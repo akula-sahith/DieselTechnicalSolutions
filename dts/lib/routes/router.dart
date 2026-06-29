@@ -1,0 +1,74 @@
+import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/auth_provider.dart';
+import '../screens/splash_screen.dart';
+import '../screens/login_screen.dart';
+import '../screens/dashboard_screen.dart';
+import '../screens/reports_screen.dart';
+import '../screens/create_report_screen.dart';
+import '../screens/report_details_screen.dart';
+import '../screens/success_screen.dart';
+
+final routerProvider = Provider<GoRouter>((ref) {
+  final authState = ref.watch(authProvider);
+
+  return GoRouter(
+    initialLocation: '/splash',
+    routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/dashboard',
+        builder: (context, state) => const DashboardScreen(),
+      ),
+      GoRoute(
+        path: '/reports',
+        builder: (context, state) => const ReportsScreen(),
+      ),
+      GoRoute(
+        path: '/create-report',
+        builder: (context, state) => const CreateReportScreen(),
+      ),
+      GoRoute(
+        path: '/report-details/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          final isLocalDraft = state.uri.queryParameters['draft'] == 'true';
+          return ReportDetailsScreen(reportId: id, isLocalDraft: isLocalDraft);
+        },
+      ),
+      GoRoute(
+        path: '/report-success/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return SuccessScreen(reportId: id);
+        },
+      ),
+    ],
+    redirect: (context, state) {
+      final isLoggedIn = authState.isAuthenticated;
+      final isGoingToSplash = state.matchedLocation == '/splash';
+      final isGoingToLogin = state.matchedLocation == '/login';
+
+      if (isGoingToSplash) {
+        return null; // Let the splash screen finish loading and handle navigation
+      }
+
+      if (!isLoggedIn && !isGoingToLogin) {
+        return '/login';
+      }
+
+      if (isLoggedIn && isGoingToLogin) {
+        return '/dashboard';
+      }
+
+      return null;
+    },
+  );
+});

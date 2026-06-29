@@ -22,6 +22,14 @@ app.get('/health', (req, res) => {
   res.status(200).json({ success: true, message: 'Server is healthy.', data: {} });
 });
 
+app.post("/api/ping", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Server is awake!",
+    timestamp: new Date()
+  });
+});
+
 app.use('/api/reports', reportRoutes);
 app.use('/api/cloudinary', cloudinaryRoutes);
 

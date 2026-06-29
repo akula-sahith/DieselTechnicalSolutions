@@ -18,13 +18,13 @@ const buildPartsUsed = (items = []) => {
 
 export const createReport = async (req, res) => {
   try {
-    const technicianSignatureFile = req.files?.technicianSignature?.[0];
+    // const technicianSignatureFile = req.files?.technicianSignature?.[0];
     const customerPhotoFile = req.files?.customerPhoto?.[0];
 
-    if (!technicianSignatureFile || !customerPhotoFile) {
+    if (customerPhotoFile) {
       return sendError(
         res,
-        "Both technician signature and customer photo are required.",
+        "Customer photo is required.",
         {},
         400
       );
@@ -41,10 +41,12 @@ export const createReport = async (req, res) => {
         ? JSON.parse(rawReportPayload)
         : rawReportPayload;
 
-    const [technicianSignatureUrl, customerPhotoUrl] = await Promise.all([
-      uploadToCloudinary(technicianSignatureFile, "efsr/signatures"),
+    const [customerPhotoUrl] = await Promise.all([
+      // uploadToCloudinary(technicianSignatureFile, "efsr/signatures"),
       uploadToCloudinary(customerPhotoFile, "efsr/customers"),
     ]);
+
+    const technicianSignatureUrl = "https://res.cloudinary.com/dy5gs2egc/image/upload/v1782710059/efsr/signatures/i1ijhzyhgkmeig7v7cad.png";
 
     const reportDocument = {
       serviceAndCustomer: {

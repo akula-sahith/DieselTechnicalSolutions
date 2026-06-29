@@ -23,6 +23,8 @@ class SuccessScreen extends ConsumerStatefulWidget {
 class _SuccessScreenState extends ConsumerState<SuccessScreen> {
   ReportModel? _report;
   bool _isLoading = true;
+  bool _isActionLoading = false;
+  String _actionLoadingMessage = '';
 
   @override
   void initState() {
@@ -54,6 +56,10 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
 
   void _downloadPdf() async {
     if (_report == null) return;
+    setState(() {
+      _isActionLoading = true;
+      _actionLoadingMessage = 'Preparing PDF for download...';
+    });
     try {
       final pdfService = ref.read(pdfServiceProvider);
       await pdfService.printOrSavePdf(_report!);
@@ -61,11 +67,21 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to generate PDF: $e'), backgroundColor: AppColors.error),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isActionLoading = false;
+        });
+      }
     }
   }
 
   void _sharePdf() async {
     if (_report == null) return;
+    setState(() {
+      _isActionLoading = true;
+      _actionLoadingMessage = 'Preparing PDF for sharing...';
+    });
     try {
       final pdfService = ref.read(pdfServiceProvider);
       await pdfService.sharePdf(_report!);
@@ -73,6 +89,12 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to share PDF: $e'), backgroundColor: AppColors.error),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isActionLoading = false;
+        });
+      }
     }
   }
 
@@ -85,124 +107,155 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Spacer(),
-                    
-                    // Success Checkmark
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: AppColors.success.withOpacity(0.12),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.check_circle_rounded,
-                          color: AppColors.success,
-                          size: 96,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    
-                    // Title
-                    const Text(
-                      'Report Saved Successfully!',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    // Job Info Card
-                    Card(
-                      elevation: 0,
-                      color: AppColors.background.withOpacity(0.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: const BorderSide(color: AppColors.border),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          children: [
-                            Text(
-                              _report?.serviceAndCustomer.jobRef ?? '',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
+            : Stack(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Spacer(),
+                        
+                        // Success Checkmark
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withOpacity(0.12),
+                              shape: BoxShape.circle,
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              formattedTime,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: AppColors.textSecondary,
-                              ),
+                            child: const Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.success,
+                              size: 96,
                             ),
-                          ],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        
+                        // Title
+                        const Text(
+                          'Report Saved Successfully!',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Job Info Card
+                        Card(
+                          elevation: 0,
+                          color: AppColors.background.withOpacity(0.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: const BorderSide(color: AppColors.border),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              children: [
+                                Text(
+                                  _report?.serviceAndCustomer.jobRef ?? '',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  formattedTime,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        
+                        const Spacer(),
+                        
+                        // Action Buttons
+                        ElevatedButton(
+                          onPressed: () {
+                            context.go('/dashboard');
+                            context.push('/report-details/${widget.reportId}?draft=false');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: const Text('View Report'),
+                        ),
+                        const SizedBox(height: 12),
+                        
+                        OutlinedButton.icon(
+                          onPressed: _downloadPdf,
+                          icon: const Icon(Icons.download_rounded),
+                          label: const Text('Download PDF'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        
+                        ElevatedButton.icon(
+                          onPressed: _sharePdf,
+                          icon: const Icon(Icons.share),
+                          label: const Text('Share PDF'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.success,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        
+                        TextButton(
+                          onPressed: () => context.go('/dashboard'),
+                          child: const Text(
+                            'Back to Dashboard',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_isActionLoading)
+                    Container(
+                      color: Colors.black.withOpacity(0.4),
+                      child: Center(
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(horizontal: 40),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const CircularProgressIndicator(),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _actionLoadingMessage,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                    
-                    const Spacer(),
-                    
-                    // Action Buttons
-                    ElevatedButton(
-                      onPressed: () {
-                        context.go('/dashboard');
-                        context.push('/report-details/${widget.reportId}?draft=false');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text('View Report'),
-                    ),
-                    const SizedBox(height: 12),
-                    
-                    OutlinedButton.icon(
-                      onPressed: _downloadPdf,
-                      icon: const Icon(Icons.download_rounded),
-                      label: const Text('Download PDF'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    
-                    ElevatedButton.icon(
-                      onPressed: _sharePdf,
-                      icon: const Icon(Icons.share),
-                      label: const Text('Share PDF'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.success,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    TextButton(
-                      onPressed: () => context.go('/dashboard'),
-                      child: const Text(
-                        'Back to Dashboard',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
       ),
     );

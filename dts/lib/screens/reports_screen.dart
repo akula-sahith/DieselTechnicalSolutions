@@ -73,14 +73,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('All Reports'),
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Menu tapped.')),
-            );
-          },
-        ),
+
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import '../models/report_model.dart';
 import '../repositories/report_repository.dart';
+import '../core/constants/app_constants.dart';
 import 'auth_provider.dart';
 import 'reports_provider.dart';
 
@@ -305,7 +306,7 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
   // Draft helper
   Future<void> saveAsDraft() async {
     final draft = state.toReportModel(
-      signatureUrl: state.technicianSignatureFile?.path ?? '',
+      signatureUrl: kDefaultTechnicianSignatureUrl,
       photoUrl: state.customerPhotoFile?.path ?? '',
     );
     await _reportsNotifier.saveDraft(draft);
@@ -335,10 +336,6 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
           state = state.copyWith(error: 'Both Technician and Representative names are required.');
           return false;
         }
-        if (state.technicianSignatureFile == null) {
-          state = state.copyWith(error: 'Technician Signature is required.');
-          return false;
-        }
         if (state.customerPhotoFile == null) {
           state = state.copyWith(error: 'Customer Photo is required.');
           return false;
@@ -353,18 +350,20 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
   Future<bool> submitReport() async {
     state = state.copyWith(isSubmitting: true, error: null);
     try {
-      if (state.technicianSignatureFile == null || state.customerPhotoFile == null) {
+      if (state.customerPhotoFile == null) {
         state = state.copyWith(
           isSubmitting: false,
-          error: 'Signature and Customer Photo are required for submission.',
+          error: 'Customer Photo is required for submission.',
         );
         return false;
       }
 
-      final reportPayload = state.toReportModel();
+      final reportPayload = state.toReportModel(
+        signatureUrl: kDefaultTechnicianSignatureUrl,
+      );
       final result = await _repository.createReport(
         report: reportPayload,
-        signatureFile: state.technicianSignatureFile!,
+        signatureUrl: kDefaultTechnicianSignatureUrl,
         photoFile: state.customerPhotoFile!,
       );
 

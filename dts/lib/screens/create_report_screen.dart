@@ -1,15 +1,12 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:signature/signature.dart';
-import 'package:path_provider/path_provider.dart';
 import '../core/constants/app_colors.dart';
+import '../core/constants/app_constants.dart';
 import '../providers/report_wizard_provider.dart';
-import '../models/report_model.dart';
 
 class CreateReportScreen extends ConsumerStatefulWidget {
   const CreateReportScreen({super.key});
@@ -19,7 +16,6 @@ class CreateReportScreen extends ConsumerStatefulWidget {
 }
 
 class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
-  late final SignatureController _sigController;
   final _imagePicker = ImagePicker();
   
   // Controllers for text fields to keep sync
@@ -43,16 +39,11 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
   final _techNameCtrl = TextEditingController();
   final _customerRepNameCtrl = TextEditingController();
 
-  bool _isSignatureSaved = false;
+
 
   @override
   void initState() {
     super.initState();
-    _sigController = SignatureController(
-      penStrokeWidth: 3,
-      penColor: AppColors.primary,
-      exportBackgroundColor: Colors.white,
-    );
 
     // Set initial text values after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -81,7 +72,6 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
 
   @override
   void dispose() {
-    _sigController.dispose();
     _jobRefCtrl.dispose();
     _customerNameCtrl.dispose();
     _siteLocationCtrl.dispose();
@@ -118,36 +108,7 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
     }
   }
 
-  Future<void> _saveSignature() async {
-    if (_sigController.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please draw your signature first.'), backgroundColor: AppColors.error),
-      );
-      return;
-    }
 
-    final pngBytes = await _sigController.toPngBytes();
-    if (pngBytes != null) {
-      final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/sig_${DateTime.now().millisecondsSinceEpoch}.png');
-      await file.writeAsBytes(pngBytes);
-      ref.read(reportWizardProvider.notifier).updateTechnicianSignature(file);
-      setState(() {
-        _isSignatureSaved = true;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Signature saved successfully!'), backgroundColor: AppColors.success),
-      );
-    }
-  }
-
-  void _clearSignature() {
-    _sigController.clear();
-    ref.read(reportWizardProvider.notifier).updateTechnicianSignature(null);
-    setState(() {
-      _isSignatureSaved = false;
-    });
-  }
 
   void _handleNext(ReportWizardState state, ReportWizardNotifier notifier) {
     if (notifier.validateCurrentStep(context)) {
@@ -260,12 +221,12 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
                         CircularProgressIndicator(),
                         SizedBox(height: 16),
                         Text(
-                          'Submitting Report to Server...',
+                          'Submitting Report...',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         SizedBox(height: 4),
                         Text(
-                          'Uploading images to Cloudinary...',
+                          'Saving report attachments...',
                           style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                         ),
                       ],
@@ -863,16 +824,15 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
         ),
         const SizedBox(height: 16),
 
-        // Signature Pad Title
+        // Signature Title
         const Text(
-          'Technician Signature *',
+          'Technician Signature',
           style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14),
         ),
         const SizedBox(height: 8),
 
-        // Drawing Pad Card
+        // Default Signature Image from Cloudinary
         Container(
-          height: 160,
           decoration: BoxDecoration(
             border: Border.all(color: AppColors.border, width: 1.5),
             borderRadius: BorderRadius.circular(12),
@@ -880,35 +840,33 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Signature(
-              controller: _sigController,
-              backgroundColor: Colors.grey.shade50,
+            child: Image.network(
+              kDefaultTechnicianSignatureUrl,
+              fit: BoxFit.contain,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return SizedBox(
+                  height: 120,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return const SizedBox(
+                  height: 120,
+                  child: Center(
+                    child: Text('Failed to load signature', style: TextStyle(color: AppColors.textLight)),
+                  ),
+                );
+              },
             ),
           ),
-        ),
-        const SizedBox(height: 10),
-        
-        // Signature Buttons
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            OutlinedButton(
-              onPressed: _clearSignature,
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-              child: const Text('Clear'),
-            ),
-            const SizedBox(width: 12),
-            ElevatedButton(
-              onPressed: _saveSignature,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                backgroundColor: _isSignatureSaved ? AppColors.success : AppColors.primary,
-              ),
-              child: Text(_isSignatureSaved ? '✓ Saved' : 'Save Signature'),
-            ),
-          ],
         ),
         const SizedBox(height: 20),
 

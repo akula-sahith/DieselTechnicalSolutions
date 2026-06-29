@@ -78,17 +78,14 @@ class ReportRepository {
 
   Future<ReportModel> createReport({
     required ReportModel report,
-    required File signatureFile,
+    required String signatureUrl,
     required File photoFile,
   }) async {
     try {
-      // Create FormData
+      // Create FormData - signature is a Cloudinary URL, only photo is uploaded
       final formData = FormData.fromMap({
         'report': report.toJsonString(),
-        'technicianSignature': await MultipartFile.fromFile(
-          signatureFile.path,
-          filename: 'signature.png',
-        ),
+        'technicianSignatureUrl': signatureUrl,
         'customerPhoto': await MultipartFile.fromFile(
           photoFile.path,
           filename: 'customer.png',

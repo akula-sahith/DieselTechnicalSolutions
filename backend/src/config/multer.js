@@ -24,4 +24,8 @@ export const reportUpload = upload.fields([
   { name: 'customerPhoto', maxCount: 1 },
 ]);
 
+export const agreementUpload = upload.fields([
+  { name: 'customerSignature', maxCount: 1 },
+]);
+
 export default upload;

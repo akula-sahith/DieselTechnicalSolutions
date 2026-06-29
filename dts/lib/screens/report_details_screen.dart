@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../core/constants/app_colors.dart';
 import '../models/report_model.dart';
@@ -430,7 +429,7 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen> with 
           ),
           const SizedBox(height: 8),
           Container(
-            height: 160,
+            width: double.infinity,
             decoration: BoxDecoration(
               border: Border.all(color: AppColors.border),
               borderRadius: BorderRadius.circular(12),
@@ -438,9 +437,37 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen> with 
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: widget.isLocalDraft
-                  ? (signatureUrl.isNotEmpty ? Image.file(File(signatureUrl), fit: BoxFit.contain) : const Center(child: Text('No Signature')))
-                  : (signatureUrl.isNotEmpty ? Image.network(signatureUrl, fit: BoxFit.contain) : const Center(child: Text('No Signature'))),
+              child: signatureUrl.isNotEmpty
+                  ? (widget.isLocalDraft && !signatureUrl.startsWith('http'))
+                      ? Image.file(File(signatureUrl), fit: BoxFit.contain)
+                      : Image.network(
+                          signatureUrl,
+                          fit: BoxFit.contain,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return SizedBox(
+                              height: 120,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return const SizedBox(
+                              height: 120,
+                              child: Center(child: Text('Failed to load signature')),
+                            );
+                          },
+                        )
+                  : const SizedBox(
+                      height: 120,
+                      child: Center(child: Text('No Signature')),
+                    ),
             ),
           ),
 
@@ -476,7 +503,7 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen> with 
           ),
           const SizedBox(height: 8),
           Container(
-            height: 200,
+            width: double.infinity,
             decoration: BoxDecoration(
               border: Border.all(color: AppColors.border),
               borderRadius: BorderRadius.circular(12),
@@ -484,9 +511,37 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen> with 
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: widget.isLocalDraft
-                  ? (photoUrl.isNotEmpty ? Image.file(File(photoUrl), fit: BoxFit.cover) : const Center(child: Text('No Photo')))
-                  : (photoUrl.isNotEmpty ? Image.network(photoUrl, fit: BoxFit.cover) : const Center(child: Text('No Photo'))),
+              child: photoUrl.isNotEmpty
+                  ? (widget.isLocalDraft && !photoUrl.startsWith('http'))
+                      ? Image.file(File(photoUrl), fit: BoxFit.contain)
+                      : Image.network(
+                          photoUrl,
+                          fit: BoxFit.contain,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return SizedBox(
+                              height: 200,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return const SizedBox(
+                              height: 200,
+                              child: Center(child: Text('Failed to load photo')),
+                            );
+                          },
+                        )
+                  : const SizedBox(
+                      height: 200,
+                      child: Center(child: Text('No Photo')),
+                    ),
             ),
           ),
           

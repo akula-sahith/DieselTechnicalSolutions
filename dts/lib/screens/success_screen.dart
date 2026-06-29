@@ -6,14 +6,18 @@ import '../core/constants/app_colors.dart';
 import '../providers/reports_provider.dart';
 import '../repositories/report_repository.dart';
 import '../models/report_model.dart';
+import '../models/agreement_model.dart';
+import '../repositories/agreement_repository.dart';
 import '../services/pdf_service.dart';
 
 class SuccessScreen extends ConsumerStatefulWidget {
   final String reportId;
+  final bool isAgreement;
 
   const SuccessScreen({
     super.key,
     required this.reportId,
+    this.isAgreement = false,
   });
 
   @override
@@ -22,6 +26,7 @@ class SuccessScreen extends ConsumerStatefulWidget {
 
 class _SuccessScreenState extends ConsumerState<SuccessScreen> {
   ReportModel? _report;
+  AgreementModel? _agreement;
   bool _isLoading = true;
   bool _isActionLoading = false;
   String _actionLoadingMessage = '';
@@ -29,7 +34,11 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
   @override
   void initState() {
     super.initState();
-    _loadReport();
+    if (widget.isAgreement) {
+      _loadAgreement();
+    } else {
+      _loadReport();
+    }
   }
 
   Future<void> _loadReport() async {
@@ -54,15 +63,37 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
     }
   }
 
+  Future<void> _loadAgreement() async {
+    try {
+      final repo = ref.read(agreementRepositoryProvider);
+      final agreement = await repo.getAgreementById(widget.reportId);
+      setState(() {
+        _agreement = agreement;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   void _downloadPdf() async {
-    if (_report == null) return;
     setState(() {
       _isActionLoading = true;
       _actionLoadingMessage = 'Preparing PDF for download...';
     });
     try {
       final pdfService = ref.read(pdfServiceProvider);
-      await pdfService.printOrSavePdf(_report!);
+      if (widget.isAgreement) {
+        if (_agreement != null) {
+          await pdfService.printOrSaveAgreementPdf(_agreement!);
+        }
+      } else {
+        if (_report != null) {
+          await pdfService.printOrSavePdf(_report!);
+        }
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to generate PDF: $e'), backgroundColor: AppColors.error),
@@ -77,14 +108,21 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
   }
 
   void _sharePdf() async {
-    if (_report == null) return;
     setState(() {
       _isActionLoading = true;
       _actionLoadingMessage = 'Preparing PDF for sharing...';
     });
     try {
       final pdfService = ref.read(pdfServiceProvider);
-      await pdfService.sharePdf(_report!);
+      if (widget.isAgreement) {
+        if (_agreement != null) {
+          await pdfService.shareAgreementPdf(_agreement!);
+        }
+      } else {
+        if (_report != null) {
+          await pdfService.sharePdf(_report!);
+        }
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to share PDF: $e'), backgroundColor: AppColors.error),
@@ -100,7 +138,19 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final formattedTime = DateFormat('dd MMMM yyyy, hh:mm a').format(_report?.createdAt ?? DateTime.now());
+    final title = widget.isAgreement
+        ? 'AMC Proposal Saved Successfully!'
+        : 'Report Saved Successfully!';
+    
+    final refNo = widget.isAgreement
+        ? (_agreement?.offerNumber ?? 'Offer # Pending')
+        : (_report?.serviceAndCustomer.jobRef ?? '');
+
+    final docDate = widget.isAgreement
+        ? (_agreement?.createdAt ?? DateTime.now())
+        : (_report?.createdAt ?? DateTime.now());
+
+    final formattedTime = DateFormat('dd MMMM yyyy, hh:mm a').format(docDate);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -135,9 +185,9 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
                         const SizedBox(height: 32),
                         
                         // Title
-                        const Text(
-                          'Report Saved Successfully!',
-                          style: TextStyle(
+                        Text(
+                          title,
+                          style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: AppColors.primary,
@@ -159,7 +209,7 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
                             child: Column(
                               children: [
                                 Text(
-                                  _report?.serviceAndCustomer.jobRef ?? '',
+                                  refNo,
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -185,12 +235,16 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
                         ElevatedButton(
                           onPressed: () {
                             context.go('/dashboard');
-                            context.push('/report-details/${widget.reportId}?draft=false');
+                            if (widget.isAgreement) {
+                              context.push('/agreement-details/${widget.reportId}');
+                            } else {
+                              context.push('/report-details/${widget.reportId}?draft=false');
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                          child: const Text('View Report'),
+                          child: Text(widget.isAgreement ? 'View Proposal' : 'View Report'),
                         ),
                         const SizedBox(height: 12),
                         

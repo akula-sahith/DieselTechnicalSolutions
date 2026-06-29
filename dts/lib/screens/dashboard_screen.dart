@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../core/constants/app_colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/reports_provider.dart';
+import '../providers/agreements_provider.dart';
 import '../widgets/bottom_nav_bar.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -15,6 +16,8 @@ class DashboardScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final reportsState = ref.watch(reportsProvider);
     final reportsNotifier = ref.read(reportsProvider.notifier);
+    final agreementsState = ref.watch(agreementsProvider);
+    final agreementsNotifier = ref.read(agreementsProvider.notifier);
 
     // Combine drafts (Pending) and submitted reports (Completed)
     final recentDrafts = reportsState.drafts.take(5).toList();
@@ -22,12 +25,14 @@ class DashboardScreen extends ConsumerWidget {
     
     // Sort combined by date or just display drafts first, then submitted
     final combinedRecent = [...recentDrafts, ...recentReports].take(5).toList();
+    final recentAgreements = agreementsState.agreements.take(5).toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: RefreshIndicator(
         onRefresh: () async {
           await reportsNotifier.refresh();
+          await agreementsNotifier.refresh();
         },
         child: CustomScrollView(
           slivers: [
@@ -157,27 +162,86 @@ class DashboardScreen extends ConsumerWidget {
 
             // "+ Create New Service Report" Banner Button with Overlapping Clipboard
             SliverToBoxAdapter(
-  child: Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: () => context.push('/create-report'),
-      child: Hero(
-        tag: "create_board",
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: AspectRatio(
-            aspectRatio: 4.2, // Adjust if needed
-            child: Image.asset(
-              'assets/images/create_board.png',
-              fit: BoxFit.cover,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: () => context.push('/create-report'),
+                  child: Hero(
+                    tag: "create_board",
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: AspectRatio(
+                        aspectRatio: 4.2, // Adjust if needed
+                        child: Image.asset(
+                          'assets/images/create_board.png',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
-    ),
-  ),
-),
+
+            // "+ Create New AMC Agreement / Quotation" Banner Button
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: () => context.push('/create-agreement'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColors.secondary, AppColors.primary],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.2),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.handshake_outlined, color: Colors.white, size: 40),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Create AMC Proposal',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Draft new Agreement or Quotation',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
             // Recent Reports List Header
             SliverToBoxAdapter(
@@ -272,7 +336,7 @@ class DashboardScreen extends ConsumerWidget {
                             Text(
                               report.serviceAndCustomer.customerName,
                               style: const TextStyle(
-                                fontSize: 13,
+                                  fontSize: 13,
                                 color: AppColors.textSecondary,
                               ),
                             ),
@@ -291,6 +355,149 @@ class DashboardScreen extends ConsumerWidget {
                     );
                   },
                   childCount: combinedRecent.length,
+                ),
+              ),
+
+            // Recent Agreements List Header
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 20, right: 20, top: 28, bottom: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Recent Agreements',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        context.push('/agreements');
+                      },
+                      child: const Text(
+                        'View All',
+                        style: TextStyle(
+                          color: AppColors.secondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Recent Agreements List
+            if (recentAgreements.isEmpty)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(
+                    child: Text(
+                      'No recent proposals found.\nTap the button above to create one.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.textLight),
+                    ),
+                  ),
+                ),
+              )
+            else
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final agreement = recentAgreements[index];
+                    final formattedDate = DateFormat('dd MMM yyyy').format(agreement.date);
+                    final badgeColor = agreement.documentType == 'Agreement' ? AppColors.success : AppColors.secondary;
+
+                    return Card(
+                      elevation: 2,
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      child: ListTile(
+                        onTap: () {
+                          context.push('/agreement-details/${agreement.id}');
+                        },
+                        leading: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: badgeColor.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            agreement.documentType == 'Agreement' ? Icons.handshake_outlined : Icons.request_quote_outlined,
+                            color: badgeColor,
+                          ),
+                        ),
+                        title: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                agreement.offerNumber ?? 'Offer # Pending',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: badgeColor.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                agreement.documentType,
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: badgeColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 4),
+                            Text(
+                              agreement.customerName,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  formattedDate,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.textLight,
+                                  ),
+                                ),
+                                Text(
+                                  '₹${agreement.grandTotal.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.accent,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        trailing: const Icon(Icons.chevron_right, size: 20, color: AppColors.textLight),
+                      ),
+                    );
+                  },
+                  childCount: recentAgreements.length,
                 ),
               ),
 

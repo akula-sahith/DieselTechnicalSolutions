@@ -7,6 +7,10 @@ import 'package:image_picker/image_picker.dart';
 import '../core/constants/app_colors.dart';
 import '../core/constants/app_constants.dart';
 import '../providers/report_wizard_provider.dart';
+import '../widgets/stepper/stepper_progress_bar.dart';
+import '../widgets/stepper/step_navigation.dart';
+import '../widgets/stepper/step_container.dart';
+import '../widgets/stepper/step_header.dart';
 
 class CreateReportScreen extends ConsumerStatefulWidget {
   const CreateReportScreen({super.key});
@@ -185,25 +189,23 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
         children: [
           Column(
             children: [
-              // Custom Header Stepper Progress bar
-              _buildStepProgressIndicator(steps, state.currentStep),
+              // Reusable Stepper Progress bar
+              StepperProgressBar(steps: steps, currentStep: state.currentStep),
 
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Card(
-                    margin: EdgeInsets.zero,
-                    elevation: 3,
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: _buildStepContent(state, notifier),
-                    ),
-                  ),
+                child: StepContainer(
+                  child: _buildStepContent(state, notifier),
                 ),
               ),
 
-              // Bottom Navigation Actions
-              _buildBottomActionButtons(state, notifier),
+              // Reusable Step Navigation
+              StepNavigation(
+                currentStep: state.currentStep,
+                totalSteps: steps.length,
+                onBack: () => _handleBack(state, notifier),
+                onNext: state.currentStep == steps.length - 1 ? () => _submit(notifier) : () => _handleNext(state, notifier),
+                continueLabel: state.currentStep == steps.length - 1 ? 'Submit Report' : 'Next',
+              ),
             ],
           ),
 
@@ -240,56 +242,7 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
     );
   }
 
-  Widget _buildStepProgressIndicator(List<String> steps, int currentStep) {
-    return Container(
-      color: AppColors.primary,
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(steps.length, (index) {
-          final isCompleted = index < currentStep;
-          final isActive = index == currentStep;
-          return Column(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: isCompleted
-                      ? AppColors.success
-                      : isActive
-                          ? AppColors.accent
-                          : Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                  border: isActive ? Border.all(color: Colors.white, width: 2) : null,
-                ),
-                child: Center(
-                  child: isCompleted
-                      ? const Icon(Icons.check, color: Colors.white, size: 18)
-                      : Text(
-                          '${index + 1}',
-                          style: TextStyle(
-                            color: isActive || isCompleted ? Colors.white : Colors.white70,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                steps[index],
-                style: TextStyle(
-                  color: isActive ? Colors.white : Colors.white60,
-                  fontSize: 10,
-                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ],
-          );
-        }),
-      ),
-    );
-  }
+
 
   Widget _buildStepContent(ReportWizardState state, ReportWizardNotifier notifier) {
     switch (state.currentStep) {
@@ -935,62 +888,7 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
     );
   }
 
-  Widget _buildBottomActionButtons(ReportWizardState state, ReportWizardNotifier notifier) {
-    final isLastStep = state.currentStep == 5;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          if (state.currentStep > 0)
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => _handleBack(state, notifier),
-                child: const Text('Back'),
-              ),
-            ),
-          if (state.currentStep > 0) const SizedBox(width: 16),
-          Expanded(
-            flex: 2,
-            child: ElevatedButton(
-              onPressed: isLastStep ? () => _submit(notifier) : () => _handleNext(state, notifier),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isLastStep ? AppColors.success : AppColors.primary,
-              ),
-              child: Text(isLastStep ? 'Submit Report' : 'Next'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSectionHeader(String title) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.8,
-        ),
-      ),
-    );
+    return StepHeader(title: title);
   }
 }

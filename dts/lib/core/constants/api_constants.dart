@@ -4,4 +4,5 @@ class ApiConstants {
   static const String defaultIosBaseUrl =
       'https://dieseltechnicalsolutions.onrender.com/api';
   static const String reports = '/reports';
+  static const String agreements = '/agreements';
 }

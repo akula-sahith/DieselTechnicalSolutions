@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import '../models/report_model.dart';
+import '../models/agreement_model.dart';
 import 'api_service.dart';
 
 final pdfServiceProvider = Provider<PdfService>((ref) {
@@ -718,6 +719,506 @@ pw.Widget statusWidget(String status) {
     await Share.shareXFiles(
       [XFile(file.path)],
       text: 'Diesel Technical Solutions Service Report - ${report.serviceAndCustomer.jobRef}',
+    );
+  }
+
+  Future<Uint8List> generateAgreementPdf(AgreementModel agreement) async {
+    final pdf = pw.Document();
+
+    // 1. Load Logo from Assets
+    pw.ImageProvider? logoImage;
+    try {
+      final logoBytes = (await rootBundle.load('assets/images/logo.png')).buffer.asUint8List();
+      logoImage = pw.MemoryImage(logoBytes);
+    } catch (e) {
+      // Fallback
+    }
+
+    // 2. Load Network/Local Images for Customer Signature & Technician Signature
+    pw.ImageProvider? customerSignatureImage;
+    pw.ImageProvider? technicianSignatureImage;
+
+    if (agreement.customerSignatureUrl != null && agreement.customerSignatureUrl!.isNotEmpty) {
+      final resolvedUrl = _resolveUrl(agreement.customerSignatureUrl!);
+      if (resolvedUrl.startsWith('http')) {
+        customerSignatureImage = await _loadNetworkImage(resolvedUrl);
+      } else {
+        final file = File(resolvedUrl);
+        if (await file.exists()) {
+          try {
+            customerSignatureImage = pw.MemoryImage(await file.readAsBytes());
+          } catch (e) {
+            // Ignore
+          }
+        }
+      }
+    }
+
+    if (agreement.technicianSignatureUrl.isNotEmpty) {
+      final resolvedUrl = _resolveUrl(agreement.technicianSignatureUrl);
+      if (resolvedUrl.startsWith('http')) {
+        technicianSignatureImage = await _loadNetworkImage(resolvedUrl);
+      } else {
+        final file = File(resolvedUrl);
+        if (await file.exists()) {
+          try {
+            technicianSignatureImage = pw.MemoryImage(await file.readAsBytes());
+          } catch (e) {
+            // Ignore
+          }
+        }
+      }
+    }
+
+    pw.Widget buildHeader(pw.ImageProvider? logo, String docType) {
+      return pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        children: [
+          // Left logo
+          pw.Expanded(
+            flex: 2,
+            child: pw.Align(
+              alignment: pw.Alignment.centerLeft,
+              child: logo != null
+                  ? pw.Container(
+                      width: 150,
+                      height: 50,
+                      child: pw.Image(logo, fit: pw.BoxFit.contain),
+                    )
+                  : pw.Text('DTS', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex('#0B2545'))),
+            ),
+          ),
+          
+          // Center details
+          pw.Expanded(
+            flex: 4,
+            child: pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                pw.Text(
+                  'DIESEL TECHNICAL SOLUTIONS',
+                  style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex('#000000')),
+                ),
+                pw.SizedBox(height: 2),
+              ],
+            ),
+          ),
+
+          // Right title
+          pw.Expanded(
+            flex: 2,
+            child: pw.Align(
+              alignment: pw.Alignment.centerRight,
+              child: pw.Text(
+                docType,
+                style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex('#D97706')), // Gold color
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    pw.Widget buildFooter() {
+      return pw.Column(
+        mainAxisSize: pw.MainAxisSize.min,
+        children: [
+          pw.Text(
+            'Thank you for your business...!',
+            style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, fontStyle: pw.FontStyle.italic, color: PdfColor.fromHex('#D97706')),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Divider(thickness: 0.5, color: PdfColors.grey500),
+          pw.SizedBox(height: 2),
+          pw.Text(
+            'D NO: 2-2-212, Laxma Reddy Colony, Uppal, HYD',
+            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+            textAlign: pw.TextAlign.center,
+          ),
+          pw.SizedBox(height: 1),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.center,
+            children: [
+              pw.Text(
+                'Ph No : 8121312253, Mail : ',
+                style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+              ),
+              pw.Text(
+                'dieseltechnicalsolutions@gmail.com',
+                style: pw.TextStyle(
+                  fontSize: 8,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColor.fromHex('#2563EB'),
+                  decoration: pw.TextDecoration.underline,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    // ================= PAGE 1 =================
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              buildHeader(logoImage, agreement.documentType),
+              pw.SizedBox(height: 10),
+              
+              // Offer No & Date
+              pw.Align(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                  'Offer No: - ${agreement.offerNumber ?? 'GPS/AMC/01'}',
+                  style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+                ),
+              ),
+              pw.Align(
+                alignment: pw.Alignment.centerRight,
+                child: pw.Text(
+                  'Date: ${DateFormat('dd/MM/yyyy').format(agreement.date)}',
+                  style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+                ),
+              ),
+              pw.SizedBox(height: 10),
+
+              // Sub-headings
+              pw.Align(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                  'Annual Maintenance Contract (AMC)',
+                  style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, decoration: pw.TextDecoration.underline, color: PdfColors.black),
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Align(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                  'Offer for Annual Maintenance Contract (AMC) for Diesel Generator sets.',
+                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, fontStyle: pw.FontStyle.italic, color: PdfColors.black),
+                ),
+              ),
+              pw.SizedBox(height: 12),
+
+              // Terms 1 to 11
+              _buildBulletItem(1, 'Our Service Engineer will make 6 free visits in year to the Engine / DG set at site with intervals of 60days not exceeding 70days.'),
+              _buildBulletItem(2, 'During each visit, our Service Engineer will inspect the Engine / DG set and carry out various checks, adjustments. Necessary minor repairs also are carried out by providing required spares parts with you.'),
+              _buildBulletItem(3, 'Major repairs like top Over-Hauling, Major Over-Hauling and Third party repair/jobs will carried out only after your specific approval, at extra cost.'),
+              _buildBulletItem(4, 'AMC customers are to be treated as our valuable customers, and if any complaint from you, our service team will attend the site on priority basis.'),
+              _buildBulletItem(5, 'Depends on terms of contract, one visit will be made every month on a specific date as mutually agreed, failure of which we shall depute our Engineer on any day of the month as convenient to us and to be honored by you. The contract shall be deemed executed on last day of the period completed and further renewal of the contract shall be as mutually agreed.'),
+              _buildBulletItem(6, 'Where ever necessary skilled and un-skilled Labor, Tools, Stores, Lifting and Moving facility for completion of the job should be provided by you.'),
+              _buildBulletItem(7, "In addition to carrying out normal checking, adjustment and minor repairs, our Service Engineer will acquaint your technical staff / Non Technical staff, who is responsible for the normal operation and maintenance of the engine, with Dos and Don'ts of correct operation and maintenance and the watch points for trouble-shooting."),
+              _buildBulletItem(8, "Services offered under this contract will be in accordance with the original Manufacture's standard service instruction practices to maintain the engine in healthy operating condition. However the responsibility of maintaining the engine is with the customer only by following the manufacturer's instructions and recommendation."),
+              _buildBulletItem(9, 'All parts including consumable like engine oil are to be procured either from us or from any authorized sources, failing which we will discontinue the contract service.'),
+              _buildBulletItem(10, 'Any Statement / Commitment by our Service Staff is binding on us only, if subsequently confirmed by us in writing.'),
+              _buildBulletItem(11, 'This offer covers Engine, Alternator & DG Control Panel only and other electrical & Consumables, service parts are not in the purview of this contract, which may please be noted. Separate AMC would be taken if any additional DG sets with you.'),
+              
+              pw.Spacer(),
+              buildFooter(),
+            ],
+          );
+        },
+      ),
+    );
+
+    // ================= PAGE 2 =================
+    final itemsRows = <pw.TableRow>[];
+    // Subheader row for items
+    itemsRows.add(
+      pw.TableRow(
+        decoration: pw.BoxDecoration(color: PdfColors.grey100),
+        children: [
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(6),
+            child: pw.Text('S.No', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(6),
+            child: pw.Text('Description', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(6),
+            child: pw.Text('Qty', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(6),
+            child: pw.Text('Rate/Unit', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(6),
+            child: pw.Text('Sub Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+          ),
+        ],
+      ),
+    );
+
+    for (int i = 0; i < agreement.descriptionItems.length; i++) {
+      final item = agreement.descriptionItems[i];
+      itemsRows.add(
+        pw.TableRow(
+          children: [
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(6),
+              child: pw.Text((i + 1).toString(), style: const pw.TextStyle(fontSize: 8)),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(6),
+              child: pw.Text(item.description, style: const pw.TextStyle(fontSize: 8)),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(6),
+              child: pw.Text(item.quantity.toString(), style: const pw.TextStyle(fontSize: 8)),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(6),
+              child: pw.Text(item.rate.toStringAsFixed(2), style: const pw.TextStyle(fontSize: 8)),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(6),
+              child: pw.Text(item.subTotal.toStringAsFixed(2), style: const pw.TextStyle(fontSize: 8)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Add Grand Total row inside items table
+    itemsRows.add(
+      pw.TableRow(
+        children: [
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(6),
+            child: pw.Text(''),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(6),
+            child: pw.Text('Grand Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(6),
+            child: pw.Text(''),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(6),
+            child: pw.Text(''),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(6),
+            child: pw.Text(agreement.grandTotal.toStringAsFixed(2), style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+          ),
+        ],
+      ),
+    );
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              buildHeader(logoImage, agreement.documentType),
+              pw.SizedBox(height: 10),
+
+              // Terms 12 and 13
+              _buildBulletItem(12, 'All visits will be acknowledged by dually signing the Report on the same day.'),
+              _buildBulletItem(13, 'Payment Terms: 100% payment as advance along with copy of the offer with acceptance of Terms and Conditions.', isBold: true),
+              pw.SizedBox(height: 12),
+
+              // Validity & assuring
+              pw.Align(
+                alignment: pw.Alignment.center,
+                child: pw.Text('This offer is valid for 30 Days from the date of submission.', style: const pw.TextStyle(fontSize: 8.5)),
+              ),
+              pw.Align(
+                alignment: pw.Alignment.center,
+                child: pw.Text('Thanking you and assuring our best services at all times.', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+              ),
+              pw.SizedBox(height: 12),
+
+              // Customer address box
+              pw.Container(
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.black, width: 0.5),
+                ),
+                padding: const pw.EdgeInsets.all(8),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('Name & Address:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                    pw.SizedBox(height: 4),
+                    pw.Text(agreement.customerName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+                    pw.Text(agreement.completeAddress, style: const pw.TextStyle(fontSize: 8)),
+                    pw.SizedBox(height: 4),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Contact: ${agreement.contactPerson}', style: const pw.TextStyle(fontSize: 8)),
+                        pw.Text('Mob. No : ${agreement.mobileNumber}', style: const pw.TextStyle(fontSize: 8)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 12),
+
+              // Items Table
+              pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+                columnWidths: const {
+                  0: pw.FlexColumnWidth(0.8),
+                  1: pw.FlexColumnWidth(4.5),
+                  2: pw.FlexColumnWidth(0.8),
+                  3: pw.FlexColumnWidth(1.5),
+                  4: pw.FlexColumnWidth(1.5),
+                },
+                children: itemsRows,
+              ),
+              
+              // Amount in words
+              pw.Container(
+                decoration: const pw.BoxDecoration(
+                  border: pw.Border(
+                    left: pw.BorderSide(color: PdfColors.black, width: 0.5),
+                    right: pw.BorderSide(color: PdfColors.black, width: 0.5),
+                    bottom: pw.BorderSide(color: PdfColors.black, width: 0.5),
+                  ),
+                ),
+                padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: pw.Text(
+                  agreement.amountInWords ?? '',
+                  style: const pw.TextStyle(fontSize: 8),
+                ),
+              ),
+              pw.SizedBox(height: 8),
+
+              // Note box
+              pw.RichText(
+                text: pw.TextSpan(
+                  children: [
+                    pw.TextSpan(
+                      text: 'Note: ',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.black, fontSize: 8.5),
+                    ),
+                    pw.TextSpan(
+                      text: 'The above Price is only for Service visits, Spares extra at actual.\n',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.black, fontSize: 8.5, fontStyle: pw.FontStyle.italic),
+                    ),
+                    pw.TextSpan(
+                      text: 'All expenses for traveling, lodging and boarding for deputation of service engineer will be borne by us.',
+                      style: const pw.TextStyle(color: PdfColors.black, fontSize: 8.5),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 12),
+
+              // Signatures Area
+              pw.Text('Yours faithfully', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+              pw.Text('For Diesel technical solutions', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+              pw.SizedBox(height: 10),
+
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  // Authorized
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      if (technicianSignatureImage != null)
+                        pw.Container(
+                          height: 30,
+                          width: 80,
+                          child: pw.Image(technicianSignatureImage, fit: pw.BoxFit.contain),
+                        )
+                      else
+                        pw.SizedBox(height: 30),
+                      pw.SizedBox(height: 4),
+                      pw.Text('[Authorized Signature]', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+                    ],
+                  ),
+
+                  // Customer Signatory
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      if (customerSignatureImage != null)
+                        pw.Container(
+                          height: 30,
+                          width: 80,
+                          child: pw.Image(customerSignatureImage, fit: pw.BoxFit.contain),
+                        )
+                      else
+                        pw.SizedBox(height: 30),
+                      pw.SizedBox(height: 4),
+                      pw.Text('[Customer Signatory]', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+                    ],
+                  ),
+                ],
+              ),
+
+              pw.Spacer(),
+              buildFooter(),
+            ],
+          );
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  pw.Widget _buildBulletItem(int num, String text, {bool isBold = false}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 5),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Container(
+            width: 15,
+            child: pw.Text('$num)', style: const pw.TextStyle(fontSize: 8.5)),
+          ),
+          pw.Expanded(
+            child: pw.Text(
+              text,
+              style: pw.TextStyle(
+                fontSize: 8.5,
+                fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> printOrSaveAgreementPdf(AgreementModel agreement) async {
+    final bytes = await generateAgreementPdf(agreement);
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => bytes,
+      name: 'Agreement-${agreement.offerNumber ?? agreement.customerName}',
+    );
+  }
+
+  Future<void> shareAgreementPdf(AgreementModel agreement) async {
+    final bytes = await generateAgreementPdf(agreement);
+    final tempDir = await getTemporaryDirectory();
+    final sanitizedOfferNumber = (agreement.offerNumber ?? agreement.customerName)
+        .replaceAll('/', '_')
+        .replaceAll('\\', '_');
+    final file = File('${tempDir.path}/Agreement_$sanitizedOfferNumber.pdf');
+    await file.writeAsBytes(bytes);
+    
+    await Share.shareXFiles(
+      [XFile(file.path)],
+      text: 'Diesel Technical Solutions AMC Proposal - ${agreement.offerNumber ?? agreement.customerName}',
     );
   }
 }

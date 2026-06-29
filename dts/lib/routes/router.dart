@@ -8,6 +8,9 @@ import '../screens/reports_screen.dart';
 import '../screens/create_report_screen.dart';
 import '../screens/report_details_screen.dart';
 import '../screens/success_screen.dart';
+import '../screens/agreements_screen.dart';
+import '../screens/create_agreement_screen.dart';
+import '../screens/agreement_details_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -32,8 +35,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ReportsScreen(),
       ),
       GoRoute(
+        path: '/agreements',
+        builder: (context, state) => const AgreementsScreen(),
+      ),
+      GoRoute(
         path: '/create-report',
         builder: (context, state) => const CreateReportScreen(),
+      ),
+      GoRoute(
+        path: '/create-agreement',
+        builder: (context, state) => const CreateAgreementScreen(),
       ),
       GoRoute(
         path: '/report-details/:id',
@@ -44,10 +55,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/agreement-details/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return AgreementDetailsScreen(agreementId: id);
+        },
+      ),
+      GoRoute(
         path: '/report-success/:id',
         builder: (context, state) {
           final id = state.pathParameters['id']!;
-          return SuccessScreen(reportId: id);
+          return SuccessScreen(reportId: id, isAgreement: false);
+        },
+      ),
+      GoRoute(
+        path: '/agreement-success/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return SuccessScreen(reportId: id, isAgreement: true);
         },
       ),
     ],

@@ -21,7 +21,7 @@ export const createReport = async (req, res) => {
     // const technicianSignatureFile = req.files?.technicianSignature?.[0];
     const customerPhotoFile = req.files?.customerPhoto?.[0];
 
-    if (customerPhotoFile) {
+    if (!customerPhotoFile) {
       return sendError(
         res,
         "Customer photo is required.",

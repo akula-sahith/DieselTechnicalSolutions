@@ -1,20 +1,20 @@
 name: Keep Render Awake
 
 on:
-  schedule:
-    # Every 10 minutes
-    - cron: "*/10 * * * *"
-
-  # Allows manual execution
   workflow_dispatch:
+  push:
+  schedule:
+    - cron: "*/5 * * * *"
 
 jobs:
   ping:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Send POST request
-        run: |
+      - run: echo "Triggered by ${{ github.event_name }}"
+      - run: date
+
+      - run: |
           curl -X POST \
             -H "Content-Type: application/json" \
             -d '{}' \

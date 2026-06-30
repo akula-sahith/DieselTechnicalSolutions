@@ -218,3 +218,17 @@ export const getReportById = async (req, res) => {
     return sendError(res, 'Failed to fetch service report.', { details: error.message }, 500);
   }
 };
+
+export const deleteReport = async (req, res) => {
+  try {
+    const report = await Report.findByIdAndDelete(req.params.id);
+
+    if (!report) {
+      return sendError(res, 'Service report not found.', {}, 404);
+    }
+
+    return sendSuccess(res, 'Service report deleted successfully.', {});
+  } catch (error) {
+    return sendError(res, 'Failed to delete service report.', { details: error.message }, 500);
+  }
+};

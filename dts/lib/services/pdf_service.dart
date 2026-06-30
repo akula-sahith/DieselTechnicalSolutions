@@ -826,28 +826,28 @@ pw.Widget statusWidget(String status) {
         children: [
           pw.Text(
             'Thank you for your business...!',
-            style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, fontStyle: pw.FontStyle.italic, color: PdfColor.fromHex('#D97706')),
+            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, fontStyle: pw.FontStyle.italic, color: PdfColor.fromHex('#D97706')),
           ),
-          pw.SizedBox(height: 4),
+          pw.SizedBox(height: 8),
           pw.Divider(thickness: 0.5, color: PdfColors.grey500),
-          pw.SizedBox(height: 2),
+          pw.SizedBox(height: 6),
           pw.Text(
             'D NO: 2-2-212, Laxma Reddy Colony, Uppal, HYD',
-            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+            style: pw.TextStyle(fontSize: 10.5, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
             textAlign: pw.TextAlign.center,
           ),
-          pw.SizedBox(height: 1),
+          pw.SizedBox(height: 3),
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.center,
             children: [
               pw.Text(
                 'Ph No : 8121312253, Mail : ',
-                style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+                style: pw.TextStyle(fontSize: 10.5, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
               ),
               pw.Text(
                 'dieseltechnicalsolutions@gmail.com',
                 style: pw.TextStyle(
-                  fontSize: 8,
+                  fontSize: 10.5,
                   fontWeight: pw.FontWeight.bold,
                   color: PdfColor.fromHex('#2563EB'),
                   decoration: pw.TextDecoration.underline,
@@ -863,61 +863,61 @@ pw.Widget statusWidget(String status) {
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(32),
+        margin: const pw.EdgeInsets.symmetric(horizontal: 40, vertical: 40),
         build: (pw.Context context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.stretch,
             children: [
               buildHeader(logoImage, agreement.documentType),
-              pw.SizedBox(height: 10),
+              pw.SizedBox(height: 24),
               
               // Offer No & Date
               pw.Align(
                 alignment: pw.Alignment.center,
                 child: pw.Text(
                   'Offer No: - ${agreement.offerNumber ?? 'GPS/AMC/01'}',
-                  style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+                  style: pw.TextStyle(fontSize: 12.5, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
                 ),
               ),
               pw.Align(
                 alignment: pw.Alignment.centerRight,
                 child: pw.Text(
                   'Date: ${DateFormat('dd/MM/yyyy').format(agreement.date)}',
-                  style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+                  style: pw.TextStyle(fontSize: 12.5, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
                 ),
               ),
-              pw.SizedBox(height: 10),
+              pw.SizedBox(height: 24),
 
               // Sub-headings
               pw.Align(
                 alignment: pw.Alignment.center,
                 child: pw.Text(
                   'Annual Maintenance Contract (AMC)',
-                  style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, decoration: pw.TextDecoration.underline, color: PdfColors.black),
+                  style: pw.TextStyle(fontSize: 14.5, fontWeight: pw.FontWeight.bold, decoration: pw.TextDecoration.underline, color: PdfColors.black),
                 ),
               ),
-              pw.SizedBox(height: 4),
+              pw.SizedBox(height: 8),
               pw.Align(
                 alignment: pw.Alignment.center,
                 child: pw.Text(
                   'Offer for Annual Maintenance Contract (AMC) for Diesel Generator sets.',
-                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, fontStyle: pw.FontStyle.italic, color: PdfColors.black),
+                  style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, fontStyle: pw.FontStyle.italic, color: PdfColors.black),
                 ),
               ),
-              pw.SizedBox(height: 12),
+              pw.SizedBox(height: 24),
 
               // Terms 1 to 11
-              _buildBulletItem(1, 'Our Service Engineer will make 6 free visits in year to the Engine / DG set at site with intervals of 60days not exceeding 70days.'),
-              _buildBulletItem(2, 'During each visit, our Service Engineer will inspect the Engine / DG set and carry out various checks, adjustments. Necessary minor repairs also are carried out by providing required spares parts with you.'),
-              _buildBulletItem(3, 'Major repairs like top Over-Hauling, Major Over-Hauling and Third party repair/jobs will carried out only after your specific approval, at extra cost.'),
-              _buildBulletItem(4, 'AMC customers are to be treated as our valuable customers, and if any complaint from you, our service team will attend the site on priority basis.'),
-              _buildBulletItem(5, 'Depends on terms of contract, one visit will be made every month on a specific date as mutually agreed, failure of which we shall depute our Engineer on any day of the month as convenient to us and to be honored by you. The contract shall be deemed executed on last day of the period completed and further renewal of the contract shall be as mutually agreed.'),
-              _buildBulletItem(6, 'Where ever necessary skilled and un-skilled Labor, Tools, Stores, Lifting and Moving facility for completion of the job should be provided by you.'),
-              _buildBulletItem(7, "In addition to carrying out normal checking, adjustment and minor repairs, our Service Engineer will acquaint your technical staff / Non Technical staff, who is responsible for the normal operation and maintenance of the engine, with Dos and Don'ts of correct operation and maintenance and the watch points for trouble-shooting."),
-              _buildBulletItem(8, "Services offered under this contract will be in accordance with the original Manufacture's standard service instruction practices to maintain the engine in healthy operating condition. However the responsibility of maintaining the engine is with the customer only by following the manufacturer's instructions and recommendation."),
-              _buildBulletItem(9, 'All parts including consumable like engine oil are to be procured either from us or from any authorized sources, failing which we will discontinue the contract service.'),
-              _buildBulletItem(10, 'Any Statement / Commitment by our Service Staff is binding on us only, if subsequently confirmed by us in writing.'),
-              _buildBulletItem(11, 'This offer covers Engine, Alternator & DG Control Panel only and other electrical & Consumables, service parts are not in the purview of this contract, which may please be noted. Separate AMC would be taken if any additional DG sets with you.'),
+              _buildBulletItem(1, 'Our Service Engineer will make 6 free visits in year to the Engine / DG set at site with intervals of 60days not exceeding 70days.', fontSize: 11.0),
+              _buildBulletItem(2, 'During each visit, our Service Engineer will inspect the Engine / DG set and carry out various checks, adjustments. Necessary minor repairs also are carried out by providing required spares parts with you.', fontSize: 11.0),
+              _buildBulletItem(3, 'Major repairs like top Over-Hauling, Major Over-Hauling and Third party repair/jobs will carried out only after your specific approval, at extra cost.', fontSize: 11.0),
+              _buildBulletItem(4, 'AMC customers are to be treated as our valuable customers, and if any complaint from you, our service team will attend the site on priority basis.', fontSize: 11.0),
+              _buildBulletItem(5, 'Depends on terms of contract, one visit will be made every month on a specific date as mutually agreed, failure of which we shall depute our Engineer on any day of the month as convenient to us and to be honored by you. The contract shall be deemed executed on last day of the period completed and further renewal of the contract shall be as mutually agreed.', fontSize: 11.0),
+              _buildBulletItem(6, 'Where ever necessary skilled and un-skilled Labor, Tools, Stores, Lifting and Moving facility for completion of the job should be provided by you.', fontSize: 11.0),
+              _buildBulletItem(7, "In addition to carrying out normal checking, adjustment and minor repairs, our Service Engineer will acquaint your technical staff / Non Technical staff, who is responsible for the normal operation and maintenance of the engine, with Dos and Don'ts of correct operation and maintenance and the watch points for trouble-shooting.", fontSize: 11.0),
+              _buildBulletItem(8, "Services offered under this contract will be in accordance with the original Manufacture's standard service instruction practices to maintain the engine in healthy operating condition. However the responsibility of maintaining the engine is with the customer only by following the manufacturer's instructions and recommendation.", fontSize: 11.0),
+              _buildBulletItem(9, 'All parts including consumable like engine oil are to be procured either from us or from any authorized sources, failing which we will discontinue the contract service.', fontSize: 11.0),
+              _buildBulletItem(10, 'Any Statement / Commitment by our Service Staff is binding on us only, if subsequently confirmed by us in writing.', fontSize: 11.0),
+              _buildBulletItem(11, 'This offer covers Engine, Alternator & DG Control Panel only and other electrical & Consumables, service parts are not in the purview of this contract, which may please be noted. Separate AMC would be taken if any additional DG sets with you.', fontSize: 11.0),
               
               pw.Spacer(),
               buildFooter(),
@@ -935,24 +935,24 @@ pw.Widget statusWidget(String status) {
         decoration: pw.BoxDecoration(color: PdfColors.grey100),
         children: [
           pw.Padding(
-            padding: const pw.EdgeInsets.all(6),
-            child: pw.Text('S.No', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+            padding: const pw.EdgeInsets.all(10),
+            child: pw.Text('S.No', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
           ),
           pw.Padding(
-            padding: const pw.EdgeInsets.all(6),
-            child: pw.Text('Description', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+            padding: const pw.EdgeInsets.all(10),
+            child: pw.Text('Description', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
           ),
           pw.Padding(
-            padding: const pw.EdgeInsets.all(6),
-            child: pw.Text('Qty', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+            padding: const pw.EdgeInsets.all(10),
+            child: pw.Text('Qty', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
           ),
           pw.Padding(
-            padding: const pw.EdgeInsets.all(6),
-            child: pw.Text('Rate/Unit', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+            padding: const pw.EdgeInsets.all(10),
+            child: pw.Text('Rate/Unit', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
           ),
           pw.Padding(
-            padding: const pw.EdgeInsets.all(6),
-            child: pw.Text('Sub Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+            padding: const pw.EdgeInsets.all(10),
+            child: pw.Text('Sub Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
           ),
         ],
       ),
@@ -964,53 +964,108 @@ pw.Widget statusWidget(String status) {
         pw.TableRow(
           children: [
             pw.Padding(
-              padding: const pw.EdgeInsets.all(6),
-              child: pw.Text((i + 1).toString(), style: const pw.TextStyle(fontSize: 8)),
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Text((i + 1).toString(), style: const pw.TextStyle(fontSize: 10.5)),
             ),
             pw.Padding(
-              padding: const pw.EdgeInsets.all(6),
-              child: pw.Text(item.description, style: const pw.TextStyle(fontSize: 8)),
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Text(item.description, style: const pw.TextStyle(fontSize: 10.5)),
             ),
             pw.Padding(
-              padding: const pw.EdgeInsets.all(6),
-              child: pw.Text(item.quantity.toString(), style: const pw.TextStyle(fontSize: 8)),
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Text(item.quantity.toString(), style: const pw.TextStyle(fontSize: 10.5)),
             ),
             pw.Padding(
-              padding: const pw.EdgeInsets.all(6),
-              child: pw.Text(item.rate.toStringAsFixed(2), style: const pw.TextStyle(fontSize: 8)),
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Text(item.rate.toStringAsFixed(2), style: const pw.TextStyle(fontSize: 10.5)),
             ),
             pw.Padding(
-              padding: const pw.EdgeInsets.all(6),
-              child: pw.Text(item.subTotal.toStringAsFixed(2), style: const pw.TextStyle(fontSize: 8)),
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Text(item.subTotal.toStringAsFixed(2), style: const pw.TextStyle(fontSize: 10.5)),
             ),
           ],
         ),
       );
     }
 
-    // Add Grand Total row inside items table
+    // Add Billing rows (Total before GST, GST, Grand Total) inside items table
+    if (agreement.gstRequired) {
+      itemsRows.add(
+        pw.TableRow(
+          children: [
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Text(''),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Text('Total Before GST', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Text(''),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Text(''),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Text(agreement.totalBeforeGST.toStringAsFixed(2), style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+            ),
+          ],
+        ),
+      );
+      itemsRows.add(
+        pw.TableRow(
+          children: [
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Text(''),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Text('GST @ ${agreement.gstPercentage.toStringAsFixed(0)}%', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Text(''),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Text(''),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Text(agreement.gstAmount.toStringAsFixed(2), style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+            ),
+          ],
+        ),
+      );
+    }
+
     itemsRows.add(
       pw.TableRow(
         children: [
           pw.Padding(
-            padding: const pw.EdgeInsets.all(6),
+            padding: const pw.EdgeInsets.all(10),
             child: pw.Text(''),
           ),
           pw.Padding(
-            padding: const pw.EdgeInsets.all(6),
-            child: pw.Text('Grand Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+            padding: const pw.EdgeInsets.all(10),
+            child: pw.Text('Grand Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11.5)),
           ),
           pw.Padding(
-            padding: const pw.EdgeInsets.all(6),
+            padding: const pw.EdgeInsets.all(10),
             child: pw.Text(''),
           ),
           pw.Padding(
-            padding: const pw.EdgeInsets.all(6),
+            padding: const pw.EdgeInsets.all(10),
             child: pw.Text(''),
           ),
           pw.Padding(
-            padding: const pw.EdgeInsets.all(6),
-            child: pw.Text(agreement.grandTotal.toStringAsFixed(2), style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+            padding: const pw.EdgeInsets.all(10),
+            child: pw.Text(agreement.grandTotal.toStringAsFixed(2), style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11.5)),
           ),
         ],
       ),
@@ -1019,55 +1074,53 @@ pw.Widget statusWidget(String status) {
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(32),
+        margin: const pw.EdgeInsets.symmetric(horizontal: 40, vertical: 40),
         build: (pw.Context context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.stretch,
             children: [
               buildHeader(logoImage, agreement.documentType),
-              pw.SizedBox(height: 10),
+              pw.SizedBox(height: 16),
 
               // Terms 12 and 13
-              _buildBulletItem(12, 'All visits will be acknowledged by dually signing the Report on the same day.'),
-              _buildBulletItem(13, 'Payment Terms: 100% payment as advance along with copy of the offer with acceptance of Terms and Conditions.', isBold: true),
-              pw.SizedBox(height: 12),
+              _buildBulletItem(12, 'All visits will be acknowledged by dually signing the Report on the same day.', fontSize: 11.0),
+              _buildBulletItem(13, 'Payment Terms: 100% payment as advance along with copy of the offer with acceptance of Terms and Conditions.', isBold: true, fontSize: 11.0),
+              pw.SizedBox(height: 24),
 
               // Validity & assuring
               pw.Align(
                 alignment: pw.Alignment.center,
-                child: pw.Text('This offer is valid for 30 Days from the date of submission.', style: const pw.TextStyle(fontSize: 8.5)),
+                child: pw.Text('This offer is valid for 30 Days from the date of submission.', style: const pw.TextStyle(fontSize: 11.5)),
               ),
               pw.Align(
                 alignment: pw.Alignment.center,
-                child: pw.Text('Thanking you and assuring our best services at all times.', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                child: pw.Text('Thanking you and assuring our best services at all times.', style: pw.TextStyle(fontSize: 11.5, fontWeight: pw.FontWeight.bold)),
               ),
-              pw.SizedBox(height: 12),
+              pw.SizedBox(height: 24),
 
-              // Customer address box
-              pw.Container(
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.black, width: 0.5),
-                ),
-                padding: const pw.EdgeInsets.all(8),
+              // Customer address details (No box, larger font size)
+              pw.Padding(
+                padding: const pw.EdgeInsets.symmetric(vertical: 8),
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('Name & Address:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                    pw.Text('Name & Address:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13, color: PdfColors.black)),
                     pw.SizedBox(height: 4),
-                    pw.Text(agreement.customerName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
-                    pw.Text(agreement.completeAddress, style: const pw.TextStyle(fontSize: 8)),
-                    pw.SizedBox(height: 4),
+                    pw.Text(agreement.customerName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13, color: PdfColors.black)),
+                    pw.SizedBox(height: 3),
+                    pw.Text(agreement.completeAddress, style: pw.TextStyle(fontSize: 12, color: PdfColors.black)),
+                    pw.SizedBox(height: 6),
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('Contact: ${agreement.contactPerson}', style: const pw.TextStyle(fontSize: 8)),
-                        pw.Text('Mob. No : ${agreement.mobileNumber}', style: const pw.TextStyle(fontSize: 8)),
+                        pw.Text('Contact: ${agreement.contactPerson}', style: pw.TextStyle(fontSize: 11.5, fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
+                        pw.Text('Mob. No : ${agreement.mobileNumber}', style: pw.TextStyle(fontSize: 11.5, fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
                       ],
                     ),
                   ],
                 ),
               ),
-              pw.SizedBox(height: 12),
+              pw.SizedBox(height: 24),
 
               // Items Table
               pw.Table(
@@ -1091,13 +1144,13 @@ pw.Widget statusWidget(String status) {
                     bottom: pw.BorderSide(color: PdfColors.black, width: 0.5),
                   ),
                 ),
-                padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 child: pw.Text(
                   agreement.amountInWords ?? '',
-                  style: const pw.TextStyle(fontSize: 8),
+                  style: const pw.TextStyle(fontSize: 11),
                 ),
               ),
-              pw.SizedBox(height: 8),
+              pw.SizedBox(height: 24),
 
               // Note box
               pw.RichText(
@@ -1105,25 +1158,25 @@ pw.Widget statusWidget(String status) {
                   children: [
                     pw.TextSpan(
                       text: 'Note: ',
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.black, fontSize: 8.5),
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.black, fontSize: 11),
                     ),
                     pw.TextSpan(
                       text: 'The above Price is only for Service visits, Spares extra at actual.\n',
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.black, fontSize: 8.5, fontStyle: pw.FontStyle.italic),
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.black, fontSize: 11, fontStyle: pw.FontStyle.italic),
                     ),
                     pw.TextSpan(
                       text: 'All expenses for traveling, lodging and boarding for deputation of service engineer will be borne by us.',
-                      style: const pw.TextStyle(color: PdfColors.black, fontSize: 8.5),
+                      style: const pw.TextStyle(color: PdfColors.black, fontSize: 11),
                     ),
                   ],
                 ),
               ),
-              pw.SizedBox(height: 12),
+              pw.SizedBox(height: 24),
 
               // Signatures Area
-              pw.Text('Yours faithfully', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
-              pw.Text('For Diesel technical solutions', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
-              pw.SizedBox(height: 10),
+              pw.Text('Yours faithfully', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
+              pw.Text('For Diesel technical solutions', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
+              pw.SizedBox(height: 20),
 
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -1134,14 +1187,14 @@ pw.Widget statusWidget(String status) {
                     children: [
                       if (technicianSignatureImage != null)
                         pw.Container(
-                          height: 30,
-                          width: 80,
+                          height: 50,
+                          width: 120,
                           child: pw.Image(technicianSignatureImage, fit: pw.BoxFit.contain),
                         )
                       else
-                        pw.SizedBox(height: 30),
+                        pw.SizedBox(height: 50),
                       pw.SizedBox(height: 4),
-                      pw.Text('[Authorized Signature]', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+                      pw.Text('[Authorized Signature]', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
                     ],
                   ),
 
@@ -1151,14 +1204,14 @@ pw.Widget statusWidget(String status) {
                     children: [
                       if (customerSignatureImage != null)
                         pw.Container(
-                          height: 30,
-                          width: 80,
+                          height: 50,
+                          width: 120,
                           child: pw.Image(customerSignatureImage, fit: pw.BoxFit.contain),
                         )
                       else
-                        pw.SizedBox(height: 30),
+                        pw.SizedBox(height: 50),
                       pw.SizedBox(height: 4),
-                      pw.Text('[Customer Signatory]', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+                      pw.Text('[Customer Signatory]', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
                     ],
                   ),
                 ],
@@ -1175,21 +1228,21 @@ pw.Widget statusWidget(String status) {
     return pdf.save();
   }
 
-  pw.Widget _buildBulletItem(int num, String text, {bool isBold = false}) {
+  pw.Widget _buildBulletItem(int num, String text, {bool isBold = false, double fontSize = 11.0}) {
     return pw.Padding(
-      padding: const pw.EdgeInsets.only(bottom: 5),
+      padding: const pw.EdgeInsets.only(bottom: 12),
       child: pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Container(
-            width: 15,
-            child: pw.Text('$num)', style: const pw.TextStyle(fontSize: 8.5)),
+            width: 20,
+            child: pw.Text('$num)', style: pw.TextStyle(fontSize: fontSize)),
           ),
           pw.Expanded(
             child: pw.Text(
               text,
               style: pw.TextStyle(
-                fontSize: 8.5,
+                fontSize: fontSize,
                 fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
               ),
             ),

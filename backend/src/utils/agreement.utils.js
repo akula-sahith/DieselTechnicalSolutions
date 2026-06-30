@@ -89,5 +89,5 @@ export const calculateAgreementTotals = (descriptionItems = [], financials = {})
 };
 
 export const formatOfferNumber = (sequence) => {
-  return `GPS/AMC/${String(sequence).padStart(4, '0')}`;
+  return `GPS/AMC/${String(sequence).padStart(1, '0')}`;
 };

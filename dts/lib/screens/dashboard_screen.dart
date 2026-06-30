@@ -7,9 +7,20 @@ import '../providers/auth_provider.dart';
 import '../providers/reports_provider.dart';
 import '../providers/agreements_provider.dart';
 import '../widgets/bottom_nav_bar.dart';
+import '../widgets/common/stat_card.dart';
+import '../widgets/common/section_header.dart';
+import '../widgets/common/quick_action_card.dart';
+import '../widgets/common/document_card.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
+
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -19,13 +30,10 @@ class DashboardScreen extends ConsumerWidget {
     final agreementsState = ref.watch(agreementsProvider);
     final agreementsNotifier = ref.read(agreementsProvider.notifier);
 
-    // Combine drafts (Pending) and submitted reports (Completed)
-    final recentDrafts = reportsState.drafts.take(5).toList();
-    final recentReports = reportsState.reports.take(5).toList();
-    
-    // Sort combined by date or just display drafts first, then submitted
-    final combinedRecent = [...recentDrafts, ...recentReports].take(5).toList();
-    final recentAgreements = agreementsState.agreements.take(5).toList();
+    final today = DateFormat('EEEE, dd MMM yyyy').format(DateTime.now());
+
+    // Build unified recent activity feed
+    final recentActivity = _buildRecentActivity(reportsState, agreementsState);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -36,12 +44,12 @@ class DashboardScreen extends ConsumerWidget {
         },
         child: CustomScrollView(
           slivers: [
-            // Custom App Bar Header with Horizontal Stat Cards
+            // ──── Header with Gradient ────
             SliverToBoxAdapter(
               child: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFF0F2042), Color(0xFF1E3A8A)], // Deep Navy to Bright Blue
+                    colors: [Color(0xFF0B2545), Color(0xFF134074)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -53,39 +61,42 @@ class DashboardScreen extends ConsumerWidget {
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 20, right: 20, bottom: 24, top: 12),
+                    padding: const EdgeInsets.only(left: 20, right: 20, bottom: 24, top: 14),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Greeting row
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Good Morning, ${authState.userName ?? 'Siva'} 👋',
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${_greeting()}, ${authState.userName ?? 'Technician'} 👋',
+                                    style: const TextStyle(
+                                      fontSize: 21,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  "Here's what's happening today",
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.white70,
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    today,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.white.withOpacity(0.7),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                            // Notification Bell
                             Stack(
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
+                                  icon: const Icon(Icons.notifications_outlined,
+                                      color: Colors.white, size: 26),
                                   onPressed: () {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(content: Text('No new notifications.')),
@@ -93,56 +104,57 @@ class DashboardScreen extends ConsumerWidget {
                                   },
                                 ),
                                 Positioned(
-                                  top: 8,
-                                  right: 8,
+                                  top: 10,
+                                  right: 10,
                                   child: Container(
-                                    padding: const EdgeInsets.all(4),
+                                    width: 8,
+                                    height: 8,
                                     decoration: const BoxDecoration(
                                       color: AppColors.accent,
                                       shape: BoxShape.circle,
                                     ),
-                                    constraints: const BoxConstraints(minWidth: 8, minHeight: 8),
                                   ),
                                 ),
                               ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
-                        // Horizontal row of stat cards
+                        const SizedBox(height: 22),
+
+                        // ──── Statistics Row ────
                         Row(
                           children: [
                             Expanded(
-                              child: _buildStatCardHorizontal(
+                              child: StatCard(
                                 title: "Today's Reports",
                                 value: reportsNotifier.todayReportsCount.toString(),
                                 icon: Icons.description_outlined,
-                                color: const Color(0xFF3B82F6),
+                                color: AppColors.quotationBlue,
                               ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: _buildStatCardHorizontal(
-                                title: "Completed",
-                                value: reportsNotifier.completedReportsCount.toString(),
-                                icon: Icons.check_circle_outline,
-                                color: const Color(0xFF10B981),
+                              child: StatCard(
+                                title: "Agreements",
+                                value: agreementsState.totalCount.toString(),
+                                icon: Icons.handshake_outlined,
+                                color: AppColors.agreementGreen,
                               ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: _buildStatCardHorizontal(
+                              child: StatCard(
                                 title: "Pending",
                                 value: reportsNotifier.pendingReportsCount.toString(),
                                 icon: Icons.schedule_outlined,
-                                color: const Color(0xFFF59E0B),
+                                color: AppColors.warning,
                               ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: _buildStatCardHorizontal(
-                                title: "Total Reports",
-                                value: reportsNotifier.totalReportsCount.toString(),
+                              child: StatCard(
+                                title: "Total Docs",
+                                value: (reportsNotifier.totalReportsCount + agreementsState.totalCount).toString(),
                                 icon: Icons.folder_open_outlined,
                                 color: const Color(0xFF6B7280),
                               ),
@@ -156,352 +168,86 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
 
+            // ──── Quick Actions Header ────
             const SliverToBoxAdapter(
-              child: SizedBox(height: 16),
+              child: SectionHeader(title: 'Quick Actions'),
             ),
 
-            // "+ Create New Service Report" Banner Button with Overlapping Clipboard
+            // ──── Quick Action Cards (Equal Prominence) ────
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(18),
-                  onTap: () => context.push('/create-report'),
-                  child: Hero(
-                    tag: "create_board",
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: AspectRatio(
-                        aspectRatio: 4.2, // Adjust if needed
-                        child: Image.asset(
-                          'assets/images/create_board.png',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    QuickActionCard(
+                      title: 'Service\nReport',
+                      subtitle: 'Create new report',
+                      icon: Icons.description_outlined,
+                      gradientColors: const [Color(0xFFEE6C4D), Color(0xFFE85D3A)],
+                      onTap: () => context.push('/create-report'),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    QuickActionCard(
+                      title: 'AMC\nProposal',
+                      subtitle: 'Draft agreement',
+                      icon: Icons.handshake_outlined,
+                      gradientColors: const [Color(0xFF059669), Color(0xFF047857)],
+                      onTap: () => context.push('/create-agreement'),
+                    ),
+                  ],
                 ),
               ),
             ),
 
-            // "+ Create New AMC Agreement / Quotation" Banner Button
+            // ──── Recent Activity Header ────
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(18),
-                  onTap: () => context.push('/create-agreement'),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.secondary, AppColors.primary],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Row(
+              child: SectionHeader(
+                title: 'Recent Activity',
+                actionText: 'View All',
+                onActionTap: () => context.push('/reports'),
+              ),
+            ),
+
+            // ──── Recent Activity Feed ────
+            if (recentActivity.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: Column(
                       children: [
-                        Icon(Icons.handshake_outlined, color: Colors.white, size: 40),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Create AMC Proposal',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Draft new Agreement or Quotation',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                            ],
+                        Icon(Icons.inbox_rounded,
+                            size: 48, color: AppColors.textLight.withOpacity(0.4)),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'No recent activity',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
                           ),
                         ),
-                        Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Create your first document to get started',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textLight,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
-              ),
-            ),
-
-            // Recent Reports List Header
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 20, right: 20, top: 28, bottom: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Recent Reports',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        context.push('/reports');
-                      },
-                      child: const Text(
-                        'View All',
-                        style: TextStyle(
-                          color: AppColors.secondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Recent Reports List
-            if (combinedRecent.isEmpty)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(
-                    child: Text(
-                      'No recent reports found.\nTap the button above to create one.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: AppColors.textLight),
-                    ),
-                  ),
-                ),
               )
             else
               SliverList(
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final report = combinedRecent[index];
-                    final isDraft = report.id == null || report.id!.isEmpty;
-                    final formattedDate = DateFormat('dd MMM yyyy, hh:mm a').format(report.serviceAndCustomer.dateTime);
-
-                    return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      child: ListTile(
-                        onTap: () {
-                          // Draft check: pass draft query parameter
-                          final id = isDraft ? report.serviceAndCustomer.jobRef : report.id!;
-                          context.push('/report-details/$id?draft=$isDraft');
-                        },
-                        leading: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.background,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.description_outlined, color: AppColors.primary),
-                        ),
-                        title: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                report.serviceAndCustomer.jobRef,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                            _buildStatusBadge(isDraft),
-                          ],
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 4),
-                            Text(
-                              report.serviceAndCustomer.customerName,
-                              style: const TextStyle(
-                                  fontSize: 13,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              formattedDate,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textLight,
-                              ),
-                            ),
-                          ],
-                        ),
-                        trailing: const Icon(Icons.chevron_right, size: 20, color: AppColors.textLight),
-                      ),
-                    );
-                  },
-                  childCount: combinedRecent.length,
+                  (context, index) => recentActivity[index],
+                  childCount: recentActivity.length,
                 ),
               ),
 
-            // Recent Agreements List Header
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 20, right: 20, top: 28, bottom: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Recent Agreements',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        context.push('/agreements');
-                      },
-                      child: const Text(
-                        'View All',
-                        style: TextStyle(
-                          color: AppColors.secondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Recent Agreements List
-            if (recentAgreements.isEmpty)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(
-                    child: Text(
-                      'No recent proposals found.\nTap the button above to create one.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: AppColors.textLight),
-                    ),
-                  ),
-                ),
-              )
-            else
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final agreement = recentAgreements[index];
-                    final formattedDate = DateFormat('dd MMM yyyy').format(agreement.date);
-                    final badgeColor = agreement.documentType == 'Agreement' ? AppColors.success : AppColors.secondary;
-
-                    return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      child: ListTile(
-                        onTap: () {
-                          context.push('/agreement-details/${agreement.id}');
-                        },
-                        leading: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: badgeColor.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            agreement.documentType == 'Agreement' ? Icons.handshake_outlined : Icons.request_quote_outlined,
-                            color: badgeColor,
-                          ),
-                        ),
-                        title: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                agreement.offerNumber ?? 'Offer # Pending',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: badgeColor.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                agreement.documentType,
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                  color: badgeColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 4),
-                            Text(
-                              agreement.customerName,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  formattedDate,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.textLight,
-                                  ),
-                                ),
-                                Text(
-                                  '₹${agreement.grandTotal.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.accent,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        trailing: const Icon(Icons.chevron_right, size: 20, color: AppColors.textLight),
-                      ),
-                    );
-                  },
-                  childCount: recentAgreements.length,
-                ),
-              ),
-
-            // Padding at the bottom so bottom bar doesn't cover list
+            // Bottom padding for nav bar
             const SliverToBoxAdapter(
               child: SizedBox(height: 100),
             ),
@@ -512,79 +258,88 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatCardHorizontal({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 18),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  /// Builds a unified list of DocumentCard widgets from recent reports + agreements,
+  /// sorted by date descending, capped at 8 items.
+  List<Widget> _buildRecentActivity(
+    ReportsState reportsState,
+    AgreementsState agreementsState,
+  ) {
+    final List<_ActivityItem> items = [];
 
-  Widget _buildStatusBadge(bool isDraft) {
-    final text = isDraft ? 'Pending' : 'Completed';
-    final bgColor = isDraft ? AppColors.warning.withOpacity(0.15) : AppColors.success.withOpacity(0.15);
-    final textColor = isDraft ? AppColors.warning : AppColors.success;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
+    // Add drafts (pending reports)
+    for (final draft in reportsState.drafts.take(5)) {
+      items.add(_ActivityItem(
+        date: draft.serviceAndCustomer.dateTime,
+        widget: Builder(
+          builder: (context) => DocumentCard(
+            documentNumber: draft.serviceAndCustomer.jobRef,
+            customerName: draft.serviceAndCustomer.customerName,
+            formattedDate: DateFormat('dd MMM yyyy, hh:mm a')
+                .format(draft.serviceAndCustomer.dateTime),
+            documentType: DocumentType.report,
+            statusText: 'Pending',
+            isPending: true,
+            onTap: () {
+              context.push(
+                  '/report-details/${draft.serviceAndCustomer.jobRef}?draft=true');
+            },
+          ),
         ),
-      ),
-    );
+      ));
+    }
+
+    // Add submitted reports
+    for (final report in reportsState.reports.take(5)) {
+      items.add(_ActivityItem(
+        date: report.createdAt ?? report.serviceAndCustomer.dateTime,
+        widget: Builder(
+          builder: (context) => DocumentCard(
+            documentNumber: report.serviceAndCustomer.jobRef,
+            customerName: report.serviceAndCustomer.customerName,
+            formattedDate: DateFormat('dd MMM yyyy, hh:mm a')
+                .format(report.createdAt ?? report.serviceAndCustomer.dateTime),
+            documentType: DocumentType.report,
+            statusText: 'Completed',
+            isPending: false,
+            onTap: () {
+              context.push('/report-details/${report.id}?draft=false');
+            },
+          ),
+        ),
+      ));
+    }
+
+    // Add agreements
+    for (final agreement in agreementsState.agreements.take(5)) {
+      items.add(_ActivityItem(
+        date: agreement.date,
+        widget: Builder(
+          builder: (context) => DocumentCard(
+            documentNumber: agreement.offerNumber ?? 'Offer # Pending',
+            customerName: agreement.customerName,
+            formattedDate: DateFormat('dd MMM yyyy').format(agreement.date),
+            documentType: agreement.documentType == 'Agreement'
+                ? DocumentType.agreement
+                : DocumentType.quotation,
+            amount: '₹${agreement.grandTotal.toStringAsFixed(0)}',
+            onTap: () {
+              context.push('/agreement-details/${agreement.id}');
+            },
+          ),
+        ),
+      ));
+    }
+
+    // Sort by date descending and take 8
+    items.sort((a, b) => b.date.compareTo(a.date));
+    return items.take(8).map((item) => item.widget).toList();
   }
+}
+
+/// Helper class to sort activity items by date
+class _ActivityItem {
+  final DateTime date;
+  final Widget widget;
+
+  _ActivityItem({required this.date, required this.widget});
 }

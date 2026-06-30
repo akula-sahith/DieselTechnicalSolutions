@@ -22,13 +22,94 @@ class CustomBottomNavBar extends ConsumerWidget {
       case 1:
         context.go('/reports');
         break;
-      case 2: // Search page - route to reports and focus search
-        context.go('/reports');
+      case 2:
+        // Center FAB — handled separately
         break;
-      case 3: // Profile - show simple signout sheet
+      case 3:
+        context.go('/agreements');
+        break;
+      case 4:
         _showProfileSheet(context, ref);
         break;
     }
+  }
+
+  void _showCreateSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Drag handle
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Create New Document',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Choose the type of document to create',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Service Report Option
+                  _CreateOption(
+                    icon: Icons.description_outlined,
+                    iconColor: AppColors.reportOrange,
+                    title: 'Service Report',
+                    subtitle: 'Create a field service report',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/create-report');
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  // AMC Proposal Option
+                  _CreateOption(
+                    icon: Icons.handshake_outlined,
+                    iconColor: AppColors.agreementGreen,
+                    title: 'AMC Proposal',
+                    subtitle: 'Draft an agreement or quotation',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/create-agreement');
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _showProfileSheet(BuildContext context, WidgetRef ref) {
@@ -126,65 +207,63 @@ class CustomBottomNavBar extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              // Dashboard Icon
               _buildNavItem(
                 icon: Icons.grid_view_rounded,
-                label: 'Dashboard',
+                label: 'Home',
                 isActive: currentIndex == 0,
                 onTap: () => _handleNavigation(context, 0, ref),
               ),
-              // Reports Icon
               _buildNavItem(
                 icon: Icons.description_rounded,
                 label: 'Reports',
                 isActive: currentIndex == 1,
                 onTap: () => _handleNavigation(context, 1, ref),
               ),
-              // Spacer for middle FAB
-              const SizedBox(width: 48),
-              // Search Icon
+              // Spacer for center FAB
+              const SizedBox(width: 56),
               _buildNavItem(
-                icon: Icons.search_rounded,
-                label: 'Search',
-                isActive: currentIndex == 2,
-                onTap: () => _handleNavigation(context, 2, ref),
+                icon: Icons.handshake_rounded,
+                label: 'Proposals',
+                isActive: currentIndex == 3,
+                onTap: () => _handleNavigation(context, 3, ref),
               ),
-              // Profile Icon
               _buildNavItem(
                 icon: Icons.person_rounded,
                 label: 'Profile',
-                isActive: currentIndex == 3,
-                onTap: () => _handleNavigation(context, 3, ref),
+                isActive: currentIndex == 4,
+                onTap: () => _handleNavigation(context, 4, ref),
               ),
             ],
           ),
           
-          // Floating Center Button
+          // Floating Center Create Button
           Positioned(
             top: -24,
             left: MediaQuery.of(context).size.width / 2 - 28,
             child: GestureDetector(
-              onTap: () {
-                context.push('/create-report');
-              },
+              onTap: () => _showCreateSheet(context),
               child: Container(
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, AppColors.secondary],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 12,
+                      color: AppColors.primary.withOpacity(0.35),
+                      blurRadius: 14,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
                 child: const Icon(
-                  Icons.add,
+                  Icons.add_rounded,
                   color: Colors.white,
-                  size: 32,
+                  size: 30,
                 ),
               ),
             ),
@@ -210,7 +289,7 @@ class CustomBottomNavBar extends ConsumerWidget {
           children: [
             Icon(
               icon,
-              color: isActive ? AppColors.secondary : AppColors.textLight,
+              color: isActive ? AppColors.primary : AppColors.textLight,
               size: 24,
             ),
             const SizedBox(height: 4),
@@ -218,11 +297,85 @@ class CustomBottomNavBar extends ConsumerWidget {
               label,
               style: TextStyle(
                 fontSize: 10,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                color: isActive ? AppColors.secondary : AppColors.textLight,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                color: isActive ? AppColors.primary : AppColors.textLight,
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A single option tile in the "Create" bottom sheet
+class _CreateOption extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _CreateOption({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: iconColor.withOpacity(0.15)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios_rounded,
+                  size: 16, color: iconColor.withOpacity(0.5)),
+            ],
+          ),
         ),
       ),
     );

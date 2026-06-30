@@ -17,4 +17,13 @@ class AppColors {
   static const Color warning = Color(0xFFF59E0B); // Orange/Amber
   static const Color error = Color(0xFFEF4444); // Red
   static const Color border = Color(0xFFE5E7EB); // Soft divider border
+
+  // Module-specific colors
+  static const Color reportOrange = Color(0xFFEE6C4D); // Service Report accent
+  static const Color agreementGreen = Color(0xFF059669); // Agreement badge/icon
+  static const Color quotationBlue = Color(0xFF3B82F6); // Quotation badge/icon
+
+  // Surface variants
+  static const Color surfaceLight = Color(0xFFF8FAFC); // Lighter card background
+  static const Color surfaceDark = Color(0xFFEEF2F6); // Slightly darker surface
 }

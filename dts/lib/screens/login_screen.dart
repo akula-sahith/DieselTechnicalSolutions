@@ -270,38 +270,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         )
                       : const Text('Login'),
                 ),
-                const SizedBox(height: 20),
-
-                // Divider OR
-                Row(
-                  children: const [
-                    Expanded(child: Divider(color: AppColors.border)),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text(
-                        'OR',
-                        style: TextStyle(color: AppColors.textLight, fontSize: 12),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: AppColors.border)),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Google Sign In
-                OutlinedButton.icon(
-                  onPressed: () {
-                    // Google mock login
-                    _emailController.text = 'siva@dts.com';
-                    _passwordController.text = 'password123';
-                    _handleLogin();
-                  },
-                  icon: const Icon(Icons.g_mobiledata, size: 30),
-                  label: const Text('Login with Google'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
                 const SizedBox(height: 30),
 
                 // Footer

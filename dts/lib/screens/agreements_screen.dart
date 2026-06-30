@@ -4,6 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../core/constants/app_colors.dart';
 import '../providers/agreements_provider.dart';
+import '../widgets/bottom_nav_bar.dart';
+import '../widgets/common/document_card.dart';
+import '../widgets/common/search_bar_widget.dart';
+import '../widgets/common/empty_state_widget.dart';
 
 class AgreementsScreen extends ConsumerStatefulWidget {
   const AgreementsScreen({super.key});
@@ -51,54 +55,43 @@ class _AgreementsScreenState extends ConsumerState<AgreementsScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('AMC Agreements & Quotations'),
+        title: const Text('AMC Proposals'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list_rounded),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Filter feature coming soon.')),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
-          // Search and Filters Bar
+          // Search + Filter Area
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            color: AppColors.primary,
+            color: AppColors.background,
             child: Column(
               children: [
-                // Search Input
-                TextField(
+                SearchBarWidget(
                   controller: _searchController,
+                  hintText: 'Search agreements & quotations...',
                   onChanged: (val) => agreementsNotifier.search(val),
-                  style: const TextStyle(color: AppColors.textPrimary),
-                  decoration: InputDecoration(
-                    hintText: 'Search agreements & quotations...',
-                    hintStyle: const TextStyle(color: AppColors.textLight),
-                    prefixIcon: const Icon(Icons.search, color: AppColors.textLight),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              agreementsNotifier.search('');
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
+                  onClear: () => agreementsNotifier.search(''),
                 ),
-                const SizedBox(height: 12),
-                
-                // Document Type Filter ChoiceChips
-                Row(
-                  children: [
-                    _buildFilterChip('All', ''),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Agreements', 'Agreement'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Quotations', 'Quotation'),
-                  ],
+                // Document Type Filter Chips
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Row(
+                    children: [
+                      _buildFilterChip('All', ''),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Agreements', 'Agreement'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Quotations', 'Quotation'),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -116,12 +109,12 @@ class _AgreementsScreenState extends ConsumerState<AgreementsScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          context.push('/create-agreement');
-        },
-        backgroundColor: AppColors.accent,
-        child: const Icon(Icons.add, color: Colors.white),
+        heroTag: 'create_agreement_fab',
+        onPressed: () => context.push('/create-agreement'),
+        backgroundColor: AppColors.agreementGreen,
+        child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
     );
   }
 
@@ -129,24 +122,29 @@ class _AgreementsScreenState extends ConsumerState<AgreementsScreen> {
     final activeDocType = ref.watch(agreementsProvider).documentTypeFilter;
     final isSelected = activeDocType == docType;
 
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        if (selected) {
-          ref.read(agreementsProvider.notifier).filterByDocumentType(docType);
-        }
+    return GestureDetector(
+      onTap: () {
+        ref.read(agreementsProvider.notifier).filterByDocumentType(docType);
       },
-      selectedColor: AppColors.accent,
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Colors.white70,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        fontSize: 12,
-      ),
-      backgroundColor: Colors.white.withOpacity(0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide.none,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.border,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : AppColors.textSecondary,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            fontSize: 12,
+          ),
+        ),
       ),
     );
   }
@@ -156,63 +154,31 @@ class _AgreementsScreenState extends ConsumerState<AgreementsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (state.agreements.isEmpty) {
+    if (state.error != null && state.agreements.isEmpty) {
       return ListView(
         children: [
-          SizedBox(height: MediaQuery.of(context).size.height * 0.25),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.feed_outlined, size: 80, color: AppColors.textLight.withOpacity(0.5)),
-                const SizedBox(height: 16),
-                const Text(
-                  'No Agreements or Quotations',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Create one or search with a different keyword.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textLight),
-                ),
-              ],
-            ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+          EmptyStateWidget(
+            icon: Icons.error_outline_rounded,
+            title: 'Something went wrong',
+            subtitle: state.error!,
+            actionLabel: 'Retry',
+            onAction: () => ref.read(agreementsProvider.notifier).refresh(),
           ),
         ],
       );
     }
 
-    if (state.error != null && state.agreements.isEmpty) {
+    if (state.agreements.isEmpty) {
       return ListView(
         children: [
-          SizedBox(height: MediaQuery.of(context).size.height * 0.25),
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: AppColors.error),
-                  const SizedBox(height: 16),
-                  Text(
-                    state.error!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      ref.read(agreementsProvider.notifier).refresh();
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+          EmptyStateWidget(
+            icon: Icons.handshake_outlined,
+            title: 'No Proposals Found',
+            subtitle: 'Create your first AMC agreement\nor quotation to get started.',
+            actionLabel: 'Create Proposal',
+            onAction: () => context.push('/create-agreement'),
           ),
         ],
       );
@@ -220,7 +186,7 @@ class _AgreementsScreenState extends ConsumerState<AgreementsScreen> {
 
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(top: 4, bottom: 8),
       itemCount: state.agreements.length + (state.page <= state.totalPages ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == state.agreements.length) {
@@ -232,92 +198,18 @@ class _AgreementsScreenState extends ConsumerState<AgreementsScreen> {
 
         final agreement = state.agreements[index];
         final formattedDate = DateFormat('dd MMM yyyy').format(agreement.date);
-        final badgeColor = agreement.documentType == 'Agreement' ? AppColors.success : AppColors.secondary;
 
-        return Card(
-          elevation: 2,
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ListTile(
-            onTap: () {
-              context.push('/agreement-details/${agreement.id}');
-            },
-            leading: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: badgeColor.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                agreement.documentType == 'Agreement' ? Icons.handshake_outlined : Icons.request_quote_outlined,
-                color: badgeColor,
-              ),
-            ),
-            title: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    agreement.offerNumber ?? 'Offer # Pending',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: badgeColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    agreement.documentType,
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                      color: badgeColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text(
-                  agreement.customerName,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      formattedDate,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textLight,
-                      ),
-                    ),
-                    Text(
-                      '₹${agreement.grandTotal.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.accent,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            trailing: const Icon(Icons.chevron_right, size: 20, color: AppColors.textLight),
-          ),
+        return DocumentCard(
+          documentNumber: agreement.offerNumber ?? 'Offer # Pending',
+          customerName: agreement.customerName,
+          formattedDate: formattedDate,
+          documentType: agreement.documentType == 'Agreement'
+              ? DocumentType.agreement
+              : DocumentType.quotation,
+          amount: '₹${agreement.grandTotal.toStringAsFixed(2)}',
+          onTap: () {
+            context.push('/agreement-details/${agreement.id}');
+          },
         );
       },
     );

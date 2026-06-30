@@ -8,6 +8,7 @@ import agreementRoutes from './routes/agreement.routes.js';
 import cloudinaryRoutes from './routes/cloudinary.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { notFoundHandler } from './middleware/notFound.middleware.js';
+import appVersionRoutes from "./routes/appVersion.routes.js";
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.post("/api/ping", (req, res) => {
 app.use('/api/reports', reportRoutes);
 app.use('/api/agreements', agreementRoutes);
 app.use('/api/cloudinary', cloudinaryRoutes);
+app.use('/api/app-versions', appVersionRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

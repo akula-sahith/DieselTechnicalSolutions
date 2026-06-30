@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-
 import '../models/app_version.dart';
 
-Future<void> showUpdateDialog({
+Future<bool> showUpdateDialog({
   required BuildContext context,
   required AppVersion version,
-  required VoidCallback onUpdate,
-}) {
-  return showDialog(
+}) async {
+  final result = await showDialog<bool>(
     context: context,
     barrierDismissible: !version.forceUpdate,
     builder: (context) {
@@ -16,21 +14,21 @@ Future<void> showUpdateDialog({
         child: AlertDialog(
           title: Text(
             version.forceUpdate
-                ? 'Update Required'
-                : 'Update Available',
+                ? "Update Required"
+                : "Update Available",
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Version ${version.latestVersion}',
+                "Version ${version.latestVersion}",
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 15),
 
               if (version.releaseNotes.isNotEmpty) ...[
                 const Text(
@@ -55,13 +53,15 @@ Future<void> showUpdateDialog({
             if (!version.forceUpdate)
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context);
+                  Navigator.pop(context, false);
                 },
                 child: const Text("Later"),
               ),
 
             ElevatedButton(
-              onPressed: onUpdate,
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
               child: const Text("Update"),
             ),
           ],
@@ -69,4 +69,6 @@ Future<void> showUpdateDialog({
       );
     },
   );
+
+  return result ?? false;
 }

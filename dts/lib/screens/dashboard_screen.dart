@@ -181,7 +181,7 @@ class DashboardScreen extends ConsumerWidget {
                   children: [
                     QuickActionCard(
                       title: 'Service\nReport',
-                      subtitle: 'Create new report',
+                      subtitle: 'Create new \n report',
                       icon: Icons.description_outlined,
                       gradientColors: const [Color(0xFFEE6C4D), Color(0xFFE85D3A)],
                       onTap: () => context.push('/create-report'),
@@ -189,7 +189,7 @@ class DashboardScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     QuickActionCard(
                       title: 'AMC\nProposal',
-                      subtitle: 'Draft agreement',
+                      subtitle: 'Draft Agreement or Quotation',
                       icon: Icons.handshake_outlined,
                       gradientColors: const [Color(0xFF059669), Color(0xFF047857)],
                       onTap: () => context.push('/create-agreement'),

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/app_version.dart';
 import '../widgets/update_dialog.dart';
 import '../services/apk_download_service.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,7 @@ import '../services/update_service.dart';
 import '../services/version_service.dart';
 import '../core/constants/app_colors.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/download_progress_dialog.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -18,6 +20,7 @@ class SplashScreen extends ConsumerStatefulWidget {
 
 class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _progressController;
+  final ValueNotifier<double> _downloadProgress = ValueNotifier<double>(0.0);
 
   @override
   void initState() {
@@ -41,38 +44,88 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
   }
 
   Future<void> _checkAppInitialization() async {
-  final versionService = ref.read(versionServiceProvider);
-  final updateService = UpdateService(versionService);
+    final startTime = DateTime.now();
 
-  final update = await updateService.checkForUpdate();
+    final UpdateService updateService = ref.read(updateServiceProvider);
+    final AppVersion? update = await updateService.checkForUpdate();
 
-  if (!mounted) return;
+    if (!mounted) return;
 
-  if (update != null) {
-  await showUpdateDialog(
-    context: context,
-    version: update,
-    onUpdate: () async {
-  Navigator.pop(context);
-
-  final downloadService = ApkDownloadService();
-
-  await downloadService.downloadAndInstall(
-    apkUrl: update.apkUrl,
-    onProgress: (progress) {
-      print(
-        "Downloading: ${(progress * 100).toStringAsFixed(0)}%",
+    if (update != null) {
+      final shouldUpdate = await showUpdateDialog(
+        context: context,
+        version: update,
       );
-    },
-  );
-},
-  );
-}
 
-  await Future.delayed(const Duration(milliseconds: 3200));
+      if (!mounted) return;
 
-  _checkAuthAndNavigate();
-}
+      if (shouldUpdate) {
+        _downloadProgress.value = 0.0;
+
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => DownloadProgressDialog(
+            progress: _downloadProgress,
+          ),
+        );
+
+        final ApkDownloadService downloadService = ref.read(apkDownloadServiceProvider);
+        
+        try {
+          final filePath = await downloadService.downloadApk(
+            apkUrl: update.apkUrl,
+            onProgress: (progress) {
+              if (mounted) {
+                _downloadProgress.value = progress;
+              }
+            },
+          );
+
+          if (mounted) {
+            Navigator.of(context, rootNavigator: true).pop();
+          }
+
+          await downloadService.installApk(filePath);
+          return;
+        } catch (e) {
+          print("Update download or install failed: $e");
+          if (mounted) {
+            Navigator.of(context, rootNavigator: true).pop();
+            await showDialog(
+              context: context,
+              builder: (errContext) => AlertDialog(
+                title: const Text("Update Failed"),
+                content: Text(
+                  update.forceUpdate
+                      ? "The required update could not be downloaded or installed. Please check your internet connection and try again."
+                      : "The update could not be downloaded or installed. Continuing to the application.",
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(errContext),
+                    child: const Text("OK"),
+                  ),
+                ],
+              ),
+            );
+
+            if (update.forceUpdate) {
+              return;
+            }
+          }
+        }
+      }
+    }
+
+    final elapsed = DateTime.now().difference(startTime);
+    const minSplashDuration = Duration(milliseconds: 3200);
+    if (elapsed < minSplashDuration) {
+      await Future.delayed(minSplashDuration - elapsed);
+    }
+
+    _checkAuthAndNavigate();
+  }
 
   @override
   void dispose() {

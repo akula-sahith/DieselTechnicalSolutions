@@ -1,7 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../widgets/update_dialog.dart';
+import '../services/apk_download_service.dart';
 import 'package:go_router/go_router.dart';
+import '../services/update_service.dart';
+import '../services/version_service.dart';
 import '../core/constants/app_colors.dart';
 import '../providers/auth_provider.dart';
 
@@ -23,7 +27,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
       duration: const Duration(seconds: 3),
     )..forward();
 
-    Timer(const Duration(milliseconds: 3200), _checkAuthAndNavigate);
+    _checkAppInitialization();
   }
 
   void _checkAuthAndNavigate() {
@@ -35,6 +39,40 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
       context.go('/login');
     }
   }
+
+  Future<void> _checkAppInitialization() async {
+  final versionService = ref.read(versionServiceProvider);
+  final updateService = UpdateService(versionService);
+
+  final update = await updateService.checkForUpdate();
+
+  if (!mounted) return;
+
+  if (update != null) {
+  await showUpdateDialog(
+    context: context,
+    version: update,
+    onUpdate: () async {
+  Navigator.pop(context);
+
+  final downloadService = ApkDownloadService();
+
+  await downloadService.downloadAndInstall(
+    apkUrl: update.apkUrl,
+    onProgress: (progress) {
+      print(
+        "Downloading: ${(progress * 100).toStringAsFixed(0)}%",
+      );
+    },
+  );
+},
+  );
+}
+
+  await Future.delayed(const Duration(milliseconds: 3200));
+
+  _checkAuthAndNavigate();
+}
 
   @override
   void dispose() {

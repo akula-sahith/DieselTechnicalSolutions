@@ -36,6 +36,7 @@ class AgreementRepository {
     int limit = 10,
     String search = '',
     String documentType = '',
+    String status = '',
   }) async {
     try {
       final queryParams = <String, dynamic>{
@@ -45,6 +46,9 @@ class AgreementRepository {
       };
       if (documentType.isNotEmpty) {
         queryParams['documentType'] = documentType;
+      }
+      if (status.isNotEmpty) {
+        queryParams['status'] = status;
       }
 
       final response = await _apiService.get(
@@ -84,16 +88,21 @@ class AgreementRepository {
 
   Future<AgreementModel> createAgreement({
     required AgreementModel agreement,
-    required File signatureFile,
+    File? signatureFile,
   }) async {
     try {
-      final formData = FormData.fromMap({
+      final map = <String, dynamic>{
         'agreement': agreement.toJsonString(),
-        'customerSignature': await MultipartFile.fromFile(
+      };
+
+      if (signatureFile != null) {
+        map['customerSignature'] = await MultipartFile.fromFile(
           signatureFile.path,
           filename: 'signature.png',
-        ),
-      });
+        );
+      }
+
+      final formData = FormData.fromMap(map);
 
       final response = await _apiService.post(
         ApiConstants.agreements,
@@ -102,6 +111,45 @@ class AgreementRepository {
 
       final data = response.data['data'] as Map<String, dynamic>;
       return AgreementModel.fromJson(data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<AgreementModel> updateAgreement({
+    required String id,
+    required AgreementModel agreement,
+    File? signatureFile,
+  }) async {
+    try {
+      final map = <String, dynamic>{
+        'agreement': agreement.toJsonString(),
+      };
+
+      if (signatureFile != null) {
+        map['customerSignature'] = await MultipartFile.fromFile(
+          signatureFile.path,
+          filename: 'signature.png',
+        );
+      }
+
+      final formData = FormData.fromMap(map);
+
+      final response = await _apiService.put(
+        '${ApiConstants.agreements}/$id',
+        data: formData,
+      );
+
+      final data = response.data['data'] as Map<String, dynamic>;
+      return AgreementModel.fromJson(data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteAgreement(String id) async {
+    try {
+      await _apiService.delete('${ApiConstants.agreements}/$id');
     } catch (e) {
       rethrow;
     }

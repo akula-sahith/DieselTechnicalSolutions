@@ -123,6 +123,22 @@ class ApiService {
     }
   }
 
+  Future<Response> put(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
+    try {
+      return await _dio.put(path, data: data, queryParameters: queryParameters);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Response> delete(String path, {Map<String, dynamic>? queryParameters}) async {
+    try {
+      return await _dio.delete(path, queryParameters: queryParameters);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   Exception _handleError(DioException error) {
     String message = 'An unexpected error occurred.';
     if (error.type == DioExceptionType.connectionTimeout ||

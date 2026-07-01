@@ -35,15 +35,21 @@ class ReportRepository {
     int page = 1,
     int limit = 10,
     String search = '',
+    String status = '',
   }) async {
     try {
+      final queryParameters = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+        'search': search,
+      };
+      if (status.isNotEmpty) {
+        queryParameters['status'] = status;
+      }
+
       final response = await _apiService.get(
         ApiConstants.reports,
-        queryParameters: {
-          'page': page,
-          'limit': limit,
-          'search': search,
-        },
+        queryParameters: queryParameters,
       );
 
       final data = response.data['data'] as Map<String, dynamic>;
@@ -79,18 +85,22 @@ class ReportRepository {
   Future<ReportModel> createReport({
     required ReportModel report,
     required String signatureUrl,
-    required File photoFile,
+    File? photoFile,
   }) async {
     try {
-      // Create FormData - signature is a Cloudinary URL, only photo is uploaded
-      final formData = FormData.fromMap({
+      final Map<String, dynamic> fields = {
         'report': report.toJsonString(),
         'technicianSignatureUrl': signatureUrl,
-        'customerPhoto': await MultipartFile.fromFile(
+      };
+
+      if (photoFile != null) {
+        fields['customerPhoto'] = await MultipartFile.fromFile(
           photoFile.path,
           filename: 'customer.png',
-        ),
-      });
+        );
+      }
+
+      final formData = FormData.fromMap(fields);
 
       final response = await _apiService.post(
         ApiConstants.reports,
@@ -99,6 +109,47 @@ class ReportRepository {
 
       final data = response.data['data'] as Map<String, dynamic>;
       return ReportModel.fromJson(data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<ReportModel> updateReport({
+    required String id,
+    required ReportModel report,
+    required String signatureUrl,
+    File? photoFile,
+  }) async {
+    try {
+      final Map<String, dynamic> fields = {
+        'report': report.toJsonString(),
+        'technicianSignatureUrl': signatureUrl,
+      };
+
+      if (photoFile != null) {
+        fields['customerPhoto'] = await MultipartFile.fromFile(
+          photoFile.path,
+          filename: 'customer.png',
+        );
+      }
+
+      final formData = FormData.fromMap(fields);
+
+      final response = await _apiService.put(
+        '${ApiConstants.reports}/$id',
+        data: formData,
+      );
+
+      final data = response.data['data'] as Map<String, dynamic>;
+      return ReportModel.fromJson(data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteReport(String id) async {
+    try {
+      await _apiService.delete('${ApiConstants.reports}/$id');
     } catch (e) {
       rethrow;
     }

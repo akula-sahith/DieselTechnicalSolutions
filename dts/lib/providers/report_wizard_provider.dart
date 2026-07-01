@@ -10,6 +10,8 @@ import 'reports_provider.dart';
 
 class ReportWizardState {
   final int currentStep;
+  final String? id;
+  final String status; // 'draft' or 'submitted'
   
   // Step 1
   final String jobRef;
@@ -54,6 +56,8 @@ class ReportWizardState {
 
   ReportWizardState({
     required this.currentStep,
+    this.id,
+    required this.status,
     required this.jobRef,
     required this.dateTime,
     required this.customerName,
@@ -83,55 +87,10 @@ class ReportWizardState {
     this.submittedReport,
   });
 
-  factory ReportWizardState.initial(String defaultTechName) {
-    // Generate a default ticket reference like DTS-2026-01234
-    final now = DateTime.now();
-    final randomDigits = Random().nextInt(90000) + 10000;
-    final defaultJobRef = 'DTS-${now.year}-$randomDigits';
-
-    final defaultChecklist = [
-      'Engine Oil Level & Quality',
-      'Coolant Level & Protection',
-      'Water Separator Draining',
-      'Exhaust / Silencer Leakage',
-      'Fuel Filter Replacement',
-      'Radiator Fins & Core Check',
-      'Battery Terminals & Charging',
-      'AVM (Anti-Vibration Mounts)',
-    ].map((param) => ServiceChecklistItem(parameter: param, status: 'ok')).toList();
-
-    return ReportWizardState(
-      currentStep: 0,
-      jobRef: defaultJobRef,
-      dateTime: now,
-      customerName: '',
-      siteLocation: '',
-      contactPerson: '',
-      contactNumber: '',
-      generatorMakeModel: '',
-      capacity: '',
-      engineSerialNo: '',
-      alternatorSerialNo: '',
-      hourMeter: '',
-      hours: null,
-      batteryStatusVolt: '',
-      serviceChecklist: defaultChecklist,
-      partsUsed: [],
-      observations: '',
-      nextServiceDueDate: null,
-      nextServiceDueHours: null,
-      technicianName: defaultTechName,
-      customerRepresentativeName: '',
-      technicianSignatureFile: null,
-      customerPhotoFile: null,
-      technicianDate: now,
-      customerDate: now,
-      isSubmitting: false,
-    );
-  }
-
   ReportWizardState copyWith({
     int? currentStep,
+    String? id,
+    String? status,
     String? jobRef,
     DateTime? dateTime,
     String? customerName,
@@ -162,6 +121,8 @@ class ReportWizardState {
   }) {
     return ReportWizardState(
       currentStep: currentStep ?? this.currentStep,
+      id: id ?? this.id,
+      status: status ?? this.status,
       jobRef: jobRef ?? this.jobRef,
       dateTime: dateTime ?? this.dateTime,
       customerName: customerName ?? this.customerName,
@@ -187,13 +148,67 @@ class ReportWizardState {
       technicianDate: technicianDate ?? this.technicianDate,
       customerDate: customerDate ?? this.customerDate,
       isSubmitting: isSubmitting ?? this.isSubmitting,
-      error: error,
+      error: error ?? this.error,
       submittedReport: submittedReport ?? this.submittedReport,
     );
   }
 
-  ReportModel toReportModel({String signatureUrl = '', String photoUrl = ''}) {
+  factory ReportWizardState.initial(String defaultTechName) {
+    final now = DateTime.now();
+    final randomDigits = Random().nextInt(90000) + 10000;
+    final defaultJobRef = 'DTS-${now.year}-$randomDigits';
+
+    final defaultChecklist = [
+      'Engine Oil Level & Quality',
+      'Coolant Level & Protection',
+      'Water Separator Draining',
+      'Exhaust / Silencer Leakage',
+      'Fuel Filter Replacement',
+      'Radiator Fins & Core Check',
+      'Battery Terminals & Charging',
+      'AVM (Anti-Vibration Mounts)',
+    ].map((param) => ServiceChecklistItem(parameter: param, status: 'ok')).toList();
+
+    return ReportWizardState(
+      currentStep: 0,
+      id: null,
+      status: 'draft',
+      jobRef: defaultJobRef,
+      dateTime: now,
+      customerName: '',
+      siteLocation: '',
+      contactPerson: '',
+      contactNumber: '',
+      generatorMakeModel: '',
+      capacity: '',
+      engineSerialNo: '',
+      alternatorSerialNo: '',
+      hourMeter: '',
+      hours: null,
+      batteryStatusVolt: '',
+      serviceChecklist: defaultChecklist,
+      partsUsed: [],
+      observations: '',
+      nextServiceDueDate: null,
+      nextServiceDueHours: null,
+      technicianName: defaultTechName,
+      customerRepresentativeName: '',
+      technicianSignatureFile: null,
+      customerPhotoFile: null,
+      technicianDate: now,
+      customerDate: now,
+      isSubmitting: false,
+    );
+  }
+
+  ReportModel toReportModel({
+    required String signatureUrl,
+    required String photoUrl,
+    String? status,
+  }) {
     return ReportModel(
+      id: id,
+      status: status ?? this.status,
       serviceAndCustomer: ServiceAndCustomer(
         jobRef: jobRef,
         dateTime: dateTime,
@@ -241,9 +256,53 @@ final reportWizardProvider = StateNotifierProvider.autoDispose<ReportWizardNotif
 class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
   final ReportRepository _repository;
   final ReportsNotifier _reportsNotifier;
+  final String _defaultTechName;
 
-  ReportWizardNotifier(this._repository, this._reportsNotifier, String defaultTechName)
-      : super(ReportWizardState.initial(defaultTechName));
+  ReportWizardNotifier(this._repository, this._reportsNotifier, this._defaultTechName)
+      : super(ReportWizardState.initial(_defaultTechName));
+
+  void reset() {
+    state = ReportWizardState.initial(_defaultTechName);
+  }
+
+  void loadFromReport(ReportModel report) {
+    state = ReportWizardState(
+      currentStep: 0,
+      id: report.id,
+      status: report.status,
+      jobRef: report.serviceAndCustomer.jobRef,
+      dateTime: report.serviceAndCustomer.dateTime,
+      customerName: report.serviceAndCustomer.customerName,
+      siteLocation: report.serviceAndCustomer.siteLocation,
+      contactPerson: report.serviceAndCustomer.contactPerson,
+      contactNumber: report.serviceAndCustomer.contactNumber,
+      generatorMakeModel: report.equipmentAndEngine.generatorMakeModel,
+      capacity: report.equipmentAndEngine.capacity,
+      engineSerialNo: report.equipmentAndEngine.engineSerialNo,
+      alternatorSerialNo: report.equipmentAndEngine.alternatorSerialNo,
+      hourMeter: report.equipmentAndEngine.hourMeter,
+      hours: report.equipmentAndEngine.hours,
+      batteryStatusVolt: report.equipmentAndEngine.batteryStatusVolt,
+      serviceChecklist: report.serviceChecklist,
+      partsUsed: report.partsUsed,
+      observations: report.remarksAndActionPlan.observations,
+      nextServiceDueDate: report.remarksAndActionPlan.nextServiceDueDate,
+      nextServiceDueHours: report.remarksAndActionPlan.nextServiceDueHours,
+      technicianName: report.authorization.technicianName,
+      customerRepresentativeName: report.authorization.customerRepresentativeName,
+      technicianSignatureFile: report.authorization.technicianSignatureUrl.isNotEmpty && !report.authorization.technicianSignatureUrl.startsWith('http')
+          ? File(report.authorization.technicianSignatureUrl)
+          : null,
+      customerPhotoFile: report.authorization.customerPhotoUrl.isNotEmpty && !report.authorization.customerPhotoUrl.startsWith('http')
+          ? File(report.authorization.customerPhotoUrl)
+          : null,
+      technicianDate: report.authorization.technicianDate ?? DateTime.now(),
+      customerDate: report.authorization.customerDate ?? DateTime.now(),
+      isSubmitting: false,
+      error: null,
+      submittedReport: null,
+    );
+  }
 
   void updateStep(int step) {
     if (step >= 0 && step < 7) {
@@ -304,12 +363,47 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
   void updateCustomerDate(DateTime value) => state = state.copyWith(customerDate: value);
 
   // Draft helper
-  Future<void> saveAsDraft() async {
-    final draft = state.toReportModel(
-      signatureUrl: kDefaultTechnicianSignatureUrl,
-      photoUrl: state.customerPhotoFile?.path ?? '',
-    );
-    await _reportsNotifier.saveDraft(draft);
+  Future<bool> saveAsDraft() async {
+    state = state.copyWith(isSubmitting: true, error: null);
+    try {
+      final reportPayload = state.toReportModel(
+        signatureUrl: kDefaultTechnicianSignatureUrl,
+        photoUrl: state.customerPhotoFile?.path ?? state.submittedReport?.authorization.customerPhotoUrl ?? '',
+        status: 'draft',
+      );
+
+      ReportModel result;
+      if (state.id != null) {
+        result = await _repository.updateReport(
+          id: state.id!,
+          report: reportPayload,
+          signatureUrl: kDefaultTechnicianSignatureUrl,
+          photoFile: state.customerPhotoFile,
+        );
+      } else {
+        result = await _repository.createReport(
+          report: reportPayload,
+          signatureUrl: kDefaultTechnicianSignatureUrl,
+          photoFile: state.customerPhotoFile,
+        );
+      }
+
+      state = state.copyWith(
+        isSubmitting: false,
+        id: result.id,
+        status: 'draft',
+        submittedReport: result,
+      );
+
+      await _reportsNotifier.refresh();
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isSubmitting: false,
+        error: e.toString(),
+      );
+      return false;
+    }
   }
 
   // Validates current step
@@ -322,25 +416,6 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
           return false;
         }
         return true;
-      case 1:
-        // Optional steps or simple constraints
-        return true;
-      case 2:
-        return true;
-      case 3:
-        return true;
-      case 4:
-        return true;
-      case 5:
-        if (state.technicianName.isEmpty || state.customerRepresentativeName.isEmpty) {
-          state = state.copyWith(error: 'Both Technician and Representative names are required.');
-          return false;
-        }
-        if (state.customerPhotoFile == null) {
-          state = state.copyWith(error: 'Customer Photo is required.');
-          return false;
-        }
-        return true;
       default:
         return true;
     }
@@ -350,7 +425,10 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
   Future<bool> submitReport() async {
     state = state.copyWith(isSubmitting: true, error: null);
     try {
-      if (state.customerPhotoFile == null) {
+      final hasPhoto = state.customerPhotoFile != null || 
+          (state.submittedReport?.authorization.customerPhotoUrl.isNotEmpty ?? false);
+          
+      if (!hasPhoto) {
         state = state.copyWith(
           isSubmitting: false,
           error: 'Customer Photo is required for submission.',
@@ -360,22 +438,32 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
 
       final reportPayload = state.toReportModel(
         signatureUrl: kDefaultTechnicianSignatureUrl,
-      );
-      final result = await _repository.createReport(
-        report: reportPayload,
-        signatureUrl: kDefaultTechnicianSignatureUrl,
-        photoFile: state.customerPhotoFile!,
+        photoUrl: state.customerPhotoFile?.path ?? state.submittedReport?.authorization.customerPhotoUrl ?? '',
+        status: 'submitted',
       );
 
-      // If this report was a draft, delete the draft
-      await _reportsNotifier.deleteDraft(state.jobRef);
-      
-      // Refresh backend reports list
+      ReportModel result;
+      if (state.id != null) {
+        result = await _repository.updateReport(
+          id: state.id!,
+          report: reportPayload,
+          signatureUrl: kDefaultTechnicianSignatureUrl,
+          photoFile: state.customerPhotoFile,
+        );
+      } else {
+        result = await _repository.createReport(
+          report: reportPayload,
+          signatureUrl: kDefaultTechnicianSignatureUrl,
+          photoFile: state.customerPhotoFile!,
+        );
+      }
+
       await _reportsNotifier.refresh();
 
       state = state.copyWith(
         isSubmitting: false,
         submittedReport: result,
+        status: 'submitted',
       );
       return true;
     } catch (e) {

@@ -7,13 +7,15 @@ import 'package:image_picker/image_picker.dart';
 import '../core/constants/app_colors.dart';
 import '../core/constants/app_constants.dart';
 import '../providers/report_wizard_provider.dart';
+import '../providers/reports_provider.dart';
 import '../widgets/stepper/stepper_progress_bar.dart';
 import '../widgets/stepper/step_navigation.dart';
 import '../widgets/stepper/step_container.dart';
 import '../widgets/stepper/step_header.dart';
 
 class CreateReportScreen extends ConsumerStatefulWidget {
-  const CreateReportScreen({super.key});
+  final String? draftId;
+  const CreateReportScreen({super.key, this.draftId});
 
   @override
   ConsumerState<CreateReportScreen> createState() => _CreateReportScreenState();
@@ -49,8 +51,23 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
   void initState() {
     super.initState();
 
-    // Set initial text values after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 1. Reset state first or load draft synchronously if draftId is provided
+      if (widget.draftId != null) {
+        try {
+          final drafts = ref.read(reportsProvider).drafts;
+          final draft = drafts.firstWhere(
+            (element) => element.id == widget.draftId || element.serviceAndCustomer.jobRef == widget.draftId,
+          );
+          ref.read(reportWizardProvider.notifier).loadFromReport(draft);
+        } catch (e) {
+          print("Failed to load draft: $e");
+        }
+      } else {
+        ref.read(reportWizardProvider.notifier).reset();
+      }
+
+      // 2. Read state and initialize controller values synchronously
       final state = ref.read(reportWizardProvider);
       _jobRefCtrl.text = state.jobRef;
       _customerNameCtrl.text = state.customerName;
@@ -96,19 +113,55 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
   }
 
   Future<void> _captureCustomerPhoto() async {
-    try {
-      final photo = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 70,
-        maxWidth: 1024,
-      );
-      if (photo != null) {
-        ref.read(reportWizardProvider.notifier).updateCustomerPhoto(File(photo.path));
+    final ImageSource? source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              const ListTile(
+                title: Text(
+                  'Select Photo Source',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined, color: AppColors.primary),
+                title: const Text('Take Live Photo'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined, color: AppColors.primary),
+                title: const Text('Choose from Gallery'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (source != null) {
+      try {
+        final photo = await _imagePicker.pickImage(
+          source: source,
+          imageQuality: 70,
+          maxWidth: 1024,
+        );
+        if (photo != null) {
+          ref.read(reportWizardProvider.notifier).updateCustomerPhoto(File(photo.path));
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to pick photo: $e'), backgroundColor: AppColors.error),
+          );
+        }
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to capture photo: $e'), backgroundColor: AppColors.error),
-      );
     }
   }
 

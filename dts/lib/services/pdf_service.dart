@@ -340,25 +340,43 @@ pw.Widget statusWidget(String status) {
                   ),
 
                   // Right title
-                  pw.Expanded(
-                    flex: 2,
-                    child: pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.end,
-                      mainAxisAlignment: pw.MainAxisAlignment.center,
-                      children: [
-                        pw.Text(
-                          'ELECTRONIC FIELD SERVICE REPORT (eFSR)',
-                          style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex('#0B2545')),
-                        ),
-                        pw.SizedBox(height: 1),
-                        pw.Text(
-                          'GENERATOR MAINTENANCE & TECHNICAL INSPECTION RECORD',
-                          style: pw.TextStyle(fontSize: 6.5, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex('#134074')),
-                          textAlign: pw.TextAlign.right,
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Right title
+pw.Expanded(
+  flex: 2,
+  child: pw.Align(
+    alignment: pw.Alignment.centerRight,
+    child: pw.Container(
+      width: 180, // Increase/decrease if needed
+      child: pw.Column(
+        mainAxisSize: pw.MainAxisSize.min,
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'ELECTRONIC FIELD SERVICE\nREPORT (eFSR)',
+            textAlign: pw.TextAlign.left,
+            style: pw.TextStyle(
+              fontSize: 8.5,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColor.fromHex('#0B2545'),
+            ),
+          ),
+
+          pw.SizedBox(height: 3),
+
+          pw.Text(
+            'GENERATOR MAINTENANCE &\nTECHNICAL INSPECTION RECORD',
+            textAlign: pw.TextAlign.left,
+            style: pw.TextStyle(
+              fontSize: 6.5,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColor.fromHex('#134074'),
+            ),
+          ),
+        ],
+      ),
+    ),
+  ),
+),
                 ],
               ),
               pw.SizedBox(height: 6),
@@ -907,17 +925,17 @@ pw.Widget statusWidget(String status) {
               pw.SizedBox(height: 24),
 
               // Terms 1 to 11
-              _buildBulletItem(1, 'Our Service Engineer will make 6 free visits in year to the Engine / DG set at site with intervals of 60days not exceeding 70days.', fontSize: 11.0),
-              _buildBulletItem(2, 'During each visit, our Service Engineer will inspect the Engine / DG set and carry out various checks, adjustments. Necessary minor repairs also are carried out by providing required spares parts with you.', fontSize: 11.0),
-              _buildBulletItem(3, 'Major repairs like top Over-Hauling, Major Over-Hauling and Third party repair/jobs will carried out only after your specific approval, at extra cost.', fontSize: 11.0),
-              _buildBulletItem(4, 'AMC customers are to be treated as our valuable customers, and if any complaint from you, our service team will attend the site on priority basis.', fontSize: 11.0),
-              _buildBulletItem(5, 'Depends on terms of contract, one visit will be made every month on a specific date as mutually agreed, failure of which we shall depute our Engineer on any day of the month as convenient to us and to be honored by you. The contract shall be deemed executed on last day of the period completed and further renewal of the contract shall be as mutually agreed.', fontSize: 11.0),
-              _buildBulletItem(6, 'Where ever necessary skilled and un-skilled Labor, Tools, Stores, Lifting and Moving facility for completion of the job should be provided by you.', fontSize: 11.0),
-              _buildBulletItem(7, "In addition to carrying out normal checking, adjustment and minor repairs, our Service Engineer will acquaint your technical staff / Non Technical staff, who is responsible for the normal operation and maintenance of the engine, with Dos and Don'ts of correct operation and maintenance and the watch points for trouble-shooting.", fontSize: 11.0),
-              _buildBulletItem(8, "Services offered under this contract will be in accordance with the original Manufacture's standard service instruction practices to maintain the engine in healthy operating condition. However the responsibility of maintaining the engine is with the customer only by following the manufacturer's instructions and recommendation.", fontSize: 11.0),
-              _buildBulletItem(9, 'All parts including consumable like engine oil are to be procured either from us or from any authorized sources, failing which we will discontinue the contract service.', fontSize: 11.0),
-              _buildBulletItem(10, 'Any Statement / Commitment by our Service Staff is binding on us only, if subsequently confirmed by us in writing.', fontSize: 11.0),
-              _buildBulletItem(11, 'This offer covers Engine, Alternator & DG Control Panel only and other electrical & Consumables, service parts are not in the purview of this contract, which may please be noted. Separate AMC would be taken if any additional DG sets with you.', fontSize: 11.0),
+              _buildBulletItem(1, 'Our Service Engineer will make 6 free visits in year to the Engine / DG set at site with intervals of 60days not exceeding 70days.', fontSize: 10.0),
+              _buildBulletItem(2, 'During each visit, our Service Engineer will inspect the Engine / DG set and carry out various checks, adjustments. Necessary minor repairs also are carried out by providing required spares parts with you.', fontSize: 10.0),
+              _buildBulletItem(3, 'Major repairs like top Over-Hauling, Major Over-Hauling and Third party repair/jobs will carried out only after your specific approval, at extra cost.', fontSize: 10.0),
+              _buildBulletItem(4, 'AMC customers are to be treated as our valuable customers, and if any complaint from you, our service team will attend the site on priority basis.', fontSize: 10.0),
+              _buildBulletItem(5, 'Depends on terms of contract, one visit will be made every month on a specific date as mutually agreed, failure of which we shall depute our Engineer on any day of the month as convenient to us and to be honored by you. The contract shall be deemed executed on last day of the period completed and further renewal of the contract shall be as mutually agreed.', fontSize: 10.0),
+              _buildBulletItem(6, 'Where ever necessary skilled and un-skilled Labor, Tools, Stores, Lifting and Moving facility for completion of the job should be provided by you.', fontSize: 10.0),
+              _buildBulletItem(7, "In addition to carrying out normal checking, adjustment and minor repairs, our Service Engineer will acquaint your technical staff / Non Technical staff, who is responsible for the normal operation and maintenance of the engine, with Dos and Don'ts of correct operation and maintenance and the watch points for trouble-shooting.", fontSize: 10.0),
+              _buildBulletItem(8, "Services offered under this contract will be in accordance with the original Manufacture's standard service instruction practices to maintain the engine in healthy operating condition. However the responsibility of maintaining the engine is with the customer only by following the manufacturer's instructions and recommendation.", fontSize: 10.0),
+              _buildBulletItem(9, 'All parts including consumable like engine oil are to be procured either from us or from any authorized sources, failing which we will discontinue the contract service.', fontSize: 10.0),
+              _buildBulletItem(10, 'Any Statement / Commitment by our Service Staff is binding on us only, if subsequently confirmed by us in writing.', fontSize: 10.0),
+              _buildBulletItem(11, 'This offer covers Engine, Alternator & DG Control Panel only and other electrical & Consumables, service parts are not in the purview of this contract, which may please be noted. Separate AMC would be taken if any additional DG sets with you.', fontSize: 10.0),
               
               pw.Spacer(),
               buildFooter(),
@@ -1083,20 +1101,20 @@ pw.Widget statusWidget(String status) {
               pw.SizedBox(height: 16),
 
               // Terms 12 and 13
-              _buildBulletItem(12, 'All visits will be acknowledged by dually signing the Report on the same day.', fontSize: 11.0),
+              _buildBulletItem(12, 'All visits will be acknowledged by dually signing the Report on the same day.', fontSize: 10.0),
               _buildBulletItem(13, 'Payment Terms: 100% payment as advance along with copy of the offer with acceptance of Terms and Conditions.', isBold: true, fontSize: 11.0),
-              pw.SizedBox(height: 24),
+              pw.SizedBox(height: 16),
 
               // Validity & assuring
               pw.Align(
                 alignment: pw.Alignment.center,
-                child: pw.Text('This offer is valid for 30 Days from the date of submission.', style: const pw.TextStyle(fontSize: 11.5)),
+                child: pw.Text('This offer is valid for 30 Days from the date of submission.', style: const pw.TextStyle(fontSize: 10)),
               ),
               pw.Align(
                 alignment: pw.Alignment.center,
-                child: pw.Text('Thanking you and assuring our best services at all times.', style: pw.TextStyle(fontSize: 11.5, fontWeight: pw.FontWeight.bold)),
+                child: pw.Text('Thanking you and assuring our best services at all times.', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
               ),
-              pw.SizedBox(height: 24),
+              pw.SizedBox(height: 22),
 
               // Customer address details (No box, larger font size)
               pw.Padding(
@@ -1120,7 +1138,7 @@ pw.Widget statusWidget(String status) {
                   ],
                 ),
               ),
-              pw.SizedBox(height: 24),
+              pw.SizedBox(height: 22),
 
               // Items Table
               pw.Table(
@@ -1150,7 +1168,7 @@ pw.Widget statusWidget(String status) {
                   style: const pw.TextStyle(fontSize: 11),
                 ),
               ),
-              pw.SizedBox(height: 24),
+              pw.SizedBox(height: 22),
 
               // Note box
               pw.RichText(
@@ -1171,7 +1189,7 @@ pw.Widget statusWidget(String status) {
                   ],
                 ),
               ),
-              pw.SizedBox(height: 24),
+              pw.SizedBox(height: 22),
 
               // Signatures Area
               pw.Text('Yours faithfully', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
@@ -1199,21 +1217,22 @@ pw.Widget statusWidget(String status) {
                   ),
 
                   // Customer Signatory
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      if (customerSignatureImage != null)
-                        pw.Container(
-                          height: 50,
-                          width: 120,
-                          child: pw.Image(customerSignatureImage, fit: pw.BoxFit.contain),
-                        )
-                      else
-                        pw.SizedBox(height: 50),
-                      pw.SizedBox(height: 4),
-                      pw.Text('[Customer Signatory]', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
-                    ],
-                  ),
+                  if (agreement.documentType != 'Quotation')
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        if (customerSignatureImage != null)
+                          pw.Container(
+                            height: 50,
+                            width: 120,
+                            child: pw.Image(customerSignatureImage, fit: pw.BoxFit.contain),
+                          )
+                        else
+                          pw.SizedBox(height: 50),
+                        pw.SizedBox(height: 4),
+                        pw.Text('[Customer Signatory]', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                      ],
+                    ),
                 ],
               ),
 

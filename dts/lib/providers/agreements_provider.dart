@@ -5,6 +5,7 @@ import '../repositories/agreement_repository.dart';
 
 class AgreementsState {
   final List<AgreementModel> agreements;
+  final List<AgreementModel> drafts;
   final bool isLoading;
   final String? error;
   final int page;
@@ -15,6 +16,7 @@ class AgreementsState {
 
   AgreementsState({
     required this.agreements,
+    required this.drafts,
     required this.isLoading,
     this.error,
     required this.page,
@@ -26,6 +28,7 @@ class AgreementsState {
 
   AgreementsState copyWith({
     List<AgreementModel>? agreements,
+    List<AgreementModel>? drafts,
     bool? isLoading,
     String? error,
     int? page,
@@ -36,6 +39,7 @@ class AgreementsState {
   }) {
     return AgreementsState(
       agreements: agreements ?? this.agreements,
+      drafts: drafts ?? this.drafts,
       isLoading: isLoading ?? this.isLoading,
       error: error,
       page: page ?? this.page,
@@ -49,6 +53,7 @@ class AgreementsState {
   factory AgreementsState.initial() {
     return AgreementsState(
       agreements: [],
+      drafts: [],
       isLoading: false,
       page: 1,
       totalPages: 1,
@@ -63,7 +68,33 @@ class AgreementsNotifier extends StateNotifier<AgreementsState> {
   final AgreementRepository _repository;
 
   AgreementsNotifier(this._repository) : super(AgreementsState.initial()) {
+    fetchDrafts();
     fetchAgreements();
+  }
+
+  // Fetch drafts from MongoDB
+  Future<void> fetchDrafts() async {
+    try {
+      final response = await _repository.getAgreements(
+        page: 1,
+        limit: 100,
+        status: 'draft',
+      );
+      state = state.copyWith(drafts: response.agreements);
+    } catch (e) {
+      print("Failed to fetch drafts: $e");
+    }
+  }
+
+  // Delete a draft or agreement
+  Future<void> deleteDraft(String id) async {
+    try {
+      await _repository.deleteAgreement(id);
+      final drafts = state.drafts.where((element) => element.id != id).toList();
+      state = state.copyWith(drafts: drafts);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> fetchAgreements({bool refresh = false, String? search, String? docType}) async {
@@ -82,6 +113,11 @@ class AgreementsNotifier extends StateNotifier<AgreementsState> {
     );
 
     try {
+      // Refresh drafts in parallel when refreshing the main feed
+      if (refresh) {
+        fetchDrafts();
+      }
+
       final response = await _repository.getAgreements(
         page: nextPage,
         search: targetSearch,
@@ -121,6 +157,21 @@ class AgreementsNotifier extends StateNotifier<AgreementsState> {
   Future<void> filterByDocumentType(String type) async {
     state = state.copyWith(documentTypeFilter: type, page: 1, agreements: []);
     await fetchAgreements(refresh: true);
+  }
+
+  Future<void> deleteAgreement(String id) async {
+    try {
+      await _repository.deleteAgreement(id);
+      final agreements = state.agreements.where((element) => element.id != id).toList();
+      final drafts = state.drafts.where((element) => element.id != id).toList();
+      state = state.copyWith(
+        agreements: agreements,
+        drafts: drafts,
+        totalCount: (state.totalCount - 1).clamp(0, 999999),
+      );
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> refresh() async {

@@ -12,8 +12,15 @@ import '../widgets/common/section_header.dart';
 import '../widgets/common/quick_action_card.dart';
 import '../widgets/common/document_card.dart';
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  String _selectedFilter = 'all'; // 'all', 'today', 'reports', 'proposals', 'pending'
 
   String _greeting() {
     final hour = DateTime.now().hour;
@@ -22,18 +29,51 @@ class DashboardScreen extends ConsumerWidget {
     return 'Good Evening';
   }
 
+  void _toggleFilter(String filter) {
+    setState(() {
+      if (_selectedFilter == filter) {
+        _selectedFilter = 'all';
+      } else {
+        _selectedFilter = filter;
+      }
+    });
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final reportsState = ref.watch(reportsProvider);
     final reportsNotifier = ref.read(reportsProvider.notifier);
     final agreementsState = ref.watch(agreementsProvider);
     final agreementsNotifier = ref.read(agreementsProvider.notifier);
 
-    final today = DateFormat('EEEE, dd MMM yyyy').format(DateTime.now());
+    final todayStr = DateFormat('EEEE, dd MMM yyyy').format(DateTime.now());
 
-    // Build unified recent activity feed
-    final recentActivity = _buildRecentActivity(reportsState, agreementsState);
+    // Compute counts
+    final now = DateTime.now();
+    final todayReports = reportsState.reports.where((r) {
+      final date = r.createdAt ?? r.serviceAndCustomer.dateTime;
+      return date.year == now.year && date.month == now.month && date.day == now.day;
+    }).length + reportsState.drafts.where((d) {
+      final date = d.createdAt ?? d.serviceAndCustomer.dateTime;
+      return date.year == now.year && date.month == now.month && date.day == now.day;
+    }).length;
+
+    final todayAgreements = agreementsState.agreements.where((a) {
+      final date = a.createdAt ?? a.date;
+      return date.year == now.year && date.month == now.month && date.day == now.day;
+    }).length + agreementsState.drafts.where((d) {
+      final date = d.createdAt ?? d.date;
+      return date.year == now.year && date.month == now.month && date.day == now.day;
+    }).length;
+
+    final todayDocsCount = todayReports + todayAgreements;
+    final totalReports = reportsNotifier.totalReportsCount;
+    final totalAgreements = agreementsState.totalCount + agreementsState.drafts.length;
+    final totalPending = reportsState.drafts.length + agreementsState.drafts.length;
+
+    // Build filtered unified recent activity feed
+    final recentActivity = _buildRecentActivity(reportsState, agreementsState, _selectedFilter);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -71,26 +111,26 @@ class DashboardScreen extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${_greeting()}, ${authState.userName ?? 'Technician'} 👋',
-                                    style: const TextStyle(
-                                      fontSize: 21,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${_greeting()}, ${authState.userName ?? 'Technician'} 👋',
+                                      style: const TextStyle(
+                                        fontSize: 21,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    today,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.white.withOpacity(0.7),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      todayStr,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.white.withOpacity(0.7),
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                ),
                             ),
                             Stack(
                               children: [
@@ -121,42 +161,50 @@ class DashboardScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 22),
 
-                        // ──── Statistics Row ────
+                        // ──── Statistics Row (Interactive Filters) ────
                         Row(
                           children: [
                             Expanded(
                               child: StatCard(
-                                title: "Today's Reports",
-                                value: reportsNotifier.todayReportsCount.toString(),
-                                icon: Icons.description_outlined,
+                                title: "Today Docs",
+                                value: todayDocsCount.toString(),
+                                icon: Icons.today_outlined,
                                 color: AppColors.quotationBlue,
+                                isSelected: _selectedFilter == 'today',
+                                onTap: () => _toggleFilter('today'),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: StatCard(
-                                title: "Agreements",
-                                value: agreementsState.totalCount.toString(),
+                                title: "Reports",
+                                value: totalReports.toString(),
+                                icon: Icons.description_outlined,
+                                color: const Color(0xFFEE6C4D),
+                                isSelected: _selectedFilter == 'reports',
+                                onTap: () => _toggleFilter('reports'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: StatCard(
+                                title: "AMC Proposals",
+                                value: totalAgreements.toString(),
                                 icon: Icons.handshake_outlined,
                                 color: AppColors.agreementGreen,
+                                isSelected: _selectedFilter == 'proposals',
+                                onTap: () => _toggleFilter('proposals'),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: StatCard(
-                                title: "Pending",
-                                value: reportsNotifier.pendingReportsCount.toString(),
+                                title: "Pending / Drafts",
+                                value: totalPending.toString(),
                                 icon: Icons.schedule_outlined,
                                 color: AppColors.warning,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: StatCard(
-                                title: "Total Docs",
-                                value: (reportsNotifier.totalReportsCount + agreementsState.totalCount).toString(),
-                                icon: Icons.folder_open_outlined,
-                                color: const Color(0xFF6B7280),
+                                isSelected: _selectedFilter == 'pending',
+                                onTap: () => _toggleFilter('pending'),
                               ),
                             ),
                           ],
@@ -173,7 +221,7 @@ class DashboardScreen extends ConsumerWidget {
               child: SectionHeader(title: 'Quick Actions'),
             ),
 
-            // ──── Quick Action Cards (Equal Prominence) ────
+            // ──── Quick Action Cards ────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -199,12 +247,30 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
 
-            // ──── Recent Activity Header ────
+            // ──── Dynamic Activity Header ────
             SliverToBoxAdapter(
               child: SectionHeader(
-                title: 'Recent Activity',
+                title: _selectedFilter == 'all'
+                    ? 'Recent Activity'
+                    : _selectedFilter == 'today'
+                        ? 'Today\'s Documents'
+                        : _selectedFilter == 'reports'
+                            ? 'Service Reports'
+                            : _selectedFilter == 'proposals'
+                                ? 'AMC Proposals'
+                                : 'Pending Drafts',
                 actionText: 'View All',
-                onActionTap: () => context.push('/reports'),
+                onActionTap: () {
+                  if (_selectedFilter == 'reports') {
+                    context.push('/reports');
+                  } else if (_selectedFilter == 'proposals') {
+                    context.push('/agreements');
+                  } else if (_selectedFilter == 'pending') {
+                    context.push('/drafts');
+                  } else {
+                    context.push('/reports');
+                  }
+                },
               ),
             ),
 
@@ -219,21 +285,24 @@ class DashboardScreen extends ConsumerWidget {
                         Icon(Icons.inbox_rounded,
                             size: 48, color: AppColors.textLight.withOpacity(0.4)),
                         const SizedBox(height: 12),
-                        const Text(
-                          'No recent activity',
-                          style: TextStyle(
+                        Text(
+                          _selectedFilter == 'all'
+                              ? 'No recent activity'
+                              : 'No matching documents found',
+                          style: const TextStyle(
                             fontSize: 14,
                             color: AppColors.textSecondary,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'Create your first document to get started',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textLight,
+                        if (_selectedFilter == 'all')
+                          const Text(
+                            'Create your first document to get started',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textLight,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -258,88 +327,142 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  /// Builds a unified list of DocumentCard widgets from recent reports + agreements,
-  /// sorted by date descending, capped at 8 items.
+  /// Builds a filtered list of DocumentCard widgets
   List<Widget> _buildRecentActivity(
     ReportsState reportsState,
     AgreementsState agreementsState,
+    String filter,
   ) {
     final List<_ActivityItem> items = [];
 
-    // Add drafts (pending reports)
-    for (final draft in reportsState.drafts.take(5)) {
-      items.add(_ActivityItem(
-        date: draft.serviceAndCustomer.dateTime,
-        widget: Builder(
-          builder: (context) => DocumentCard(
-            documentNumber: draft.serviceAndCustomer.jobRef,
-            customerName: draft.serviceAndCustomer.customerName,
-            formattedDate: DateFormat('dd MMM yyyy, hh:mm a')
-                .format(draft.serviceAndCustomer.dateTime),
-            documentType: DocumentType.report,
-            statusText: 'Pending',
-            isPending: true,
-            onTap: () {
-              context.push(
-                  '/report-details/${draft.serviceAndCustomer.jobRef}?draft=true');
-            },
+    // Add report drafts
+    for (final draft in reportsState.drafts) {
+      if (draft.id != null) {
+        items.add(_ActivityItem(
+          id: draft.id!,
+          isReport: true,
+          isDraft: true,
+          date: draft.serviceAndCustomer.dateTime,
+          widget: Builder(
+            builder: (context) => DocumentCard(
+              documentNumber: draft.serviceAndCustomer.jobRef,
+              customerName: draft.serviceAndCustomer.customerName,
+              formattedDate: DateFormat('dd MMM yyyy, hh:mm a').format(draft.serviceAndCustomer.dateTime),
+              documentType: DocumentType.report,
+              statusText: 'Pending',
+              isPending: true,
+              onTap: () => context.push('/report-details/${draft.id}?draft=true'),
+            ),
           ),
-        ),
-      ));
+        ));
+      }
     }
 
-    // Add submitted reports
-    for (final report in reportsState.reports.take(5)) {
-      items.add(_ActivityItem(
-        date: report.createdAt ?? report.serviceAndCustomer.dateTime,
-        widget: Builder(
-          builder: (context) => DocumentCard(
-            documentNumber: report.serviceAndCustomer.jobRef,
-            customerName: report.serviceAndCustomer.customerName,
-            formattedDate: DateFormat('dd MMM yyyy, hh:mm a')
-                .format(report.createdAt ?? report.serviceAndCustomer.dateTime),
-            documentType: DocumentType.report,
-            statusText: 'Completed',
-            isPending: false,
-            onTap: () {
-              context.push('/report-details/${report.id}?draft=false');
-            },
+    // Add reports
+    for (final report in reportsState.reports) {
+      if (report.id != null) {
+        items.add(_ActivityItem(
+          id: report.id!,
+          isReport: true,
+          isDraft: false,
+          date: report.createdAt ?? report.serviceAndCustomer.dateTime,
+          widget: Builder(
+            builder: (context) => DocumentCard(
+              documentNumber: report.serviceAndCustomer.jobRef,
+              customerName: report.serviceAndCustomer.customerName,
+              formattedDate: DateFormat('dd MMM yyyy, hh:mm a').format(report.createdAt ?? report.serviceAndCustomer.dateTime),
+              documentType: DocumentType.report,
+              statusText: 'Completed',
+              isPending: false,
+              onTap: () => context.push('/report-details/${report.id}?draft=false'),
+            ),
           ),
-        ),
-      ));
+        ));
+      }
+    }
+
+    // Add agreement drafts
+    for (final draft in agreementsState.drafts) {
+      if (draft.id != null) {
+        items.add(_ActivityItem(
+          id: draft.id!,
+          isReport: false,
+          isDraft: true,
+          date: draft.date,
+          widget: Builder(
+            builder: (context) => DocumentCard(
+              documentNumber: draft.offerNumber ?? 'Offer # Pending',
+              customerName: draft.customerName,
+              formattedDate: DateFormat('dd MMM yyyy').format(draft.date),
+              documentType: draft.documentType == 'Agreement' ? DocumentType.agreement : DocumentType.quotation,
+              amount: '₹${draft.grandTotal.toStringAsFixed(0)}',
+              statusText: 'Pending',
+              isPending: true,
+              onTap: () => context.push('/agreement-details/${draft.id}?draft=true'),
+            ),
+          ),
+        ));
+      }
     }
 
     // Add agreements
-    for (final agreement in agreementsState.agreements.take(5)) {
-      items.add(_ActivityItem(
-        date: agreement.date,
-        widget: Builder(
-          builder: (context) => DocumentCard(
-            documentNumber: agreement.offerNumber ?? 'Offer # Pending',
-            customerName: agreement.customerName,
-            formattedDate: DateFormat('dd MMM yyyy').format(agreement.date),
-            documentType: agreement.documentType == 'Agreement'
-                ? DocumentType.agreement
-                : DocumentType.quotation,
-            amount: '₹${agreement.grandTotal.toStringAsFixed(0)}',
-            onTap: () {
-              context.push('/agreement-details/${agreement.id}');
-            },
+    for (final agreement in agreementsState.agreements) {
+      if (agreement.id != null) {
+        items.add(_ActivityItem(
+          id: agreement.id!,
+          isReport: false,
+          isDraft: false,
+          date: agreement.date,
+          widget: Builder(
+            builder: (context) => DocumentCard(
+              documentNumber: agreement.offerNumber ?? 'Offer # Pending',
+              customerName: agreement.customerName,
+              formattedDate: DateFormat('dd MMM yyyy').format(agreement.date),
+              documentType: agreement.documentType == 'Agreement' ? DocumentType.agreement : DocumentType.quotation,
+              amount: '₹${agreement.grandTotal.toStringAsFixed(0)}',
+              onTap: () => context.push('/agreement-details/${agreement.id}'),
+            ),
           ),
-        ),
-      ));
+        ));
+      }
     }
 
-    // Sort by date descending and take 8
+    // Sort by date descending
     items.sort((a, b) => b.date.compareTo(a.date));
-    return items.take(8).map((item) => item.widget).toList();
+
+    // Filter items
+    Iterable<_ActivityItem> filtered = items;
+    if (filter == 'today') {
+      final now = DateTime.now();
+      filtered = items.where((item) =>
+          item.date.year == now.year &&
+          item.date.month == now.month &&
+          item.date.day == now.day);
+    } else if (filter == 'reports') {
+      filtered = items.where((item) => item.isReport);
+    } else if (filter == 'proposals') {
+      filtered = items.where((item) => !item.isReport);
+    } else if (filter == 'pending') {
+      filtered = items.where((item) => item.isDraft);
+    }
+
+    return filtered.take(15).map((item) => item.widget).toList();
   }
 }
 
 /// Helper class to sort activity items by date
 class _ActivityItem {
+  final String id;
+  final bool isReport;
+  final bool isDraft;
   final DateTime date;
   final Widget widget;
 
-  _ActivityItem({required this.date, required this.widget});
+  _ActivityItem({
+    required this.id,
+    required this.isReport,
+    required this.isDraft,
+    required this.date,
+    required this.widget,
+  });
 }

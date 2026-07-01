@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../core/constants/app_colors.dart';
 import '../models/agreement_model.dart';
 import '../repositories/agreement_repository.dart';
+import '../providers/agreements_provider.dart';
 import '../services/pdf_service.dart';
+import 'pdf_viewer_screen.dart';
 
 class AgreementDetailsScreen extends ConsumerStatefulWidget {
   final String agreementId;
+  final bool isLocalDraft;
 
   const AgreementDetailsScreen({
     super.key,
     required this.agreementId,
+    this.isLocalDraft = false,
   });
 
   @override
@@ -50,10 +55,22 @@ class _AgreementDetailsScreenState extends ConsumerState<AgreementDetailsScreen>
         _isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      try {
+        final drafts = ref.read(agreementsProvider).drafts;
+        final draft = drafts.firstWhere(
+          (element) => element.id == widget.agreementId || element.offerNumber == widget.agreementId,
+        );
+        setState(() {
+          _agreement = draft;
+          _isLoading = false;
+          _error = null;
+        });
+      } catch (_) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -84,6 +101,64 @@ class _AgreementDetailsScreenState extends ConsumerState<AgreementDetailsScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to share PDF: $e'), backgroundColor: AppColors.error),
       );
+    }
+  }
+
+  void _viewAsPdf() {
+    if (_agreement == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => PdfViewerScreen(
+          title: _agreement!.offerNumber ?? 'Agreement PDF',
+          pdfBuilder: () {
+            final pdfService = ref.read(pdfServiceProvider);
+            return pdfService.generateAgreementPdf(_agreement!);
+          },
+        ),
+      ),
+    );
+  }
+
+  void _deleteAgreement() async {
+    if (_agreement == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete ${_agreement!.documentType}'),
+        content: Text('Are you sure you want to delete this ${_agreement!.documentType.toLowerCase()}? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Deleting ${_agreement!.documentType.toLowerCase()}...')),
+      );
+      try {
+        await ref.read(agreementsProvider.notifier).deleteAgreement(widget.agreementId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${_agreement!.documentType} deleted successfully.')),
+          );
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete: $e'), backgroundColor: AppColors.error),
+          );
+        }
+      }
     }
   }
 
@@ -136,14 +211,50 @@ class _AgreementDetailsScreenState extends ConsumerState<AgreementDetailsScreen>
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.download_rounded),
-            onPressed: _downloadPdf,
-            tooltip: 'Download PDF',
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            onPressed: _viewAsPdf,
+            tooltip: 'View as PDF',
           ),
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: _sharePdf,
-            tooltip: 'Share PDF',
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (value) {
+              if (value == 'download') _downloadPdf();
+              if (value == 'share') _sharePdf();
+              if (value == 'delete') _deleteAgreement();
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'download',
+                child: Row(
+                  children: [
+                    Icon(Icons.download_rounded, color: AppColors.textSecondary),
+                    SizedBox(width: 8),
+                    Text('Download PDF'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'share',
+                child: Row(
+                  children: [
+                    Icon(Icons.share_rounded, color: AppColors.textSecondary),
+                    SizedBox(width: 8),
+                    Text('Share PDF'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline_rounded, color: AppColors.error),
+                    SizedBox(width: 8),
+                    Text('Delete Proposal', style: TextStyle(color: AppColors.error)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
         bottom: TabBar(
@@ -159,13 +270,81 @@ class _AgreementDetailsScreenState extends ConsumerState<AgreementDetailsScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _buildCommercialTab(agreement),
-          _buildItemsTab(agreement),
-          _buildTermsTab(agreement),
-          _buildSignaturesTab(agreement),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildCommercialTab(agreement),
+                _buildItemsTab(agreement),
+                _buildTermsTab(agreement),
+                _buildSignaturesTab(agreement),
+              ],
+            ),
+          ),
+          
+          // Action Buttons Bottom Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -3),
+                ),
+              ],
+            ),
+            child: widget.isLocalDraft
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _deleteAgreement,
+                          icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+                          label: const Text('Delete Draft', style: TextStyle(color: AppColors.error)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.error),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            context.push('/create-agreement?draftId=${agreement.offerNumber}');
+                          },
+                          icon: const Icon(Icons.edit_outlined),
+                          label: const Text('Edit Draft'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.agreementGreen,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _sharePdf,
+                          icon: const Icon(Icons.share_outlined),
+                          label: const Text('Share PDF'),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _downloadPdf,
+                          icon: const Icon(Icons.download_rounded),
+                          label: const Text('Download PDF'),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
         ],
       ),
     );

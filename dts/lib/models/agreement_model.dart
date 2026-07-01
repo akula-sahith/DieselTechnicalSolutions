@@ -36,6 +36,7 @@ class DescriptionItem {
 
 class AgreementModel {
   final String? id;
+  final String status;
   final String documentType; // 'Agreement' or 'Quotation'
   final String? offerNumber;
   final DateTime date;
@@ -62,6 +63,7 @@ class AgreementModel {
 
   AgreementModel({
     this.id,
+    this.status = 'submitted',
     required this.documentType,
     this.offerNumber,
     required this.date,
@@ -95,6 +97,7 @@ class AgreementModel {
 
     return AgreementModel(
       id: json['_id'] ?? json['id'],
+      status: json['status'] ?? 'submitted',
       documentType: json['documentType'] ?? 'Agreement',
       offerNumber: json['offerNumber'],
       date: json['date'] != null 
@@ -125,6 +128,7 @@ class AgreementModel {
 
   Map<String, dynamic> toJson({bool flat = false}) {
     final map = <String, dynamic>{
+      'status': status,
       'documentType': documentType,
       'date': date.toIso8601String(),
       'customerName': customerName,

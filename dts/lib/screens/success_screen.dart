@@ -9,6 +9,7 @@ import '../models/report_model.dart';
 import '../models/agreement_model.dart';
 import '../repositories/agreement_repository.dart';
 import '../services/pdf_service.dart';
+import 'pdf_viewer_screen.dart';
 
 class SuccessScreen extends ConsumerStatefulWidget {
   final String reportId;
@@ -381,6 +382,38 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen>
                                 ),
                               ),
                               const SizedBox(height: 10),
+
+                              if ((!widget.isAgreement && _report != null) || (widget.isAgreement && _agreement != null)) ...[
+                                OutlinedButton.icon(
+                                  onPressed: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => PdfViewerScreen(
+                                          title: widget.isAgreement 
+                                              ? (_agreement!.offerNumber ?? 'Agreement PDF') 
+                                              : _report!.serviceAndCustomer.jobRef,
+                                          pdfBuilder: () {
+                                            final pdfService = ref.read(pdfServiceProvider);
+                                            if (widget.isAgreement) {
+                                              return pdfService.generateAgreementPdf(_agreement!);
+                                            } else {
+                                              return pdfService.generatePdf(_report!);
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.picture_as_pdf_outlined, size: 20),
+                                  label: const Text('View as PDF'),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 15),
+                                    side: BorderSide(color: typeColor),
+                                    foregroundColor: typeColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                              ],
 
                               // Download + Share row
                               Row(

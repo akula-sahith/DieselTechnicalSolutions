@@ -2,11 +2,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../core/constants/app_colors.dart';
 import '../models/report_model.dart';
 import '../providers/reports_provider.dart';
 import '../repositories/report_repository.dart';
 import '../services/pdf_service.dart';
+import 'pdf_viewer_screen.dart';
 
 class ReportDetailsScreen extends ConsumerStatefulWidget {
   final String reportId;
@@ -42,29 +44,29 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen> with 
   }
 
   Future<void> _loadReport() async {
-    if (widget.isLocalDraft) {
-      final drafts = ref.read(reportsProvider).drafts;
-      final draft = drafts.firstWhere(
-        (element) => element.serviceAndCustomer.jobRef == widget.reportId,
-        orElse: () => throw Exception('Draft not found'),
-      );
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final repo = ref.read(reportRepositoryProvider);
+      final report = await repo.getReportById(widget.reportId);
       setState(() {
-        _report = draft;
+        _report = report;
         _isLoading = false;
       });
-    } else {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
+    } catch (e) {
       try {
-        final repo = ref.read(reportRepositoryProvider);
-        final report = await repo.getReportById(widget.reportId);
+        final drafts = ref.read(reportsProvider).drafts;
+        final draft = drafts.firstWhere(
+          (element) => element.id == widget.reportId || element.serviceAndCustomer.jobRef == widget.reportId,
+        );
         setState(() {
-          _report = report;
+          _report = draft;
           _isLoading = false;
+          _error = null;
         });
-      } catch (e) {
+      } catch (_) {
         setState(() {
           _error = e.toString();
           _isLoading = false;
@@ -100,6 +102,65 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen> with 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to share PDF: $e'), backgroundColor: AppColors.error),
       );
+    }
+  }
+
+  void _viewAsPdf() {
+    if (_report == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => PdfViewerScreen(
+          title: _report!.serviceAndCustomer.jobRef,
+          pdfBuilder: () {
+            final pdfService = ref.read(pdfServiceProvider);
+            return pdfService.generatePdf(_report!);
+          },
+        ),
+      ),
+    );
+  }
+
+  void _deleteReport() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Report'),
+        content: Text(widget.isLocalDraft
+            ? 'Are you sure you want to delete this draft?'
+            : 'Are you sure you want to delete this service report? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Deleting report...')),
+      );
+      try {
+        await ref.read(reportsProvider.notifier).deleteReport(widget.reportId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Report deleted successfully.')),
+          );
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete report: $e'), backgroundColor: AppColors.error),
+          );
+        }
+      }
     }
   }
 
@@ -145,12 +206,50 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen> with 
         title: Text(report.serviceAndCustomer.jobRef),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: _sharePdf,
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            onPressed: _viewAsPdf,
+            tooltip: 'View as PDF',
           ),
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf),
-            onPressed: _downloadPdf,
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (value) {
+              if (value == 'download') _downloadPdf();
+              if (value == 'share') _sharePdf();
+              if (value == 'delete') _deleteReport();
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'download',
+                child: Row(
+                  children: [
+                    Icon(Icons.download_rounded, color: AppColors.textSecondary),
+                    SizedBox(width: 8),
+                    Text('Download PDF'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'share',
+                child: Row(
+                  children: [
+                    Icon(Icons.share_rounded, color: AppColors.textSecondary),
+                    SizedBox(width: 8),
+                    Text('Share PDF'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline_rounded, color: AppColors.error),
+                    SizedBox(width: 8),
+                    Text('Delete Report', style: TextStyle(color: AppColors.error)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
         bottom: TabBar(
@@ -182,39 +281,66 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen> with 
           ),
           
           // Action Buttons Bottom Bar
-          if (!widget.isLocalDraft)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -3),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _sharePdf,
-                      icon: const Icon(Icons.share_outlined),
-                      label: const Text('Share PDF'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _downloadPdf,
-                      icon: const Icon(Icons.download_rounded),
-                      label: const Text('Download PDF'),
-                    ),
-                  ),
-                ],
-              ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -3),
+                ),
+              ],
             ),
+            child: widget.isLocalDraft
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _deleteReport,
+                          icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+                          label: const Text('Delete Draft', style: TextStyle(color: AppColors.error)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.error),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            context.push('/create-report?draftId=${report.serviceAndCustomer.jobRef}');
+                          },
+                          icon: const Icon(Icons.edit_outlined),
+                          label: const Text('Edit Draft'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.reportOrange,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _sharePdf,
+                          icon: const Icon(Icons.share_outlined),
+                          label: const Text('Share PDF'),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _downloadPdf,
+                          icon: const Icon(Icons.download_rounded),
+                          label: const Text('Download PDF'),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
         ],
       ),
     );

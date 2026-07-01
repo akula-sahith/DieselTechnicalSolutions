@@ -11,6 +11,7 @@ import '../screens/success_screen.dart';
 import '../screens/agreements_screen.dart';
 import '../screens/create_agreement_screen.dart';
 import '../screens/agreement_details_screen.dart';
+import '../screens/drafts_list_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -40,11 +41,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/create-report',
-        builder: (context, state) => const CreateReportScreen(),
+        builder: (context, state) {
+          final draftId = state.uri.queryParameters['draftId'];
+          return CreateReportScreen(draftId: draftId);
+        },
       ),
       GoRoute(
         path: '/create-agreement',
-        builder: (context, state) => const CreateAgreementScreen(),
+        builder: (context, state) {
+          final draftId = state.uri.queryParameters['draftId'];
+          return CreateAgreementScreen(draftId: draftId);
+        },
       ),
       GoRoute(
         path: '/report-details/:id',
@@ -58,8 +65,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/agreement-details/:id',
         builder: (context, state) {
           final id = state.pathParameters['id']!;
-          return AgreementDetailsScreen(agreementId: id);
+          final isLocalDraft = state.uri.queryParameters['draft'] == 'true';
+          return AgreementDetailsScreen(agreementId: id, isLocalDraft: isLocalDraft);
         },
+      ),
+      GoRoute(
+        path: '/drafts',
+        builder: (context, state) => const DraftsListScreen(),
       ),
       GoRoute(
         path: '/report-success/:id',

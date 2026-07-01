@@ -178,7 +178,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           statusText: isDraft ? 'Pending' : 'Completed',
           isPending: isDraft,
           onTap: () {
-            final id = isDraft ? report.serviceAndCustomer.jobRef : report.id!;
+            final id = report.id!;
             context.push('/report-details/$id?draft=$isDraft');
           },
         );

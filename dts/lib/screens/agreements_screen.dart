@@ -150,11 +150,22 @@ class _AgreementsScreenState extends ConsumerState<AgreementsScreen> {
   }
 
   Widget _buildListContent(AgreementsState state) {
-    if (state.agreements.isEmpty && state.isLoading) {
+    final drafts = state.drafts.where((d) {
+      final matchesSearch = state.searchQuery.isEmpty ||
+          d.customerName.toLowerCase().contains(state.searchQuery.toLowerCase()) ||
+          (d.offerNumber ?? '').toLowerCase().contains(state.searchQuery.toLowerCase());
+      final matchesType = state.documentTypeFilter.isEmpty ||
+          d.documentType == state.documentTypeFilter;
+      return matchesSearch && matchesType;
+    }).toList();
+
+    final allItems = [...drafts, ...state.agreements];
+
+    if (allItems.isEmpty && state.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (state.error != null && state.agreements.isEmpty) {
+    if (state.error != null && allItems.isEmpty) {
       return ListView(
         children: [
           SizedBox(height: MediaQuery.of(context).size.height * 0.15),
@@ -169,10 +180,10 @@ class _AgreementsScreenState extends ConsumerState<AgreementsScreen> {
       );
     }
 
-    if (state.agreements.isEmpty) {
+    if (allItems.isEmpty) {
       return ListView(
         children: [
-          SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.15),
           EmptyStateWidget(
             icon: Icons.handshake_outlined,
             title: 'No Proposals Found',
@@ -187,16 +198,17 @@ class _AgreementsScreenState extends ConsumerState<AgreementsScreen> {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.only(top: 4, bottom: 8),
-      itemCount: state.agreements.length + (state.page <= state.totalPages ? 1 : 0),
+      itemCount: allItems.length + (state.page <= state.totalPages ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == state.agreements.length) {
+        if (index == allItems.length) {
           return const Padding(
             padding: EdgeInsets.all(16.0),
             child: Center(child: CircularProgressIndicator()),
           );
         }
 
-        final agreement = state.agreements[index];
+        final agreement = allItems[index];
+        final isDraft = agreement.status == 'draft';
         final formattedDate = DateFormat('dd MMM yyyy').format(agreement.date);
 
         return DocumentCard(
@@ -206,9 +218,12 @@ class _AgreementsScreenState extends ConsumerState<AgreementsScreen> {
           documentType: agreement.documentType == 'Agreement'
               ? DocumentType.agreement
               : DocumentType.quotation,
+          statusText: isDraft ? 'Pending' : 'Completed',
+          isPending: isDraft,
           amount: '₹${agreement.grandTotal.toStringAsFixed(2)}',
           onTap: () {
-            context.push('/agreement-details/${agreement.id}');
+            final id = agreement.id!;
+            context.push('/agreement-details/$id?draft=$isDraft');
           },
         );
       },

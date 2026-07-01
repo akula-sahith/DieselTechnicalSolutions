@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../core/constants/app_colors.dart';
 import '../models/agreement_model.dart';
 import '../providers/agreement_wizard_provider.dart';
+import '../providers/agreements_provider.dart';
 import '../widgets/signature_pad.dart';
 import '../widgets/stepper/stepper_progress_bar.dart';
 import '../widgets/stepper/step_navigation.dart';
@@ -13,7 +14,8 @@ import '../widgets/stepper/step_container.dart';
 import '../widgets/stepper/step_header.dart';
 
 class CreateAgreementScreen extends ConsumerStatefulWidget {
-  const CreateAgreementScreen({super.key});
+  final String? draftId;
+  const CreateAgreementScreen({super.key, this.draftId});
 
   @override
   ConsumerState<CreateAgreementScreen> createState() => _CreateAgreementScreenState();
@@ -37,7 +39,24 @@ class _CreateAgreementScreenState extends ConsumerState<CreateAgreementScreen> {
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 1. Reset state first or load draft synchronously if draftId is provided
+      if (widget.draftId != null) {
+        try {
+          final drafts = ref.read(agreementsProvider).drafts;
+          final draft = drafts.firstWhere(
+            (element) => element.id == widget.draftId || element.offerNumber == widget.draftId,
+          );
+          ref.read(agreementWizardProvider.notifier).loadFromAgreement(draft);
+        } catch (e) {
+          print("Failed to load draft: $e");
+        }
+      } else {
+        ref.read(agreementWizardProvider.notifier).reset();
+      }
+
+      // 2. Read state and initialize controller values synchronously
       final state = ref.read(agreementWizardProvider);
       _customerNameCtrl.text = state.customerName;
       _completeAddressCtrl.text = state.completeAddress;
@@ -103,12 +122,28 @@ class _CreateAgreementScreenState extends ConsumerState<CreateAgreementScreen> {
     final state = ref.watch(agreementWizardProvider);
     final notifier = ref.read(agreementWizardProvider.notifier);
 
-    final steps = ['Doc Info', 'Customer', 'Items', 'GST', 'Signature', 'Preview'];
+    final steps = state.documentType == 'Quotation'
+        ? ['Doc Info', 'Customer', 'Items', 'GST', 'Preview']
+        : ['Doc Info', 'Customer', 'Items', 'GST', 'Signature', 'Preview'];
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Create Agreement / Quotation'),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await notifier.saveAsDraft();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Proposal saved as local draft!'), backgroundColor: AppColors.success),
+                );
+                context.pop();
+              }
+            },
+            child: const Text('Save Draft', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -173,6 +208,7 @@ class _CreateAgreementScreenState extends ConsumerState<CreateAgreementScreen> {
   }
 
   Widget _buildStepContent(AgreementWizardState state, AgreementWizardNotifier notifier) {
+    final isQuotation = state.documentType == 'Quotation';
     switch (state.currentStep) {
       case 0:
         return _buildDocInfoStep(state, notifier);
@@ -183,9 +219,9 @@ class _CreateAgreementScreenState extends ConsumerState<CreateAgreementScreen> {
       case 3:
         return _buildGstStep(state, notifier);
       case 4:
-        return _buildSignatureStep(state, notifier);
+        return isQuotation ? _buildPreviewStep(state, notifier) : _buildSignatureStep(state, notifier);
       case 5:
-        return _buildPreviewStep(state, notifier);
+        return isQuotation ? const SizedBox() : _buildPreviewStep(state, notifier);
       default:
         return const SizedBox();
     }

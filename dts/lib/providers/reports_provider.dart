@@ -1,13 +1,10 @@
-import 'dart:convert';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/report_model.dart';
 import '../repositories/report_repository.dart';
-import '../services/api_service.dart';
 
 class ReportsState {
-  final List<ReportModel> reports; // From API
-  final List<ReportModel> drafts;  // Saved locally (Pending status)
+  final List<ReportModel> reports; // Combined list or submitted list
+  final List<ReportModel> drafts;  // Draft documents from MongoDB
   final bool isLoading;
   final String? error;
   final int page;
@@ -63,59 +60,45 @@ class ReportsState {
 
 final reportsProvider = StateNotifierProvider<ReportsNotifier, ReportsState>((ref) {
   final repo = ref.watch(reportRepositoryProvider);
-  final prefs = ref.watch(sharedPreferencesProvider);
-  return ReportsNotifier(repo, prefs);
+  return ReportsNotifier(repo);
 });
 
 class ReportsNotifier extends StateNotifier<ReportsState> {
   final ReportRepository _repository;
-  final SharedPreferences _prefs;
-  static const String _draftsKey = 'report_drafts';
 
-  ReportsNotifier(this._repository, this._prefs) : super(ReportsState.initial()) {
-    loadDrafts();
+  ReportsNotifier(this._repository) : super(ReportsState.initial()) {
+    fetchDrafts();
     fetchReports();
   }
 
-  // Load drafts from SharedPreferences
-  void loadDrafts() {
-    final list = _prefs.getStringList(_draftsKey) ?? [];
-    final drafts = list.map((e) {
-      try {
-        return ReportModel.fromJson(jsonDecode(e) as Map<String, dynamic>);
-      } catch (err) {
-        return null;
-      }
-    }).whereType<ReportModel>().toList();
-
-    state = state.copyWith(drafts: drafts);
-  }
-
-  // Save a draft locally
-  Future<void> saveDraft(ReportModel draft) async {
-    final drafts = List<ReportModel>.from(state.drafts);
-    // If it exists, replace it, otherwise add it
-    final index = drafts.indexWhere((element) => element.serviceAndCustomer.jobRef == draft.serviceAndCustomer.jobRef);
-    if (index >= 0) {
-      drafts[index] = draft;
-    } else {
-      drafts.insert(0, draft);
+  // Fetch drafts from MongoDB
+  Future<void> fetchDrafts() async {
+    try {
+      final response = await _repository.getReports(
+        page: 1,
+        limit: 100,
+        status: 'draft',
+      );
+      state = state.copyWith(drafts: response.reports);
+    } catch (e) {
+      print("Failed to fetch drafts: $e");
     }
-    
-    state = state.copyWith(drafts: drafts);
-    await _saveDraftsToPrefs(drafts);
   }
 
-  // Delete a draft
-  Future<void> deleteDraft(String jobRef) async {
-    final drafts = state.drafts.where((element) => element.serviceAndCustomer.jobRef != jobRef).toList();
-    state = state.copyWith(drafts: drafts);
-    await _saveDraftsToPrefs(drafts);
-  }
-
-  Future<void> _saveDraftsToPrefs(List<ReportModel> drafts) async {
-    final list = drafts.map((e) => jsonEncode(e.toJson(flat: false))).toList();
-    await _prefs.setStringList(_draftsKey, list);
+  // Delete a report or draft
+  Future<void> deleteReport(String id) async {
+    try {
+      await _repository.deleteReport(id);
+      final reports = state.reports.where((element) => element.id != id).toList();
+      final drafts = state.drafts.where((element) => element.id != id).toList();
+      state = state.copyWith(
+        reports: reports,
+        drafts: drafts,
+        totalCount: (state.totalCount - 1).clamp(0, 999999),
+      );
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // Fetch reports from API with optional search query and pagination
@@ -133,6 +116,11 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
     );
 
     try {
+      // Refresh drafts in parallel when refreshing the main feed
+      if (refresh) {
+        fetchDrafts();
+      }
+
       final response = await _repository.getReports(
         page: nextPage,
         search: targetSearch,
@@ -187,7 +175,7 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
       return date.year == now.year && date.month == now.month && date.day == now.day;
     }).length;
     final todayDrafts = state.drafts.where((d) {
-      final date = d.serviceAndCustomer.dateTime;
+      final date = d.createdAt ?? d.serviceAndCustomer.dateTime;
       return date.year == now.year && date.month == now.month && date.day == now.day;
     }).length;
     return todayReports + todayDrafts;

@@ -124,7 +124,6 @@ const reportSchema = new mongoose.Schema(
       technicianSignatureUrl: {
         type: String,
         trim: true,
-        required: true,
       },
       customerRepresentativeName: {
         type: String,
@@ -133,7 +132,6 @@ const reportSchema = new mongoose.Schema(
       customerPhotoUrl: {
         type: String,
         trim: true,
-        required: true,
       },
       technicianDate: {
         type: Date,
@@ -141,6 +139,12 @@ const reportSchema = new mongoose.Schema(
       customerDate: {
         type: Date,
       },
+    },
+    status: {
+      type: String,
+      enum: ['draft', 'submitted'],
+      default: 'submitted',
+      index: true,
     },
   },
   {

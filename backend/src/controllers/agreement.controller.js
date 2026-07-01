@@ -44,47 +44,57 @@ export const createAgreement = async (req, res) => {
       return sendError(res, 'Agreement payload is required.', {}, 400);
     }
 
+    const documentType = agreementPayload.documentType || 'Agreement';
+    const status = agreementPayload.status || 'submitted';
     const customerSignatureFile = req.files?.customerSignature?.[0];
-
-    if (!customerSignatureFile) {
-      return sendError(res, 'Customer signature is required.', {}, 400);
-    }
+    const isQuotation = documentType === 'Quotation';
 
     const descriptionItems = buildDescriptionItems(agreementPayload.descriptionItems || []);
 
-    if (!descriptionItems.length) {
-      return sendError(res, 'At least one description item is required.', {}, 400);
+    if (status === 'submitted') {
+      if (!customerSignatureFile && !isQuotation) {
+        return sendError(res, 'Customer signature is required.', {}, 400);
+      }
+
+      if (!descriptionItems.length) {
+        return sendError(res, 'At least one description item is required.', {}, 400);
+      }
+
+      if (!agreementPayload.customerName || !agreementPayload.completeAddress || !agreementPayload.contactPerson || !agreementPayload.mobileNumber) {
+        return sendError(res, 'Customer name, address, contact person and mobile number are required.', {}, 400);
+      }
+
+      const invalidItem = descriptionItems.find((item) => !item.description || item.quantity <= 0 || item.rate <= 0);
+      if (invalidItem) {
+        return sendError(res, 'Each description item must have a valid description, quantity greater than zero, and rate greater than zero.', {}, 400);
+      }
+
+      const gstPercentage = Number(agreementPayload.gstPercentage || 0);
+      if (gstPercentage < 0 || gstPercentage > 100) {
+        return sendError(res, 'GST percentage must be between 0 and 100.', {}, 400);
+      }
     }
 
-    if (!agreementPayload.customerName || !agreementPayload.completeAddress || !agreementPayload.contactPerson || !agreementPayload.mobileNumber) {
-      return sendError(res, 'Customer name, address, contact person and mobile number are required.', {}, 400);
-    }
-
-    const invalidItem = descriptionItems.find((item) => !item.description || item.quantity <= 0 || item.rate <= 0);
-    if (invalidItem) {
-      return sendError(res, 'Each description item must have a valid description, quantity greater than zero, and rate greater than zero.', {}, 400);
+    let customerSignatureUrl = '';
+    if (customerSignatureFile) {
+      customerSignatureUrl = await uploadToCloudinary(customerSignatureFile, 'dts/agreements/signatures');
     }
 
     const gstPercentage = Number(agreementPayload.gstPercentage || 0);
-    if (gstPercentage < 0 || gstPercentage > 100) {
-      return sendError(res, 'GST percentage must be between 0 and 100.', {}, 400);
-    }
-
-    const customerSignatureUrl = await uploadToCloudinary(customerSignatureFile, 'dts/agreements/signatures');
-
     const totals = calculateAgreementTotals(descriptionItems, {
-      gstRequired: agreementPayload.gstRequired,
+      gstRequired: agreementPayload.gstRequired === true || agreementPayload.gstRequired === 'true',
       gstPercentage,
     });
 
     const agreementDocument = {
-      documentType: agreementPayload.documentType || 'Agreement',
+      status,
+      documentType,
       offerNumber: await generateOfferNumber(),
       date: agreementPayload.date ? new Date(agreementPayload.date) : new Date(),
-      customerName: agreementPayload.customerName,
-      completeAddress: agreementPayload.completeAddress,
-      contactPerson: agreementPayload.contactPerson,
-      mobileNumber: agreementPayload.mobileNumber,
+      customerName: agreementPayload.customerName || '',
+      completeAddress: agreementPayload.completeAddress || '',
+      contactPerson: agreementPayload.contactPerson || '',
+      mobileNumber: agreementPayload.mobileNumber || '',
       descriptionItems,
       gstRequired: agreementPayload.gstRequired === true || agreementPayload.gstRequired === 'true',
       gstPercentage,
@@ -123,9 +133,10 @@ export const getAgreements = async (req, res) => {
     const customerName = req.query.customerName || '';
     const mobileNumber = req.query.mobileNumber || '';
     const offerNumber = req.query.offerNumber || '';
+    const status = req.query.status || '';
     const date = req.query.date || '';
 
-    const query = {};
+    const query = status ? { status } : {};
 
     if (search) {
       query.$or = [
@@ -204,37 +215,79 @@ export const updateAgreement = async (req, res) => {
       return sendError(res, 'Agreement not found.', {}, 404);
     }
 
+    const documentType = agreementPayload.documentType || agreement.documentType;
+    const status = agreementPayload.status || agreement.status || 'submitted';
+    const customerSignatureFile = req.files?.customerSignature?.[0];
+    const isQuotation = documentType === 'Quotation';
+
     const descriptionItems = buildDescriptionItems(agreementPayload.descriptionItems || agreement.descriptionItems || []);
 
+    if (status === 'submitted') {
+      const currentSignatureUrl = agreementPayload.customerSignatureUrl ?? agreement.customerSignatureUrl;
+      if (!customerSignatureFile && !isQuotation && (!currentSignatureUrl || currentSignatureUrl === '')) {
+        return sendError(res, 'Customer signature is required.', {}, 400);
+      }
+
+      if (!descriptionItems.length) {
+        return sendError(res, 'At least one description item is required.', {}, 400);
+      }
+
+      const checkCustomerName = agreementPayload.customerName ?? agreement.customerName;
+      const checkAddress = agreementPayload.completeAddress ?? agreement.completeAddress;
+      const checkContact = agreementPayload.contactPerson ?? agreement.contactPerson;
+      const checkMobile = agreementPayload.mobileNumber ?? agreement.mobileNumber;
+
+      if (!checkCustomerName || !checkAddress || !checkContact || !checkMobile) {
+        return sendError(res, 'Customer name, address, contact person and mobile number are required.', {}, 400);
+      }
+
+      const invalidItem = descriptionItems.find((item) => !item.description || item.quantity <= 0 || item.rate <= 0);
+      if (invalidItem) {
+        return sendError(res, 'Each description item must have a valid description, quantity greater than zero, and rate greater than zero.', {}, 400);
+      }
+
+      const gstPercentage = Number(agreementPayload.gstPercentage ?? agreement.gstPercentage ?? 0);
+      if (gstPercentage < 0 || gstPercentage > 100) {
+        return sendError(res, 'GST percentage must be between 0 and 100.', {}, 400);
+      }
+    }
+
+    let customerSignatureUrl = agreementPayload.customerSignatureUrl ?? agreement.customerSignatureUrl ?? '';
+    if (customerSignatureFile) {
+      customerSignatureUrl = await uploadToCloudinary(customerSignatureFile, 'dts/agreements/signatures');
+    }
+
+    const gstRequired = agreementPayload.gstRequired ?? agreement.gstRequired;
+    const gstPercentage = Number(agreementPayload.gstPercentage ?? agreement.gstPercentage ?? 0);
+
     const totals = calculateAgreementTotals(descriptionItems, {
-      gstRequired: agreementPayload.gstRequired ?? agreement.gstRequired,
-      gstPercentage: agreementPayload.gstPercentage ?? agreement.gstPercentage,
+      gstRequired: gstRequired === true || gstRequired === 'true',
+      gstPercentage,
     });
 
     const updatePayload = {
-      documentType: agreementPayload.documentType || agreement.documentType,
+      status,
+      documentType,
       date: agreementPayload.date ? new Date(agreementPayload.date) : agreement.date,
-      customerName: agreementPayload.customerName || agreement.customerName,
-      completeAddress: agreementPayload.completeAddress || agreement.completeAddress,
-      contactPerson: agreementPayload.contactPerson || agreement.contactPerson,
-      mobileNumber: agreementPayload.mobileNumber || agreement.mobileNumber,
+      customerName: agreementPayload.customerName ?? agreement.customerName ?? '',
+      completeAddress: agreementPayload.completeAddress ?? agreement.completeAddress ?? '',
+      contactPerson: agreementPayload.contactPerson ?? agreement.contactPerson ?? '',
+      mobileNumber: agreementPayload.mobileNumber ?? agreement.mobileNumber ?? '',
       descriptionItems,
-      gstRequired: agreementPayload.gstRequired ?? agreement.gstRequired,
-      gstPercentage: agreementPayload.gstPercentage ?? agreement.gstPercentage,
+      gstRequired: gstRequired === true || gstRequired === 'true',
+      gstPercentage,
       totalBeforeGST: totals.totalBeforeGST,
       gstAmount: totals.gstAmount,
       grandTotal: totals.grandTotal,
       amountInWords: numberToWords(totals.grandTotal),
+      technicianSignatureUrl: agreementPayload.technicianSignatureUrl || agreement.technicianSignatureUrl,
+      customerSignatureUrl,
       termsAndConditions: agreementPayload.termsAndConditions ?? agreement.termsAndConditions,
       paymentTerms: agreementPayload.paymentTerms ?? agreement.paymentTerms,
       offerValidity: agreementPayload.offerValidity ?? agreement.offerValidity,
       notes: agreementPayload.notes ?? agreement.notes,
       footerText: agreementPayload.footerText ?? agreement.footerText,
     };
-
-    if (req.files?.customerSignature?.[0]) {
-      updatePayload.customerSignatureUrl = await uploadToCloudinary(req.files.customerSignature[0], 'dts/agreements/signatures');
-    }
 
     const updatedAgreement = await Agreement.findByIdAndUpdate(req.params.id, updatePayload, { new: true, runValidators: true });
 

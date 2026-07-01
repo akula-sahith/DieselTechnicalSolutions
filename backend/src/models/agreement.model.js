@@ -48,32 +48,24 @@ const agreementSchema = new mongoose.Schema(
     customerName: {
       type: String,
       trim: true,
-      required: true,
       index: true,
     },
     completeAddress: {
       type: String,
       trim: true,
-      required: true,
     },
     contactPerson: {
       type: String,
       trim: true,
-      required: true,
     },
     mobileNumber: {
       type: String,
       trim: true,
-      required: true,
       index: true,
     },
     descriptionItems: {
       type: [descriptionItemSchema],
       default: [],
-      validate: [
-        (items) => Array.isArray(items) && items.length > 0,
-        'At least one description item is required.',
-      ],
     },
     gstRequired: {
       type: Boolean,
@@ -135,6 +127,12 @@ const agreementSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: 'Thank you for choosing GPS Technical Services.',
+    },
+    status: {
+      type: String,
+      enum: ['draft', 'submitted'],
+      default: 'submitted',
+      index: true,
     },
   },
   {

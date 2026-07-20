@@ -231,7 +231,9 @@ class AgreementWizardNotifier extends StateNotifier<AgreementWizardState> {
   void updateCompleteAddress(String address) => state = state.copyWith(completeAddress: address);
   void updateContactPerson(String person) => state = state.copyWith(contactPerson: person);
   void updateMobileNumber(String number) => state = state.copyWith(mobileNumber: number);
-  void updateGstRequired(bool required) => state = state.copyWith(gstRequired: required);
+  void updateGstRequired(bool isRequired) {
+    state = state.copyWith(gstRequired: isRequired);
+  }
   void updateGstPercentage(double pct) => state = state.copyWith(gstPercentage: pct);
   void updateCustomerSignature(File? signature) => state = state.copyWith(customerSignature: signature);
 

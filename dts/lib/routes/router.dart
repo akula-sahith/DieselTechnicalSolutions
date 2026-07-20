@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/estimate_model.dart';
 import '../providers/auth_provider.dart';
 import '../screens/splash_screen.dart';
 import '../screens/login_screen.dart';
@@ -12,6 +13,12 @@ import '../screens/agreements_screen.dart';
 import '../screens/create_agreement_screen.dart';
 import '../screens/agreement_details_screen.dart';
 import '../screens/drafts_list_screen.dart';
+import '../screens/estimates_screen.dart';
+import '../screens/create_estimate_screen.dart';
+import '../screens/estimate_details_screen.dart';
+import '../screens/tax_invoices_screen.dart';
+import '../screens/create_tax_invoice_screen.dart';
+import '../screens/tax_invoice_details_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -67,6 +74,39 @@ final routerProvider = Provider<GoRouter>((ref) {
           final id = state.pathParameters['id']!;
           final isLocalDraft = state.uri.queryParameters['draft'] == 'true';
           return AgreementDetailsScreen(agreementId: id, isLocalDraft: isLocalDraft);
+        },
+      ),
+      GoRoute(
+        path: '/estimates',
+        builder: (context, state) => const EstimatesScreen(),
+      ),
+      GoRoute(
+        path: '/tax-invoices',
+        builder: (context, state) => const TaxInvoicesScreen(),
+      ),
+      GoRoute(
+        path: '/create-estimate',
+        builder: (context, state) => const CreateEstimateScreen(),
+      ),
+      GoRoute(
+        path: '/create-tax-invoice',
+        builder: (context, state) {
+          final estimate = state.extra as EstimateModel?;
+          return CreateTaxInvoiceScreen(initialEstimate: estimate);
+        },
+      ),
+      GoRoute(
+        path: '/estimate-details/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return EstimateDetailsScreen(estimateId: id);
+        },
+      ),
+      GoRoute(
+        path: '/tax-invoice-details/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return TaxInvoiceDetailsScreen(invoiceId: id);
         },
       ),
       GoRoute(

@@ -225,24 +225,43 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    QuickActionCard(
-                      title: 'Service\nReport',
-                      subtitle: 'Create new \n report',
-                      icon: Icons.description_outlined,
-                      gradientColors: const [Color(0xFFEE6C4D), Color(0xFFE85D3A)],
-                      onTap: () => context.push('/create-report'),
-                    ),
-                    const SizedBox(width: 12),
-                    QuickActionCard(
-                      title: 'AMC\nProposal',
-                      subtitle: 'Draft Agreement or Quotation',
-                      icon: Icons.handshake_outlined,
-                      gradientColors: const [Color(0xFF059669), Color(0xFF047857)],
-                      onTap: () => context.push('/create-agreement'),
-                    ),
-                  ],
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      QuickActionCard(
+                        title: 'Service\nReport',
+                        subtitle: 'Create new \n report',
+                        icon: Icons.description_outlined,
+                        gradientColors: const [Color(0xFFEE6C4D), Color(0xFFE85D3A)],
+                        onTap: () => context.push('/create-report'),
+                      ),
+                      const SizedBox(width: 12),
+                      QuickActionCard(
+                        title: 'AMC\nProposal',
+                        subtitle: 'Draft Agreement or Quotation',
+                        icon: Icons.handshake_outlined,
+                        gradientColors: const [Color(0xFF059669), Color(0xFF047857)],
+                        onTap: () => context.push('/create-agreement'),
+                      ),
+                      const SizedBox(width: 12),
+                      QuickActionCard(
+                        title: 'Estimate',
+                        subtitle: 'Create new \n estimate',
+                        icon: Icons.receipt_long_outlined,
+                        gradientColors: const [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                        onTap: () => context.push('/create-estimate'),
+                      ),
+                      const SizedBox(width: 12),
+                      QuickActionCard(
+                        title: 'Tax\nInvoice',
+                        subtitle: 'Create new \n invoice',
+                        icon: Icons.receipt,
+                        gradientColors: const [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+                        onTap: () => context.push('/create-tax-invoice'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -144,6 +144,12 @@ class AgreementModel {
       'technicianSignatureUrl': technicianSignatureUrl,
     };
 
+    if (offerNumber != null) {
+      map['offerNumber'] = offerNumber;
+    }
+    if (amountInWords != null) {
+      map['amountInWords'] = amountInWords;
+    }
     if (customerSignatureUrl != null) {
       map['customerSignatureUrl'] = customerSignatureUrl;
     }

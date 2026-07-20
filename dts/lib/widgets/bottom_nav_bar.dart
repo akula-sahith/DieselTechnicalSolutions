@@ -20,18 +20,114 @@ class CustomBottomNavBar extends ConsumerWidget {
         context.go('/dashboard');
         break;
       case 1:
-        context.go('/reports');
+        _showViewSheet(context);
         break;
       case 2:
         // Center FAB — handled separately
         break;
       case 3:
-        context.go('/agreements');
-        break;
-      case 4:
         _showProfileSheet(context, ref);
         break;
     }
+  }
+
+  void _showViewSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'View Documents',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Select a category to view',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  _CreateOption(
+                    icon: Icons.description_outlined,
+                    iconColor: AppColors.reportOrange,
+                    title: 'Service Reports',
+                    subtitle: 'View all field service reports',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/reports');
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  _CreateOption(
+                    icon: Icons.handshake_outlined,
+                    iconColor: AppColors.agreementGreen,
+                    title: 'AMC Proposals',
+                    subtitle: 'View all agreements & quotations',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/agreements');
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  _CreateOption(
+                    icon: Icons.request_quote_outlined,
+                    iconColor: AppColors.quotationBlue,
+                    title: 'Estimates',
+                    subtitle: 'View all cost estimates',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/estimates');
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  _CreateOption(
+                    icon: Icons.receipt_outlined,
+                    iconColor: AppColors.primary,
+                    title: 'Tax Invoices',
+                    subtitle: 'View all tax invoices',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/tax-invoices');
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _showCreateSheet(BuildContext context) {
@@ -100,6 +196,32 @@ class CustomBottomNavBar extends ConsumerWidget {
                     onTap: () {
                       Navigator.pop(context);
                       context.push('/create-agreement');
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Estimate Option
+                  _CreateOption(
+                    icon: Icons.request_quote_outlined,
+                    iconColor: AppColors.quotationBlue,
+                    title: 'Estimate',
+                    subtitle: 'Create a new cost estimate',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/create-estimate');
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Tax Invoice Option
+                  _CreateOption(
+                    icon: Icons.receipt_outlined,
+                    iconColor: AppColors.primary,
+                    title: 'Tax Invoice',
+                    subtitle: 'Generate a direct tax invoice',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/create-tax-invoice');
                     },
                   ),
                   const SizedBox(height: 8),
@@ -214,25 +336,20 @@ class CustomBottomNavBar extends ConsumerWidget {
                 onTap: () => _handleNavigation(context, 0, ref),
               ),
               _buildNavItem(
-                icon: Icons.description_rounded,
-                label: 'Reports',
+                icon: Icons.folder_open_rounded,
+                label: 'View',
                 isActive: currentIndex == 1,
                 onTap: () => _handleNavigation(context, 1, ref),
               ),
               // Spacer for center FAB
               const SizedBox(width: 56),
               _buildNavItem(
-                icon: Icons.handshake_rounded,
-                label: 'Proposals',
+                icon: Icons.person_rounded,
+                label: 'Profile',
                 isActive: currentIndex == 3,
                 onTap: () => _handleNavigation(context, 3, ref),
               ),
-              _buildNavItem(
-                icon: Icons.person_rounded,
-                label: 'Profile',
-                isActive: currentIndex == 4,
-                onTap: () => _handleNavigation(context, 4, ref),
-              ),
+              const SizedBox(width: 48), // Spacer to balance the right side
             ],
           ),
           

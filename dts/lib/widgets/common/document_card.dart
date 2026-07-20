@@ -149,7 +149,7 @@ class DocumentCard extends StatelessWidget {
                           if (statusText != null) _buildStatusBadge(),
                           if (amount != null)
                             Text(
-                              amount!,
+                              amount ?? '',
                               style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
@@ -205,7 +205,7 @@ class DocumentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        statusText!,
+        statusText ?? '',
         style: TextStyle(
           color: textColor,
           fontSize: 10,

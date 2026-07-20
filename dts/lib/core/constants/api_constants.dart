@@ -5,6 +5,8 @@ class ApiConstants {
       'https://dieseltechnicalsolutions.onrender.com/api';
   static const String reports = '/reports';
   static const String agreements = '/agreements';
+  static const String estimates = '/estimates';
+  static const String taxInvoices = '/tax-invoices';
   static const String appVersions = "/app-versions";
 
 }

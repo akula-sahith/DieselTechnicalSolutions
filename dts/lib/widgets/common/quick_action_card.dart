@@ -18,7 +18,8 @@ class QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    return SizedBox(
+      width: 140,
       child: GestureDetector(
         onTap: onTap,
         child: Container(

@@ -8,6 +8,7 @@ import agreementRoutes from './routes/agreement.routes.js';
 import estimateRoutes from './routes/estimate.routes.js';
 import taxInvoiceRoutes from './routes/taxinvoice.routes.js';
 import cloudinaryRoutes from './routes/cloudinary.routes.js';
+import customerRoutes from './routes/customer.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { notFoundHandler } from './middleware/notFound.middleware.js';
 import appVersionRoutes from "./routes/appVersion.routes.js";
@@ -39,6 +40,7 @@ app.use('/api/agreements', agreementRoutes);
 app.use('/api/estimates', estimateRoutes);
 app.use('/api/tax-invoices', taxInvoiceRoutes);
 app.use('/api/cloudinary', cloudinaryRoutes);
+app.use('/api/customers', customerRoutes);
 app.use('/api/app-versions', appVersionRoutes);
 
 app.use(notFoundHandler);

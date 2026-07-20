@@ -104,7 +104,7 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
         final docId = submitted.id;
         notifier.reset();
         context.go('/dashboard');
-        context.push('/tax-invoice-details/$docId');
+        context.push('/tax-invoice-details/$docId', extra: submitted);
       }
     } else {
       final error = ref.read(taxInvoiceWizardProvider).error;

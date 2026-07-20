@@ -1330,12 +1330,10 @@ pw.Expanded(
     );
   }
 
-  pw.Widget _buildEstimateCustomerDetails(EstimateCustomerDetails customer, String label) {
+  pw.Widget _buildEstimateCustomerDetails(EstimateCustomerDetails customer) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(label, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
-        pw.Divider(color: PdfColors.black, thickness: 0.5),
         pw.Text(customer.customerName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
         pw.SizedBox(height: 4),
         pw.Text(customer.address, style: const pw.TextStyle(fontSize: 8.5)),
@@ -1350,6 +1348,7 @@ pw.Expanded(
   }
 
   Future<Uint8List> generateEstimatePdf(EstimateModel estimate) async {
+    final rupeeFont = pw.Font.ttf(await rootBundle.load('assets/fonts/roboto1.ttf'));
     final pdf = pw.Document();
 
     pw.ImageProvider? logoImage;
@@ -1405,7 +1404,6 @@ pw.Expanded(
           final itemsRows = <pw.TableRow>[];
           
           itemsRows.add(pw.TableRow(
-            decoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: PdfColors.black, width: 0.5))),
             children: tableHeaders.map((h) => pw.Padding(
               padding: const pw.EdgeInsets.all(4),
               child: pw.Text(h, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
@@ -1421,18 +1419,17 @@ pw.Expanded(
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(item.hsnSac ?? '', style: const pw.TextStyle(fontSize: 8.5))),
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('${item.quantity}', textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 8.5))),
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(item.unit, textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 8.5))),
-                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${item.pricePerUnit.toStringAsFixed(2)}', textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 8.5))),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${item.pricePerUnit.toStringAsFixed(2)}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5))),
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [
-                  pw.Text('₹ ${((item.sgst ?? 0) + (item.cgst ?? 0)).toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 8.5)),
+                  pw.Text('₹ ${((item.sgst ?? 0) + (item.cgst ?? 0)).toStringAsFixed(2)}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
                   pw.Text('(${item.gstPercentage}%)', style: const pw.TextStyle(fontSize: 8.5)),
                 ])),
-                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${item.amount?.toStringAsFixed(2) ?? ''}', textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 8.5))),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${item.amount?.toStringAsFixed(2) ?? ''}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5))),
               ]
             ));
           }
 
           itemsRows.add(pw.TableRow(
-            decoration: const pw.BoxDecoration(border: pw.Border(top: pw.BorderSide(color: PdfColors.black, width: 0.5), bottom: pw.BorderSide(color: PdfColors.black, width: 0.5))),
             children: [
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
@@ -1440,38 +1437,39 @@ pw.Expanded(
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('${estimate.items.fold<double>(0, (p, e) => p + e.quantity).toInt()}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
-              pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${estimate.totalTax?.toStringAsFixed(2) ?? ''}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
-              pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${estimate.totalAmount?.toStringAsFixed(2) ?? ''}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
+              pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${estimate.totalTax?.toStringAsFixed(2) ?? ''}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontFallback: [rupeeFont], fontWeight: pw.FontWeight.bold, fontSize: 9))),
+              pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${estimate.totalAmount?.toStringAsFixed(2) ?? ''}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontFallback: [rupeeFont], fontWeight: pw.FontWeight.bold, fontSize: 9))),
             ]
           ));
 
           return [
-            pw.Container(
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  left: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  right: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  bottom: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                )
-              ),
-              child: pw.Row(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Expanded(
-                    child: pw.Container(
-                      padding: const pw.EdgeInsets.all(8),
-                      decoration: const pw.BoxDecoration(border: pw.Border(right: pw.BorderSide(color: PdfColors.black, width: 0.5))),
-                      child: _buildEstimateCustomerDetails(estimate.estimateFor, 'Estimate For'),
+            // Customer & Details section
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+              children: [
+                pw.TableRow(
+                  children: [
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Estimate For', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
                     ),
-                  ),
-                  pw.Expanded(
-                    child: pw.Container(
-                      padding: const pw.EdgeInsets.all(8),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Estimate Details', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9), textAlign: pw.TextAlign.right),
+                    ),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: _buildEstimateCustomerDetails(estimate.estimateFor),
+                    ),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(6),
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.end,
                         children: [
-                          pw.Text('Estimate Details', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
-                          pw.Divider(color: PdfColors.black, thickness: 0.5),
                           pw.Text('Estimate No.: ${estimate.estimateNumber ?? ''}', style: const pw.TextStyle(fontSize: 8.5)),
                           pw.SizedBox(height: 4),
                           pw.Text('Date: ${DateFormat('dd-MM-yyyy').format(estimate.estimateDate)}', style: const pw.TextStyle(fontSize: 8.5)),
@@ -1480,59 +1478,49 @@ pw.Expanded(
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
-            pw.Container(
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  left: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  right: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  bottom: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                )
-              ),
-              child: pw.Table(
-                columnWidths: const {
-                  0: pw.FlexColumnWidth(0.5),
-                  1: pw.FlexColumnWidth(3),
-                  2: pw.FlexColumnWidth(1.5),
-                  3: pw.FlexColumnWidth(1),
-                  4: pw.FlexColumnWidth(1),
-                  5: pw.FlexColumnWidth(1.5),
-                  6: pw.FlexColumnWidth(1.5),
-                  7: pw.FlexColumnWidth(1.5),
-                },
-                children: itemsRows,
-              ),
+
+            // Items Table with proper borders
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+              columnWidths: const {
+                0: pw.FixedColumnWidth(25),
+                1: pw.FlexColumnWidth(3),
+                2: pw.FixedColumnWidth(55),
+                3: pw.FixedColumnWidth(50),
+                4: pw.FixedColumnWidth(35),
+                5: pw.FixedColumnWidth(65),
+                6: pw.FixedColumnWidth(65),
+                7: pw.FixedColumnWidth(70),
+              },
+              children: itemsRows,
             ),
-            pw.Container(
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  left: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  right: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  bottom: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                )
-              ),
-              child: pw.Row(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Expanded(
-                    child: pw.Container(
+
+            // Amount in words & Amounts
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+              columnWidths: const {
+                0: pw.FlexColumnWidth(1),
+                1: pw.FlexColumnWidth(1),
+              },
+              children: [
+                pw.TableRow(
+                  children: [
+                    pw.Container(
                       padding: const pw.EdgeInsets.all(8),
-                      decoration: const pw.BoxDecoration(border: pw.Border(right: pw.BorderSide(color: PdfColors.black, width: 0.5))),
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text('Estimate order Amount In Words', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
                           pw.SizedBox(height: 4),
                           pw.Text(estimate.amountInWords ?? '', style: const pw.TextStyle(fontSize: 8.5)),
-                        ]
+                        ],
                       ),
                     ),
-                  ),
-                  pw.Expanded(
-                    child: pw.Container(
+                    pw.Container(
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                         children: [
@@ -1546,9 +1534,9 @@ pw.Expanded(
                               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                               children: [
                                 pw.Text('Sub Total', style: const pw.TextStyle(fontSize: 8.5)),
-                                pw.Text('₹ ${estimate.subtotal?.toStringAsFixed(2) ?? ''}', style: const pw.TextStyle(fontSize: 8.5)),
-                              ]
-                            )
+                                pw.Text('₹ ${estimate.subtotal?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
+                              ],
+                            ),
                           ),
                           pw.Container(
                             decoration: const pw.BoxDecoration(border: pw.Border(top: pw.BorderSide(color: PdfColors.black, width: 0.5))),
@@ -1557,33 +1545,69 @@ pw.Expanded(
                               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                               children: [
                                 pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
-                                pw.Text('₹ ${estimate.totalAmount?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
-                              ]
-                            )
+                                pw.Text('₹ ${estimate.totalAmount?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
+                  ],
+                ),
+              ],
+            ),
+
+            // GST Table with proper borders
+            if (estimate.placeOfSupply == '36-Telangana' || estimate.placeOfSupply == null)
+              pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+                columnWidths: const {
+                  0: pw.FlexColumnWidth(2),
+                  1: pw.FlexColumnWidth(3),
+                  2: pw.FlexColumnWidth(2),
+                  3: pw.FlexColumnWidth(3),
+                },
+                children: [
+                  pw.TableRow(
+                    children: [
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Tax type', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Taxable amount', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Rate', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Tax amount', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5))),
+                    ],
+                  ),
+                  pw.TableRow(
+                    children: [
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('SGST', style: const pw.TextStyle(fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${estimate.subtotal?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('9.0%', style: const pw.TextStyle(fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${((estimate.totalTax ?? 0) / 2).toStringAsFixed(2)}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5))),
+                    ],
+                  ),
+                  pw.TableRow(
+                    children: [
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('CGST', style: const pw.TextStyle(fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${estimate.subtotal?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('9.0%', style: const pw.TextStyle(fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${((estimate.totalTax ?? 0) / 2).toStringAsFixed(2)}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5))),
+                    ],
                   ),
                 ],
               ),
-            ),
-            pw.Container(
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  left: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  right: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  bottom: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                )
-              ),
-              child: pw.Row(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Expanded(
-                    flex: 3,
-                    child: pw.Container(
+
+            // Footer: Bank Details + Terms + Signature
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+              columnWidths: const {
+                0: pw.FlexColumnWidth(3),
+                1: pw.FlexColumnWidth(4),
+                2: pw.FlexColumnWidth(4),
+              },
+              children: [
+                pw.TableRow(
+                  children: [
+                    pw.Container(
                       padding: const pw.EdgeInsets.all(8),
-                      decoration: const pw.BoxDecoration(border: pw.Border(right: pw.BorderSide(color: PdfColors.black, width: 0.5))),
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
@@ -1603,16 +1627,12 @@ pw.Expanded(
                                 destination: estimate.paymentData!.clickToPayLink!,
                                 child: pw.Text('Click to pay', style: pw.TextStyle(color: PdfColors.blue, fontSize: 7, decoration: pw.TextDecoration.underline)),
                               ),
-                          ]
+                          ],
                         ],
                       ),
                     ),
-                  ),
-                  pw.Expanded(
-                    flex: 4,
-                    child: pw.Container(
+                    pw.Container(
                       padding: const pw.EdgeInsets.all(8),
-                      decoration: const pw.BoxDecoration(border: pw.Border(right: pw.BorderSide(color: PdfColors.black, width: 0.5))),
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
@@ -1622,10 +1642,7 @@ pw.Expanded(
                         ],
                       ),
                     ),
-                  ),
-                  pw.Expanded(
-                    flex: 4,
-                    child: pw.Container(
+                    pw.Container(
                       padding: const pw.EdgeInsets.all(8),
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.center,
@@ -1641,18 +1658,19 @@ pw.Expanded(
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
           ];
         },
-      )
+      ),
     );
     return pdf.save();
   }
 
   Future<Uint8List> generateTaxInvoicePdf(TaxInvoiceModel invoice) async {
+    final rupeeFont = pw.Font.ttf(await rootBundle.load('assets/fonts/roboto1.ttf'));
     final pdf = pw.Document();
 
     pw.ImageProvider? logoImage;
@@ -1708,7 +1726,6 @@ pw.Expanded(
           final itemsRows = <pw.TableRow>[];
           
           itemsRows.add(pw.TableRow(
-            decoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: PdfColors.black, width: 0.5))),
             children: tableHeaders.map((h) => pw.Padding(
               padding: const pw.EdgeInsets.all(4),
               child: pw.Text(h, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
@@ -1724,14 +1741,13 @@ pw.Expanded(
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(item.hsnSac ?? '', style: const pw.TextStyle(fontSize: 8.5))),
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('${item.quantity}', textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 8.5))),
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(item.unit, textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 8.5))),
-                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${item.pricePerUnit.toStringAsFixed(2)}', textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 8.5))),
-                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${item.amount?.toStringAsFixed(2) ?? ''}', textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 8.5))),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${item.pricePerUnit.toStringAsFixed(2)}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5))),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${item.amount?.toStringAsFixed(2) ?? ''}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5))),
               ]
             ));
           }
 
           itemsRows.add(pw.TableRow(
-            decoration: const pw.BoxDecoration(border: pw.Border(top: pw.BorderSide(color: PdfColors.black, width: 0.5), bottom: pw.BorderSide(color: PdfColors.black, width: 0.5))),
             children: [
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
@@ -1739,56 +1755,65 @@ pw.Expanded(
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('${invoice.items.fold<double>(0, (p, e) => p + e.quantity).toInt()}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
-              pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${invoice.totalAmount?.toStringAsFixed(2) ?? ''}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
+              pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${invoice.totalAmount?.toStringAsFixed(2) ?? ''}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontFallback: [rupeeFont], fontWeight: pw.FontWeight.bold, fontSize: 9))),
             ]
           ));
 
           return [
-            pw.Container(
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  left: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  right: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  bottom: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                )
-              ),
-              child: pw.Row(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Expanded(
-                    flex: 4,
-                    child: pw.Container(
-                      padding: const pw.EdgeInsets.all(8),
-                      decoration: const pw.BoxDecoration(border: pw.Border(right: pw.BorderSide(color: PdfColors.black, width: 0.5))),
-                      child: _buildEstimateCustomerDetails(invoice.billTo, 'Bill To'),
+            // Details Table (Bill To, Transportation, Invoice details)
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+              columnWidths: const {
+                0: pw.FlexColumnWidth(4),
+                1: pw.FlexColumnWidth(3),
+                2: pw.FlexColumnWidth(3),
+              },
+              children: [
+                pw.TableRow(
+                  children: [
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Bill To', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
                     ),
-                  ),
-                  pw.Expanded(
-                    flex: 3,
-                    child: pw.Container(
-                      padding: const pw.EdgeInsets.all(8),
-                      decoration: const pw.BoxDecoration(border: pw.Border(right: pw.BorderSide(color: PdfColors.black, width: 0.5))),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Transportation Details', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Invoice Details', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9), textAlign: pw.TextAlign.right),
+                    ),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: _buildEstimateCustomerDetails(invoice.billTo),
+                    ),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(6),
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text('Transportation Details', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
-                          pw.Divider(color: PdfColors.black, thickness: 0.5),
-                          if (invoice.transportationDetails?.vehicleNumber != null) pw.Text(invoice.transportationDetails!.vehicleNumber!, style: const pw.TextStyle(fontSize: 8.5)),
-                          if (invoice.transportationDetails?.transportName != null) pw.Text(invoice.transportationDetails!.transportName!, style: const pw.TextStyle(fontSize: 8.5)),
-                          if (invoice.transportationDetails?.lrNumber != null) pw.Text(invoice.transportationDetails!.lrNumber!, style: const pw.TextStyle(fontSize: 8.5)),
+                          if (invoice.transportationDetails?.vehicleNumber != null && invoice.transportationDetails!.vehicleNumber!.isNotEmpty) 
+                            pw.Text(invoice.transportationDetails!.vehicleNumber!, style: const pw.TextStyle(fontSize: 8.5)),
+                          if (invoice.transportationDetails?.transportName != null && invoice.transportationDetails!.transportName!.isNotEmpty) 
+                            pw.Text(invoice.transportationDetails!.transportName!, style: const pw.TextStyle(fontSize: 8.5)),
+                          if (invoice.transportationDetails?.lrNumber != null && invoice.transportationDetails!.lrNumber!.isNotEmpty) 
+                            pw.Text(invoice.transportationDetails!.lrNumber!, style: const pw.TextStyle(fontSize: 8.5)),
+                          if (invoice.transportationDetails?.dispatchDetails != null && invoice.transportationDetails!.dispatchDetails!.isNotEmpty) 
+                            pw.Text(invoice.transportationDetails!.dispatchDetails!, style: const pw.TextStyle(fontSize: 8.5)),
+                          if (invoice.transportationDetails?.deliveryDetails != null && invoice.transportationDetails!.deliveryDetails!.isNotEmpty) 
+                            pw.Text(invoice.transportationDetails!.deliveryDetails!, style: const pw.TextStyle(fontSize: 8.5)),
                         ],
                       ),
                     ),
-                  ),
-                  pw.Expanded(
-                    flex: 3,
-                    child: pw.Container(
-                      padding: const pw.EdgeInsets.all(8),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(6),
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.end,
                         children: [
-                          pw.Text('Invoice Details', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
-                          pw.Divider(color: PdfColors.black, thickness: 0.5),
                           pw.Text('Invoice No.: ${invoice.invoiceNumber ?? ''}', style: const pw.TextStyle(fontSize: 8.5)),
                           pw.SizedBox(height: 4),
                           pw.Text('Date: ${DateFormat('dd-MM-yyyy').format(invoice.invoiceDate)}', style: const pw.TextStyle(fontSize: 8.5)),
@@ -1797,58 +1822,48 @@ pw.Expanded(
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
-            pw.Container(
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  left: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  right: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  bottom: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                )
-              ),
-              child: pw.Table(
-                columnWidths: const {
-                  0: pw.FlexColumnWidth(0.5),
-                  1: pw.FlexColumnWidth(3),
-                  2: pw.FlexColumnWidth(1.5),
-                  3: pw.FlexColumnWidth(1),
-                  4: pw.FlexColumnWidth(1),
-                  5: pw.FlexColumnWidth(1.5),
-                  6: pw.FlexColumnWidth(1.5),
-                },
-                children: itemsRows,
-              ),
+
+            // Items Table
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+              columnWidths: const {
+                0: pw.FixedColumnWidth(25),
+                1: pw.FlexColumnWidth(3),
+                2: pw.FixedColumnWidth(55),
+                3: pw.FixedColumnWidth(55),
+                4: pw.FixedColumnWidth(40),
+                5: pw.FixedColumnWidth(75),
+                6: pw.FixedColumnWidth(75),
+              },
+              children: itemsRows,
             ),
-            pw.Container(
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  left: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  right: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  bottom: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                )
-              ),
-              child: pw.Row(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Expanded(
-                    child: pw.Container(
+
+            // Amounts section
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+              columnWidths: const {
+                0: pw.FlexColumnWidth(1),
+                1: pw.FlexColumnWidth(1),
+              },
+              children: [
+                pw.TableRow(
+                  children: [
+                    pw.Container(
                       padding: const pw.EdgeInsets.all(8),
-                      decoration: const pw.BoxDecoration(border: pw.Border(right: pw.BorderSide(color: PdfColors.black, width: 0.5))),
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text('Invoice Amount In Words', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
                           pw.SizedBox(height: 4),
                           pw.Text(invoice.amountInWords ?? '', style: const pw.TextStyle(fontSize: 8.5)),
-                        ]
+                        ],
                       ),
                     ),
-                  ),
-                  pw.Expanded(
-                    child: pw.Container(
+                    pw.Container(
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                         children: [
@@ -1862,9 +1877,9 @@ pw.Expanded(
                               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                               children: [
                                 pw.Text('Sub Total', style: const pw.TextStyle(fontSize: 8.5)),
-                                pw.Text('₹ ${invoice.subtotal?.toStringAsFixed(2) ?? ''}', style: const pw.TextStyle(fontSize: 8.5)),
-                              ]
-                            )
+                                pw.Text('₹ ${invoice.subtotal?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
+                              ],
+                            ),
                           ),
                           pw.Container(
                             decoration: const pw.BoxDecoration(border: pw.Border(top: pw.BorderSide(color: PdfColors.black, width: 0.5))),
@@ -1873,9 +1888,9 @@ pw.Expanded(
                               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                               children: [
                                 pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
-                                pw.Text('₹ ${invoice.totalAmount?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
-                              ]
-                            )
+                                pw.Text('₹ ${invoice.totalAmount?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                              ],
+                            ),
                           ),
                           pw.Container(
                             decoration: const pw.BoxDecoration(border: pw.Border(top: pw.BorderSide(color: PdfColors.black, width: 0.5))),
@@ -1884,9 +1899,9 @@ pw.Expanded(
                               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                               children: [
                                 pw.Text('Received', style: const pw.TextStyle(fontSize: 8.5)),
-                                pw.Text('₹ ${invoice.paymentDetails?.advanceAmountReceived?.toStringAsFixed(2) ?? '0.00'}', style: const pw.TextStyle(fontSize: 8.5)),
-                              ]
-                            )
+                                pw.Text('₹ ${invoice.paymentDetails?.advanceAmountReceived?.toStringAsFixed(2) ?? '0.00'}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
+                              ],
+                            ),
                           ),
                           pw.Container(
                             decoration: const pw.BoxDecoration(border: pw.Border(top: pw.BorderSide(color: PdfColors.black, width: 0.5))),
@@ -1895,33 +1910,31 @@ pw.Expanded(
                               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                               children: [
                                 pw.Text('Balance', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
-                                pw.Text('₹ ${invoice.paymentDetails?.remainingAmount?.toStringAsFixed(2) ?? invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
-                              ]
-                            )
+                                pw.Text('₹ ${invoice.paymentDetails?.remainingAmount?.toStringAsFixed(2) ?? invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}', style: pw.TextStyle(fontFallback: [rupeeFont], fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
-            pw.Container(
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  left: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  right: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                  bottom: pw.BorderSide(color: PdfColors.black, width: 0.5),
-                )
-              ),
-              child: pw.Row(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Expanded(
-                    flex: 3,
-                    child: pw.Container(
+
+            // Footer (Bank details | Terms | Signature)
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+              columnWidths: const {
+                0: pw.FlexColumnWidth(3),
+                1: pw.FlexColumnWidth(4),
+                2: pw.FlexColumnWidth(4),
+              },
+              children: [
+                pw.TableRow(
+                  children: [
+                    pw.Container(
                       padding: const pw.EdgeInsets.all(8),
-                      decoration: const pw.BoxDecoration(border: pw.Border(right: pw.BorderSide(color: PdfColors.black, width: 0.5))),
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
@@ -1941,16 +1954,12 @@ pw.Expanded(
                                 destination: invoice.paymentData!.clickToPayLink!,
                                 child: pw.Text('Click to pay', style: pw.TextStyle(color: PdfColors.blue, fontSize: 7, decoration: pw.TextDecoration.underline)),
                               ),
-                          ]
+                          ],
                         ],
                       ),
                     ),
-                  ),
-                  pw.Expanded(
-                    flex: 4,
-                    child: pw.Container(
+                    pw.Container(
                       padding: const pw.EdgeInsets.all(8),
-                      decoration: const pw.BoxDecoration(border: pw.Border(right: pw.BorderSide(color: PdfColors.black, width: 0.5))),
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
@@ -1960,10 +1969,7 @@ pw.Expanded(
                         ],
                       ),
                     ),
-                  ),
-                  pw.Expanded(
-                    flex: 4,
-                    child: pw.Container(
+                    pw.Container(
                       padding: const pw.EdgeInsets.all(8),
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.center,
@@ -1979,13 +1985,13 @@ pw.Expanded(
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
           ];
         },
-      )
+      ),
     );
     return pdf.save();
   }

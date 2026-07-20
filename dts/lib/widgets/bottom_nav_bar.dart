@@ -28,6 +28,9 @@ class CustomBottomNavBar extends ConsumerWidget {
       case 3:
         _showProfileSheet(context, ref);
         break;
+      case 4:
+        context.go('/customers');
+        break;
     }
   }
 
@@ -342,14 +345,19 @@ class CustomBottomNavBar extends ConsumerWidget {
                 onTap: () => _handleNavigation(context, 1, ref),
               ),
               // Spacer for center FAB
-              const SizedBox(width: 56),
+              const SizedBox(width: 48),
+              _buildNavItem(
+                icon: Icons.people_rounded,
+                label: 'Customers',
+                isActive: currentIndex == 4,
+                onTap: () => _handleNavigation(context, 4, ref),
+              ),
               _buildNavItem(
                 icon: Icons.person_rounded,
                 label: 'Profile',
                 isActive: currentIndex == 3,
                 onTap: () => _handleNavigation(context, 3, ref),
               ),
-              const SizedBox(width: 48), // Spacer to balance the right side
             ],
           ),
           

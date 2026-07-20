@@ -197,8 +197,10 @@ class TaxInvoiceModel {
       paymentDetails: docJson['paymentDetails'] != null
           ? InvoicePaymentDetails.fromJson(docJson['paymentDetails'])
           : null,
-      linkedEstimateId: docJson['linkedEstimateId'],
-      technicianSignatureUrl: docJson['technicianSignatureUrl'],
+      linkedEstimateId: docJson['linkedEstimateId'] is Map
+          ? (docJson['linkedEstimateId']['_id'] ?? docJson['linkedEstimateId']['id'])?.toString()
+          : docJson['linkedEstimateId']?.toString(),
+      technicianSignatureUrl: docJson['technicianSignatureUrl'] ?? docJson['authorizedSignatureUrl'],
       customerSignatureUrl: docJson['customerSignatureUrl'],
       createdAt: docJson['createdAt'] != null
           ? DateTime.tryParse(docJson['createdAt'].toString())

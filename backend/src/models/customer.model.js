@@ -9,6 +9,15 @@ const invoiceHistorySchema = new mongoose.Schema(
   { _id: false }
 );
 
+const estimateHistorySchema = new mongoose.Schema(
+  {
+    estimateNumber: { type: String, trim: true, required: true },
+    estimateDate: { type: Date, default: Date.now },
+    estimateAmount: { type: Number, default: 0 },
+  },
+  { _id: false }
+);
+
 const customerSchema = new mongoose.Schema(
   {
     customerName: { type: String, trim: true, required: true },
@@ -18,6 +27,7 @@ const customerSchema = new mongoose.Schema(
     mobileNumber: { type: String, trim: true, index: true, default: '' },
     email: { type: String, trim: true, default: '' },
     address: { type: String, trim: true, default: '' },
+    estimateHistory: { type: [estimateHistorySchema], default: [] },
     invoiceHistory: { type: [invoiceHistorySchema], default: [] },
     metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
   },

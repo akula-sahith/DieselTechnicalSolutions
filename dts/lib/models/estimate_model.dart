@@ -246,7 +246,7 @@ class EstimateModel {
       totalAmount: (docJson['totalAmount'] as num?)?.toDouble(),
       amountInWords: docJson['amountInWords'],
       status: docJson['status'] ?? 'draft',
-      technicianSignatureUrl: docJson['technicianSignatureUrl'],
+      technicianSignatureUrl: docJson['technicianSignatureUrl'] ?? docJson['authorizedSignatureUrl'],
       customerSignatureUrl: docJson['customerSignatureUrl'],
       createdAt: docJson['createdAt'] != null
           ? DateTime.tryParse(docJson['createdAt'].toString())

@@ -22,6 +22,7 @@ class AppColors {
   static const Color reportOrange = Color(0xFFEE6C4D); // Service Report accent
   static const Color agreementGreen = Color(0xFF059669); // Agreement badge/icon
   static const Color quotationBlue = Color(0xFF3B82F6); // Quotation badge/icon
+  static const Color customerPurple = Color(0xFF8B5CF6); // Customer module accent
 
   // Surface variants
   static const Color surfaceLight = Color(0xFFF8FAFC); // Lighter card background

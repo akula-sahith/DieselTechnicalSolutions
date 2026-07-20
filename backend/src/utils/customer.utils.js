@@ -52,4 +52,56 @@ export async function upsertCustomerFromInvoice(billTo, taxInvoice) {
   return newCustomer;
 }
 
-export default { upsertCustomerFromInvoice };
+export async function upsertCustomerFromEstimate(estimateFor, estimate) {
+  if (!estimateFor || !estimate) return null;
+
+  const searchConditions = [];
+  if (estimateFor.gstinNumber) searchConditions.push({ gstNumber: estimateFor.gstinNumber });
+  if (estimateFor.contactNumber) searchConditions.push({ mobileNumber: estimateFor.contactNumber });
+  if (estimateFor.customerName && estimateFor.address) searchConditions.push({ customerName: estimateFor.customerName, address: estimateFor.address });
+
+  let customer = null;
+  if (searchConditions.length > 0) {
+    customer = await Customer.findOne({ $or: searchConditions });
+  }
+
+  const estimateEntry = {
+    estimateNumber: estimate.estimateNumber,
+    estimateDate: estimate.estimateDate || new Date(),
+    estimateAmount: estimate.totalAmount || 0,
+  };
+
+  if (customer) {
+    // Update basic fields
+    customer.customerName = estimateFor.customerName || customer.customerName;
+    customer.companyName = estimateFor.companyName || customer.companyName || estimateFor.customerName;
+    customer.gstNumber = estimateFor.gstinNumber || customer.gstNumber;
+    customer.contactPerson = estimateFor.contactPerson || customer.contactPerson;
+    customer.mobileNumber = estimateFor.contactNumber || customer.mobileNumber;
+    customer.email = estimateFor.email || customer.email;
+    customer.address = estimateFor.address || customer.address;
+
+    // Append estimate history if not present
+    const exists = (customer.estimateHistory || []).some(h => h.estimateNumber === estimateEntry.estimateNumber);
+    if (!exists) customer.estimateHistory.push(estimateEntry);
+
+    await customer.save();
+    return customer;
+  }
+
+  // Create new customer
+  const newCustomer = await Customer.create({
+    customerName: estimateFor.customerName || 'Unknown',
+    companyName: estimateFor.companyName || estimateFor.customerName || '',
+    gstNumber: estimateFor.gstinNumber || '',
+    contactPerson: estimateFor.contactPerson || '',
+    mobileNumber: estimateFor.contactNumber || '',
+    email: estimateFor.email || '',
+    address: estimateFor.address || '',
+    estimateHistory: [estimateEntry],
+  });
+
+  return newCustomer;
+}
+
+export default { upsertCustomerFromInvoice, upsertCustomerFromEstimate };

@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/estimate_model.dart';
+import '../models/tax_invoice_model.dart';
 import '../providers/auth_provider.dart';
 import '../screens/splash_screen.dart';
 import '../screens/login_screen.dart';
@@ -19,6 +20,8 @@ import '../screens/estimate_details_screen.dart';
 import '../screens/tax_invoices_screen.dart';
 import '../screens/create_tax_invoice_screen.dart';
 import '../screens/tax_invoice_details_screen.dart';
+import '../screens/customers_screen.dart';
+import '../screens/customer_details_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -106,12 +109,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/tax-invoice-details/:id',
         builder: (context, state) {
           final id = state.pathParameters['id']!;
-          return TaxInvoiceDetailsScreen(invoiceId: id);
+          final initialInvoice = state.extra as TaxInvoiceModel?;
+          return TaxInvoiceDetailsScreen(invoiceId: id, initialInvoice: initialInvoice);
         },
       ),
       GoRoute(
         path: '/drafts',
         builder: (context, state) => const DraftsListScreen(),
+      ),
+      GoRoute(
+        path: '/customers',
+        builder: (context, state) => const CustomersScreen(),
+      ),
+      GoRoute(
+        path: '/customer-details/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return CustomerDetailsScreen(customerId: id);
+        },
       ),
       GoRoute(
         path: '/report-success/:id',

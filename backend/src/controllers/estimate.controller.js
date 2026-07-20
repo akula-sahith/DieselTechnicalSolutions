@@ -10,7 +10,7 @@ import {
 } from '../utils/financial.utils.js';
 import { numberToWords } from '../utils/agreement.utils.js';
 import { generatePaymentData, getCompanyBankDetails } from '../utils/payment.utils.js';
-import { upsertCustomerFromInvoice } from '../utils/customer.utils.js';
+import { upsertCustomerFromInvoice, upsertCustomerFromEstimate } from '../utils/customer.utils.js';
 
 const getEstimatePayload = (req) => {
   const rawPayload = req.body?.estimate ?? req.body;
@@ -98,6 +98,13 @@ export const createEstimate = async (req, res) => {
     };
 
     const estimate = await Estimate.create(estimateDocument);
+
+    // Create or update customer record and append estimate history
+    try {
+      await upsertCustomerFromEstimate(estimate.estimateFor, estimate);
+    } catch (e) {
+      console.error('Failed to upsert customer from estimate:', e?.message || e);
+    }
 
     // Generate payment data dynamically
     const paymentData = await generatePaymentData(totals.totalAmount, `EST-${estimate.estimateNumber}`);
@@ -275,6 +282,13 @@ export const updateEstimate = async (req, res) => {
       new: true,
       runValidators: true,
     });
+
+    // Update customer record and estimate history
+    try {
+      await upsertCustomerFromEstimate(updatedEstimate.estimateFor, updatedEstimate);
+    } catch (e) {
+      console.error('Failed to upsert customer from updated estimate:', e?.message || e);
+    }
 
     const paymentData = await generatePaymentData(updatedEstimate.totalAmount, `EST-${updatedEstimate.estimateNumber}`);
     const bankDetails = getCompanyBankDetails();

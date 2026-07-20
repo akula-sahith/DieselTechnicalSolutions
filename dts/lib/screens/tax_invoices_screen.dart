@@ -157,7 +157,7 @@ class _TaxInvoicesScreenState extends ConsumerState<TaxInvoicesScreen> {
           isPending: paymentStatus == 'Unpaid',
           amount: '₹${(invoice.totalAmount ?? 0).toStringAsFixed(2)}',
           onTap: () {
-            context.push('/tax-invoice-details/${invoice.id}');
+            context.push('/tax-invoice-details/${invoice.id}', extra: invoice);
           },
         );
       },

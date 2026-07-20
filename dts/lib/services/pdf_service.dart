@@ -334,7 +334,7 @@ pw.Widget statusWidget(String status) {
                         ),
                         pw.SizedBox(height: 2),
                         pw.Text(
-                          '2-2-128/G/100/1, PLOT NO 100\n Sai Baba Nagar Colony, Road No.1, Laxma Reddy Colony, Uppal, Hyderabad, Telangana\nTel: +91 81213 12253 | Email: dieseltechnicalsolutions@zohomail.in\nWeb: www.dieseltechnicalsolutions.com',
+                          '2-2-128/G/100/1,PLOT NO 100, Sai Baba nagar colony, Road No.1, Laxma Reddy Colony, Uppal, Hyderabad, Telangana\nTel: 8121312253 | Email: dieseltechnicalsolutions@zohomail.in\nWeb: www.dieseltechnicalsolutions.com',
                           style: pw.TextStyle(fontSize: 6.5, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700),
                           textAlign: pw.TextAlign.center,
                         ),
@@ -1319,7 +1319,7 @@ pw.Expanded(
               pw.Text('Diesel Technical Solutions', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 2),
               pw.Text(
-                '2-2-128/G/100/1, PLOT NO 100, Sai Baba nagar colony, Road No.1, Laxma\nReddy Colony, Uppal, Hyderabad, Telangana\nPhone no.: 8121312253 Email: dieseltechnicalsolutions@zohomail.in\nGSTIN: 36EXIPR5533Q1ZJ, State: 36-Telangana',
+                '2-2-128/G/100/1,PLOT NO 100, Sai Baba nagar colony, Road No.1, Laxma\nReddy Colony, Uppal, Hyderabad, Telangana\nPhone no.: 8121312253 Email: dieseltechnicalsolutions@zohomail.in\nGSTIN: 36EXIPR5533Q1ZJ, State: 36-Telangana',
                 textAlign: pw.TextAlign.right,
                 style: const pw.TextStyle(fontSize: 8.5),
               ),

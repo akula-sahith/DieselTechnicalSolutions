@@ -22,6 +22,7 @@ class AgreementWizardState {
   final bool gstRequired;
   final double gstPercentage;
   final File? customerSignature;
+  final int numberOfFreeVisits;
   
   final int currentStep;
   final bool isSubmitting;
@@ -42,6 +43,7 @@ class AgreementWizardState {
     required this.gstRequired,
     required this.gstPercentage,
     this.customerSignature,
+    required this.numberOfFreeVisits,
     required this.currentStep,
     required this.isSubmitting,
     this.error,
@@ -63,6 +65,7 @@ class AgreementWizardState {
       gstRequired: false,
       gstPercentage: 18.0,
       customerSignature: null,
+      numberOfFreeVisits: 6,
       currentStep: 0,
       isSubmitting: false,
       error: null,
@@ -97,6 +100,7 @@ class AgreementWizardState {
     bool? gstRequired,
     double? gstPercentage,
     File? customerSignature,
+    int? numberOfFreeVisits,
     int? currentStep,
     bool? isSubmitting,
     String? error,
@@ -116,6 +120,7 @@ class AgreementWizardState {
       gstRequired: gstRequired ?? this.gstRequired,
       gstPercentage: gstPercentage ?? this.gstPercentage,
       customerSignature: customerSignature ?? this.customerSignature,
+      numberOfFreeVisits: numberOfFreeVisits ?? this.numberOfFreeVisits,
       currentStep: currentStep ?? this.currentStep,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: error, // Can reset to null if not passed
@@ -142,6 +147,7 @@ class AgreementWizardState {
       totalBeforeGST: totalBeforeGST,
       gstAmount: gstAmount,
       grandTotal: grandTotal,
+      numberOfFreeVisits: numberOfFreeVisits,
       technicianSignatureUrl: technicianSignatureUrl,
       customerSignatureUrl: customerSignature?.path,
     );
@@ -172,6 +178,7 @@ class AgreementWizardNotifier extends StateNotifier<AgreementWizardState> {
       descriptionItems: agreement.descriptionItems,
       gstRequired: agreement.gstRequired,
       gstPercentage: agreement.gstPercentage,
+      numberOfFreeVisits: agreement.numberOfFreeVisits,
       customerSignature: agreement.customerSignatureUrl != null && agreement.customerSignatureUrl!.isNotEmpty && !agreement.customerSignatureUrl!.startsWith('http')
           ? File(agreement.customerSignatureUrl!)
           : null,
@@ -235,6 +242,7 @@ class AgreementWizardNotifier extends StateNotifier<AgreementWizardState> {
     state = state.copyWith(gstRequired: isRequired);
   }
   void updateGstPercentage(double pct) => state = state.copyWith(gstPercentage: pct);
+  void updateNumberOfFreeVisits(int visits) => state = state.copyWith(numberOfFreeVisits: visits);
   void updateCustomerSignature(File? signature) => state = state.copyWith(customerSignature: signature);
 
   // Description Item helpers

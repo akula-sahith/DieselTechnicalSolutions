@@ -928,7 +928,7 @@ pw.Expanded(
               pw.SizedBox(height: 24),
 
               // Terms 1 to 11
-              _buildBulletItem(1, 'Our Service Engineer will make 6 free visits in year to the Engine / DG set at site with intervals of 60days not exceeding 70days.', fontSize: 10.0),
+              _buildBulletItem(1, 'Our Service Engineer will make ${agreement.numberOfFreeVisits} free visits in year to the Engine / DG set at site with intervals of ${360 ~/ agreement.numberOfFreeVisits}days not exceeding ${(360 ~/ agreement.numberOfFreeVisits) + 10}days.', fontSize: 10.0),
               _buildBulletItem(2, 'During each visit, our Service Engineer will inspect the Engine / DG set and carry out various checks, adjustments. Necessary minor repairs also are carried out by providing required spares parts with you.', fontSize: 10.0),
               _buildBulletItem(3, 'Major repairs like top Over-Hauling, Major Over-Hauling and Third party repair/jobs will carried out only after your specific approval, at extra cost.', fontSize: 10.0),
               _buildBulletItem(4, 'AMC customers are to be treated as our valuable customers, and if any complaint from you, our service team will attend the site on priority basis.', fontSize: 10.0),

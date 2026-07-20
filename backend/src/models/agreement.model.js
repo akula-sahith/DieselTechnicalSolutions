@@ -128,6 +128,10 @@ const agreementSchema = new mongoose.Schema(
       trim: true,
       default: 'Thank you for choosing GPS Technical Services.',
     },
+    numberOfFreeVisits: {
+      type: Number,
+      default: 6,
+    },
     status: {
       type: String,
       enum: ['draft', 'submitted'],

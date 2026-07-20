@@ -27,6 +27,7 @@ class _CreateAgreementScreenState extends ConsumerState<CreateAgreementScreen> {
   final _completeAddressCtrl = TextEditingController();
   final _contactPersonCtrl = TextEditingController();
   final _mobileNumberCtrl = TextEditingController();
+  final _freeVisitsCtrl = TextEditingController(text: '6');
 
   // Item Add Controllers (Dialog)
   final _itemDescCtrl = TextEditingController();
@@ -62,6 +63,7 @@ class _CreateAgreementScreenState extends ConsumerState<CreateAgreementScreen> {
       _completeAddressCtrl.text = state.completeAddress;
       _contactPersonCtrl.text = state.contactPerson;
       _mobileNumberCtrl.text = state.mobileNumber;
+      _freeVisitsCtrl.text = state.numberOfFreeVisits.toString();
       _gstPercentageCtrl.text = state.gstPercentage.toString();
     });
   }
@@ -72,6 +74,7 @@ class _CreateAgreementScreenState extends ConsumerState<CreateAgreementScreen> {
     _completeAddressCtrl.dispose();
     _contactPersonCtrl.dispose();
     _mobileNumberCtrl.dispose();
+    _freeVisitsCtrl.dispose();
     _itemDescCtrl.dispose();
     _itemQtyCtrl.dispose();
     _itemRateCtrl.dispose();
@@ -324,6 +327,27 @@ class _CreateAgreementScreenState extends ConsumerState<CreateAgreementScreen> {
             ),
           ),
         ),
+        
+        if (state.documentType == 'Agreement') ...[
+          const SizedBox(height: 24),
+          const Text(
+            'Maintenance Terms',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _freeVisitsCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Number of Free Visits (per year) *',
+              hintText: 'e.g., 6',
+            ),
+            keyboardType: TextInputType.number,
+            onChanged: (val) {
+              final visits = int.tryParse(val) ?? 6;
+              notifier.updateNumberOfFreeVisits(visits);
+            },
+          ),
+        ],
       ],
     );
   }

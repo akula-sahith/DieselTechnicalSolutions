@@ -58,6 +58,7 @@ class AgreementModel {
   final String? offerValidity;
   final String? notes;
   final String? footerText;
+  final int numberOfFreeVisits;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -85,6 +86,7 @@ class AgreementModel {
     this.offerValidity,
     this.notes,
     this.footerText,
+    this.numberOfFreeVisits = 6,
     this.createdAt,
     this.updatedAt,
   });
@@ -121,6 +123,7 @@ class AgreementModel {
       offerValidity: json['offerValidity'],
       notes: json['notes'],
       footerText: json['footerText'],
+      numberOfFreeVisits: json['numberOfFreeVisits'] != null ? int.tryParse(json['numberOfFreeVisits'].toString()) ?? 6 : 6,
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'].toString()) : null,
     );
@@ -168,6 +171,7 @@ class AgreementModel {
     if (footerText != null) {
       map['footerText'] = footerText;
     }
+    map['numberOfFreeVisits'] = numberOfFreeVisits;
     if (id != null) {
       map['id'] = id;
     }

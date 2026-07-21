@@ -1617,7 +1617,10 @@ pw.Expanded(
                             if (estimate.paymentData?.clickToPayLink != null) 
                               pw.UrlLink(
                                 destination: estimate.paymentData!.clickToPayLink!,
-                                child: pw.Image(qrImage, width: 70, height: 70),
+                                child: pw.Anchor(
+                                  name: estimate.paymentData!.clickToPayLink!,
+                                  child: pw.Image(qrImage, width: 70, height: 70),
+                                ),
                               )
                             else 
                               pw.Image(qrImage, width: 70, height: 70),
@@ -1625,7 +1628,10 @@ pw.Expanded(
                             if (estimate.paymentData?.clickToPayLink != null)
                               pw.UrlLink(
                                 destination: estimate.paymentData!.clickToPayLink!,
-                                child: pw.Text('Click to pay', style: pw.TextStyle(color: PdfColors.blue, fontSize: 7, decoration: pw.TextDecoration.underline)),
+                                child: pw.Anchor(
+                                  name: estimate.paymentData!.clickToPayLink!,
+                                  child: pw.Text('Click to pay', style: pw.TextStyle(color: PdfColors.blue, fontSize: 7, decoration: pw.TextDecoration.underline)),
+                                ),
                               ),
                           ],
                         ],
@@ -1944,7 +1950,10 @@ pw.Expanded(
                             if (invoice.paymentData?.clickToPayLink != null) 
                               pw.UrlLink(
                                 destination: invoice.paymentData!.clickToPayLink!,
-                                child: pw.Image(qrImage, width: 70, height: 70),
+                                child: pw.Anchor(
+                                  name: invoice.paymentData!.clickToPayLink!,
+                                  child: pw.Image(qrImage, width: 70, height: 70),
+                                ),
                               )
                             else 
                               pw.Image(qrImage, width: 70, height: 70),
@@ -1952,7 +1961,10 @@ pw.Expanded(
                             if (invoice.paymentData?.clickToPayLink != null)
                               pw.UrlLink(
                                 destination: invoice.paymentData!.clickToPayLink!,
-                                child: pw.Text('Click to pay', style: pw.TextStyle(color: PdfColors.blue, fontSize: 7, decoration: pw.TextDecoration.underline)),
+                                child: pw.Anchor(
+                                  name: invoice.paymentData!.clickToPayLink!,
+                                  child: pw.Text('Click to pay', style: pw.TextStyle(color: PdfColors.blue, fontSize: 7, decoration: pw.TextDecoration.underline)),
+                                ),
                               ),
                           ],
                         ],

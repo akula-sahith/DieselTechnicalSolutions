@@ -19,7 +19,7 @@ const companyPaymentDetails = {
   ifscCode: 'ICIC0000001',
 
   // UPI Details
-  upiId: '8341999296-2@axl',
+  upiId: '9491435957@ybl',
 
   // Contact Information
   gstNumber: '36AEXPS55330IZ1',

@@ -1617,10 +1617,7 @@ pw.Expanded(
                             if (estimate.paymentData?.clickToPayLink != null) 
                               pw.UrlLink(
                                 destination: estimate.paymentData!.clickToPayLink!,
-                                child: pw.Anchor(
-                                  name: estimate.paymentData!.clickToPayLink!,
-                                  child: pw.Image(qrImage, width: 70, height: 70),
-                                ),
+                                child: pw.Image(qrImage, width: 70, height: 70),
                               )
                             else 
                               pw.Image(qrImage, width: 70, height: 70),
@@ -1628,10 +1625,7 @@ pw.Expanded(
                             if (estimate.paymentData?.clickToPayLink != null)
                               pw.UrlLink(
                                 destination: estimate.paymentData!.clickToPayLink!,
-                                child: pw.Anchor(
-                                  name: estimate.paymentData!.clickToPayLink!,
-                                  child: pw.Text('Click to pay', style: pw.TextStyle(color: PdfColors.blue, fontSize: 7, decoration: pw.TextDecoration.underline)),
-                                ),
+                                child: pw.Text('Click to pay', style: pw.TextStyle(color: PdfColors.blue, fontSize: 7, decoration: pw.TextDecoration.underline)),
                               ),
                           ],
                         ],
@@ -1950,10 +1944,7 @@ pw.Expanded(
                             if (invoice.paymentData?.clickToPayLink != null) 
                               pw.UrlLink(
                                 destination: invoice.paymentData!.clickToPayLink!,
-                                child: pw.Anchor(
-                                  name: invoice.paymentData!.clickToPayLink!,
-                                  child: pw.Image(qrImage, width: 70, height: 70),
-                                ),
+                                child: pw.Image(qrImage, width: 70, height: 70),
                               )
                             else 
                               pw.Image(qrImage, width: 70, height: 70),
@@ -1961,10 +1952,7 @@ pw.Expanded(
                             if (invoice.paymentData?.clickToPayLink != null)
                               pw.UrlLink(
                                 destination: invoice.paymentData!.clickToPayLink!,
-                                child: pw.Anchor(
-                                  name: invoice.paymentData!.clickToPayLink!,
-                                  child: pw.Text('Click to pay', style: pw.TextStyle(color: PdfColors.blue, fontSize: 7, decoration: pw.TextDecoration.underline)),
-                                ),
+                                child: pw.Text('Click to pay', style: pw.TextStyle(color: PdfColors.blue, fontSize: 7, decoration: pw.TextDecoration.underline)),
                               ),
                           ],
                         ],
@@ -2025,9 +2013,15 @@ pw.Expanded(
     final file = File('${tempDir.path}/Estimate_$sanitizedNumber.pdf');
     await file.writeAsBytes(bytes);
     
+    final upiLink = estimate.paymentData?.clickToPayLink;
+    final shareText = StringBuffer('Diesel Technical Solutions Estimate - ${estimate.estimateNumber ?? estimate.estimateFor.customerName}');
+    if (upiLink != null && upiLink.isNotEmpty) {
+      shareText.write('\n\n💳 Click to Pay via UPI:\n$upiLink');
+    }
+
     await Share.shareXFiles(
       [XFile(file.path)],
-      text: 'Diesel Technical Solutions Estimate - ${estimate.estimateNumber ?? estimate.estimateFor.customerName}',
+      text: shareText.toString(),
     );
   }
 
@@ -2048,9 +2042,15 @@ pw.Expanded(
     final file = File('${tempDir.path}/TaxInvoice_$sanitizedNumber.pdf');
     await file.writeAsBytes(bytes);
     
+    final upiLink = invoice.paymentData?.clickToPayLink;
+    final shareText = StringBuffer('Diesel Technical Solutions Tax Invoice - ${invoice.invoiceNumber ?? invoice.billTo.customerName}');
+    if (upiLink != null && upiLink.isNotEmpty) {
+      shareText.write('\n\n💳 Click to Pay via UPI:\n$upiLink');
+    }
+
     await Share.shareXFiles(
       [XFile(file.path)],
-      text: 'Diesel Technical Solutions Tax Invoice - ${invoice.invoiceNumber ?? invoice.billTo.customerName}',
+      text: shareText.toString(),
     );
   }
 }

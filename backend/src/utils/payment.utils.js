@@ -8,15 +8,12 @@ import companyPaymentDetails from '../config/companyPaymentDetails.js';
 export const generateUpiPaymentUri = (amount, reference = '') => {
   const { upiId, companyName } = companyPaymentDetails;
 
-  const params = new URLSearchParams({
-    pa: upiId,
-    pn: companyName,
-    am: String(amount),
-    cu: 'INR',
-    tn: reference || 'Payment',
-  });
+  const pa = encodeURIComponent(upiId);
+  const pn = encodeURIComponent(companyName);
+  const am = Number(amount || 0).toFixed(2);
+  const tn = encodeURIComponent(reference || 'Payment');
 
-  return `upi://pay?${params.toString()}`;
+  return `upi://pay?pa=${pa}&pn=${pn}&am=${am}&cu=INR&tn=${tn}`;
 };
 
 /**

@@ -40,7 +40,6 @@ class EstimateItem {
   final String itemName;
   final String? hsnSac;
   final double quantity;
-  final String unit;
   final double pricePerUnit;
   final bool taxApplicable;
   final double gstPercentage;
@@ -52,7 +51,6 @@ class EstimateItem {
     required this.itemName,
     this.hsnSac,
     required this.quantity,
-    this.unit = '-',
     required this.pricePerUnit,
     this.taxApplicable = true,
     this.gstPercentage = 18.0,
@@ -66,7 +64,6 @@ class EstimateItem {
       itemName: json['itemName'] ?? '',
       hsnSac: json['hsnSac'],
       quantity: (json['quantity'] as num?)?.toDouble() ?? 1.0,
-      unit: json['unit'] ?? '-',
       pricePerUnit: (json['pricePerUnit'] as num?)?.toDouble() ?? 0.0,
       taxApplicable: json['taxApplicable'] ?? true,
       gstPercentage: (json['gstPercentage'] as num?)?.toDouble() ?? 18.0,
@@ -81,11 +78,9 @@ class EstimateItem {
       'itemName': itemName,
       if (hsnSac != null) 'hsnSac': hsnSac,
       'quantity': quantity,
-      'unit': unit,
       'pricePerUnit': pricePerUnit,
       'taxApplicable': taxApplicable,
       'gstPercentage': gstPercentage,
-      // sgst, cgst, and amount are calculated by backend, but we send them if we are updating (optional)
       if (sgst != null) 'sgst': sgst,
       if (cgst != null) 'cgst': cgst,
       if (amount != null) 'amount': amount,

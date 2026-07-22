@@ -72,6 +72,40 @@ export const formatInvoiceNumber = (sequence) => {
   return `INV-${year}-${String(sequence).padStart(4, '0')}`;
 };
 
+export const formatBillingInvoiceNumber = (sequence) => {
+  const year = new Date().getFullYear();
+  return `BILL-${year}-${String(sequence).padStart(4, '0')}`;
+};
+
+export const calculateBillingItems = (items = []) => {
+  return items.map((item) => {
+    const quantity = Number(item.quantity || 0);
+    const pricePerUnit = Number(item.pricePerUnit || 0);
+    const amount = Number((quantity * pricePerUnit).toFixed(2));
+
+    return {
+      itemName: item.itemName,
+      hsnSac: item.hsnSac || '',
+      quantity,
+      pricePerUnit,
+      amount,
+    };
+  });
+};
+
+export const calculateBillingTotals = (items = []) => {
+  const calculatedItems = calculateBillingItems(items);
+
+  const totalAmount = Number(
+    calculatedItems.reduce((sum, item) => sum + item.amount, 0).toFixed(2)
+  );
+
+  return {
+    items: calculatedItems,
+    totalAmount,
+  };
+};
+
 export const generateNextSequence = async (Model, fieldName = 'estimateNumber') => {
   const latest = await Model.findOne().sort({ createdAt: -1 }).select(fieldName).lean();
 

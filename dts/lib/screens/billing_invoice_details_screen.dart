@@ -2,30 +2,30 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:go_router/go_router.dart';
 import '../core/constants/app_colors.dart';
-import '../models/tax_invoice_model.dart';
-import '../repositories/tax_invoice_repository.dart';
+import '../models/billing_invoice_model.dart';
+import '../repositories/billing_invoice_repository.dart';
+import '../providers/billing_invoices_provider.dart';
 import '../services/pdf_service.dart';
 import 'pdf_viewer_screen.dart';
 
-class TaxInvoiceDetailsScreen extends ConsumerStatefulWidget {
+class BillingInvoiceDetailsScreen extends ConsumerStatefulWidget {
   final String invoiceId;
-  final TaxInvoiceModel? initialInvoice;
+  final BillingInvoiceModel? initialInvoice;
 
-  const TaxInvoiceDetailsScreen({
+  const BillingInvoiceDetailsScreen({
     super.key,
     required this.invoiceId,
     this.initialInvoice,
   });
 
   @override
-  ConsumerState<TaxInvoiceDetailsScreen> createState() => _TaxInvoiceDetailsScreenState();
+  ConsumerState<BillingInvoiceDetailsScreen> createState() => _BillingInvoiceDetailsScreenState();
 }
 
-class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScreen> with SingleTickerProviderStateMixin {
+class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDetailsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  TaxInvoiceModel? _invoice;
+  BillingInvoiceModel? _invoice;
   bool _isLoading = true;
   String? _error;
 
@@ -53,8 +53,8 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
       _error = null;
     });
     try {
-      final repo = ref.read(taxInvoiceRepositoryProvider);
-      final invoice = await repo.getTaxInvoiceById(widget.invoiceId);
+      final repo = ref.read(billingInvoiceRepositoryProvider);
+      final invoice = await repo.getBillingInvoiceById(widget.invoiceId);
       setState(() {
         _invoice = invoice;
         _isLoading = false;
@@ -74,7 +74,7 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
     );
     try {
       final pdfService = ref.read(pdfServiceProvider);
-      await pdfService.printOrSaveTaxInvoicePdf(_invoice!);
+      await pdfService.printOrSaveBillingInvoicePdf(_invoice!);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -91,7 +91,7 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
     );
     try {
       final pdfService = ref.read(pdfServiceProvider);
-      await pdfService.shareTaxInvoicePdf(_invoice!);
+      await pdfService.shareBillingInvoicePdf(_invoice!);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -106,10 +106,10 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => PdfViewerScreen(
-          title: _invoice!.invoiceNumber ?? 'Tax Invoice PDF',
+          title: _invoice!.invoiceNumber ?? 'Billing Invoice PDF',
           pdfBuilder: () {
             final pdfService = ref.read(pdfServiceProvider);
-            return pdfService.generateTaxInvoicePdf(_invoice!);
+            return pdfService.generateBillingInvoicePdf(_invoice!);
           },
         ),
       ),
@@ -121,7 +121,7 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Tax Invoice'),
+        title: const Text('Delete Billing Invoice'),
         content: const Text('Are you sure you want to delete this invoice? This action cannot be undone.'),
         actions: [
           TextButton(
@@ -139,14 +139,14 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
 
     if (confirmed == true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Deleting tax invoice...')),
+        const SnackBar(content: Text('Deleting invoice...')),
       );
       try {
-        await ref.read(taxInvoiceRepositoryProvider).deleteTaxInvoice(widget.invoiceId);
-        // Refresh provider logic can be added if a provider exists
+        await ref.read(billingInvoiceRepositoryProvider).deleteBillingInvoice(widget.invoiceId);
+        ref.read(billingInvoicesProvider.notifier).refresh();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Tax Invoice deleted successfully.')),
+            const SnackBar(content: Text('Billing Invoice deleted successfully.')),
           );
           Navigator.of(context).pop();
         }
@@ -193,7 +193,6 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
     }
 
     final invoice = _invoice!;
-    final payment = invoice.paymentDetails;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -201,7 +200,7 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(invoice.invoiceNumber ?? 'Invoice Details'),
+            Text(invoice.invoiceNumber ?? 'Billing Invoice'),
             Text(
               invoice.billTo.customerName,
               style: const TextStyle(fontSize: 12, color: Colors.white70),
@@ -275,7 +274,7 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildCommercialTab(invoice, payment),
+                _buildCommercialTab(invoice),
                 _buildItemsTab(invoice),
                 _buildTermsTab(invoice),
                 _buildSignaturesTab(invoice),
@@ -283,14 +282,13 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
             ),
           ),
           
-          // Action Buttons Bottom Bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, -3),
                 ),
@@ -321,13 +319,12 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
     );
   }
 
-  Widget _buildCommercialTab(TaxInvoiceModel invoice, InvoicePaymentDetails? payment) {
+  Widget _buildCommercialTab(BillingInvoiceModel invoice) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Basic Info
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
@@ -335,30 +332,9 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Tax Invoice',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
-                      ),
-                      if (payment != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: _getStatusColor(payment.status).withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            payment.status.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: _getStatusColor(payment.status),
-                            ),
-                          ),
-                        ),
-                    ],
+                  const Text(
+                    'Billing Invoice (Without GST)',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
                   ),
                   const Divider(height: 24),
                   _buildDetailRow('Invoice Number', invoice.invoiceNumber ?? '-'),
@@ -371,7 +347,6 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
           ),
           const SizedBox(height: 16),
 
-          // Bill To Card
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
@@ -384,42 +359,12 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
                   _buildDetailRow('Name', invoice.billTo.customerName),
                   _buildDetailRow('Address', invoice.billTo.address),
                   _buildDetailRow('Contact No.', invoice.billTo.contactNumber),
-                  if (invoice.billTo.gstinNumber != null && invoice.billTo.gstinNumber!.isNotEmpty)
-                    _buildDetailRow('GSTIN', invoice.billTo.gstinNumber!),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
 
-          // Transportation Details Card
-          if (invoice.transportationDetails != null)
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Transportation Details', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                    const Divider(height: 20),
-                    if (invoice.transportationDetails!.vehicleNumber != null)
-                      _buildDetailRow('Vehicle No.', invoice.transportationDetails!.vehicleNumber!),
-                    if (invoice.transportationDetails!.transportName != null)
-                      _buildDetailRow('Transport Name', invoice.transportationDetails!.transportName!),
-                    if (invoice.transportationDetails!.lrNumber != null)
-                      _buildDetailRow('LR No.', invoice.transportationDetails!.lrNumber!),
-                    if (invoice.transportationDetails!.dispatchDetails != null)
-                      _buildDetailRow('Dispatch Through', invoice.transportationDetails!.dispatchDetails!),
-                    if (invoice.transportationDetails!.deliveryDetails != null)
-                      _buildDetailRow('Destination', invoice.transportationDetails!.deliveryDetails!),
-                  ],
-                ),
-              ),
-            ),
-          if (invoice.transportationDetails != null) const SizedBox(height: 16),
-
-          // Totals Card
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
@@ -427,28 +372,14 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Payment Summary', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  const Text('Summary', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primary)),
                   const Divider(height: 20),
-                  _buildDetailRow('Sub Total', '₹${invoice.subtotal?.toStringAsFixed(2) ?? '0.00'}'),
-                  if ((invoice.totalTax ?? 0) > 0)
-                    _buildDetailRow('GST Amount', '₹${invoice.totalTax?.toStringAsFixed(2) ?? '0.00'}'),
-                  const Divider(),
                   _buildDetailRow(
-                    'Total Amount',
+                    'Grand Total',
                     '₹${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
                     isBold: true,
                     valueColor: AppColors.textPrimary,
                   ),
-                  if (payment != null) ...[
-                    _buildDetailRow('Amount Received', '₹${payment.advanceAmountReceived?.toStringAsFixed(2) ?? '0.00'}', valueColor: AppColors.success),
-                    const Divider(),
-                    _buildDetailRow(
-                      'Balance Due',
-                      '₹${payment.remainingAmount?.toStringAsFixed(2) ?? '0.00'}',
-                      isBold: true,
-                      valueColor: AppColors.error,
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -458,7 +389,7 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
     );
   }
 
-  Widget _buildItemsTab(TaxInvoiceModel invoice) {
+  Widget _buildItemsTab(BillingInvoiceModel invoice) {
     if (invoice.items.isEmpty) {
       return const Center(child: Text('No items found.'));
     }
@@ -473,57 +404,20 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: AppColors.primary.withOpacity(0.1),
-                      radius: 14,
-                      child: Text('${index + 1}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.itemName,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Quantity: ${item.quantity} | Rate: ₹${item.pricePerUnit.toStringAsFixed(2)}',
-                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                          ),
-                          if (item.hsnSac != null && item.hsnSac!.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'HSN/SAC: ${item.hsnSac}',
-                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '₹${item.amount?.toStringAsFixed(2) ?? '0.00'}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
-                        ),
-                        if ((item.sgst ?? 0) + (item.cgst ?? 0) > 0)
-                          Text(
-                            'GST: ${item.gstPercentage}%',
-                            style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
-                          ),
-                      ],
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(item.itemName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      const SizedBox(height: 4),
+                      Text('Quantity: ${item.quantity} | Rate: ₹${item.pricePerUnit.toStringAsFixed(2)}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    ],
+                  ),
                 ),
+                Text('₹${item.amount?.toStringAsFixed(2) ?? '0.00'}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
               ],
             ),
           ),
@@ -532,41 +426,36 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
     );
   }
 
-  Widget _buildTermsTab(TaxInvoiceModel invoice) {
+  Widget _buildTermsTab(BillingInvoiceModel invoice) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildTermsCard('Terms & Conditions', invoice.termsAndConditions ?? 'Thank you for doing business with us.\n* You want a tax bill that will be 18% higher.'),
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Terms & Conditions', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  const Divider(height: 20),
+                  Text(
+                    invoice.termsAndConditions ?? 'Thank you for doing business with us.\n*100% advance is mandatory',
+                    style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTermsCard(String title, String content) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
-            const Divider(height: 20),
-            Text(
-              content,
-              style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.4),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSignaturesTab(TaxInvoiceModel invoice) {
+  Widget _buildSignaturesTab(BillingInvoiceModel invoice) {
     final qrBase64 = invoice.paymentData?.qrBase64;
-    final customerSig = invoice.customerSignatureUrl;
     final techSig = invoice.technicianSignatureUrl;
     
     return SingleChildScrollView(
@@ -574,7 +463,6 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Payment QR Code Card
           if (qrBase64 != null)
             Card(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -591,49 +479,11 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
                       width: 150,
                       errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image, size: 50),
                     ),
-                    const SizedBox(height: 16),
-                    if (invoice.paymentData?.clickToPayLink != null)
-                      Text(
-                        'Click to Pay link is available in the PDF.',
-                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                      ),
                   ],
                 ),
               ),
             ),
           const SizedBox(height: 16),
-
-          // Customer signature card
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Customer Signature', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                  const Divider(height: 20),
-                  Text('Signed by: ${invoice.billTo.customerName}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  Container(
-                    height: 120,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: customerSig != null && customerSig.isNotEmpty
-                        ? Image.network(customerSig, fit: BoxFit.contain)
-                        : const Center(child: Text('No Customer Signature', style: TextStyle(color: AppColors.textLight))),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Technician signature card
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
@@ -664,18 +514,6 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
         ],
       ),
     );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'paid':
-        return AppColors.success;
-      case 'partially paid':
-        return AppColors.warning;
-      case 'unpaid':
-      default:
-        return AppColors.error;
-    }
   }
 
   Widget _buildDetailRow(String label, String value, {bool isBold = false, Color? valueColor}) {

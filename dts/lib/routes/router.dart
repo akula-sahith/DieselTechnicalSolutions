@@ -20,6 +20,10 @@ import '../screens/estimate_details_screen.dart';
 import '../screens/tax_invoices_screen.dart';
 import '../screens/create_tax_invoice_screen.dart';
 import '../screens/tax_invoice_details_screen.dart';
+import '../screens/billing_invoices_screen.dart';
+import '../screens/create_billing_invoice_screen.dart';
+import '../screens/billing_invoice_details_screen.dart';
+import '../models/billing_invoice_model.dart';
 import '../screens/customers_screen.dart';
 import '../screens/customer_details_screen.dart';
 
@@ -111,6 +115,22 @@ final routerProvider = Provider<GoRouter>((ref) {
           final id = state.pathParameters['id']!;
           final initialInvoice = state.extra as TaxInvoiceModel?;
           return TaxInvoiceDetailsScreen(invoiceId: id, initialInvoice: initialInvoice);
+        },
+      ),
+      GoRoute(
+        path: '/billing-invoices',
+        builder: (context, state) => const BillingInvoicesScreen(),
+      ),
+      GoRoute(
+        path: '/create-billing-invoice',
+        builder: (context, state) => const CreateBillingInvoiceScreen(),
+      ),
+      GoRoute(
+        path: '/billing-invoice-details/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          final initialInvoice = state.extra as BillingInvoiceModel?;
+          return BillingInvoiceDetailsScreen(invoiceId: id, initialInvoice: initialInvoice);
         },
       ),
       GoRoute(

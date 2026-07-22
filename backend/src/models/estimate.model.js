@@ -17,11 +17,6 @@ const estimateItemSchema = new mongoose.Schema(
       required: true,
       min: 0.0001,
     },
-    unit: {
-      type: String,
-      trim: true,
-      default: '-',
-    },
     pricePerUnit: {
       type: Number,
       required: true,

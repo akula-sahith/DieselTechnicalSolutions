@@ -240,6 +240,13 @@ class _CreateEstimateScreenState extends ConsumerState<CreateEstimateScreen> {
             decoration: const InputDecoration(labelText: 'Place of Supply', prefixIcon: Icon(Icons.map)),
             onChanged: notifier.updatePlaceOfSupply,
           ),
+          const SizedBox(height: 16),
+          TextFormField(
+            initialValue: state.termsAndConditions,
+            maxLines: 3,
+            decoration: const InputDecoration(labelText: 'Terms & Conditions', prefixIcon: Icon(Icons.gavel)),
+            onChanged: notifier.updateTermsAndConditions,
+          ),
         ],
       ),
     );

@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const invoiceItemSchema = new mongoose.Schema(
+const billingItemSchema = new mongoose.Schema(
   {
     itemName: {
       type: String,
@@ -22,23 +22,6 @@ const invoiceItemSchema = new mongoose.Schema(
       required: true,
       min: 0.0001,
     },
-    taxApplicable: {
-      type: Boolean,
-      default: true,
-    },
-    gstPercentage: {
-      type: Number,
-      enum: [0, 0.25, 3, 5, 12, 18, 28, 40],
-      default: 18,
-    },
-    sgst: {
-      type: Number,
-      default: 0,
-    },
-    cgst: {
-      type: Number,
-      default: 0,
-    },
     amount: {
       type: Number,
       default: 0,
@@ -46,9 +29,6 @@ const invoiceItemSchema = new mongoose.Schema(
   },
   { _id: false }
 );
-
-// Payment details removed from TaxInvoice model.
-// Invoice is now a billing-only document; payment tracking lives on Estimates and Customers.
 
 const transportationDetailsSchema = new mongoose.Schema(
   {
@@ -81,7 +61,7 @@ const transportationDetailsSchema = new mongoose.Schema(
   { _id: false }
 );
 
-const taxInvoiceSchema = new mongoose.Schema(
+const billingInvoiceSchema = new mongoose.Schema(
   {
     invoiceNumber: {
       type: String,
@@ -129,19 +109,11 @@ const taxInvoiceSchema = new mongoose.Schema(
     },
     transportationDetails: transportationDetailsSchema,
     items: {
-      type: [invoiceItemSchema],
+      type: [billingItemSchema],
       validate: [
         (items) => Array.isArray(items) && items.length > 0,
         'At least one item is required.',
       ],
-    },
-    subtotal: {
-      type: Number,
-      default: 0,
-    },
-    totalTax: {
-      type: Number,
-      default: 0,
     },
     totalAmount: {
       type: Number,
@@ -151,11 +123,10 @@ const taxInvoiceSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    // paymentDetails removed: invoices are billing documents only
     termsAndConditions: {
       type: String,
       trim: true,
-      default: 'Thank you for doing business with us.\n*You want a tax bill that will be his higher.',
+      default: 'Thank you for doing business with us.\n*100% advance is mandatory',
     },
     authorizedSignatureUrl: {
       type: String,
@@ -177,12 +148,12 @@ const taxInvoiceSchema = new mongoose.Schema(
   }
 );
 
-taxInvoiceSchema.index({
+billingInvoiceSchema.index({
   invoiceNumber: 'text',
   'billTo.customerName': 'text',
   'billTo.contactNumber': 'text',
 });
 
-const TaxInvoice = mongoose.model('TaxInvoice', taxInvoiceSchema);
+const BillingInvoice = mongoose.model('BillingInvoice', billingInvoiceSchema);
 
-export default TaxInvoice;
+export default BillingInvoice;

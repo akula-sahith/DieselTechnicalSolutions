@@ -2,6 +2,7 @@ import TaxInvoice from '../models/taxinvoice.model.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 import { calculateEstimateTotals, formatInvoiceNumber, generateNextSequence } from '../utils/financial.utils.js';
 import { numberToWords } from '../utils/agreement.utils.js';
+import { generatePaymentData, getCompanyBankDetails } from '../utils/payment.utils.js';
 
 const getTaxInvoicePayload = (req) => {
   const rawPayload = req.body?.taxInvoice ?? req.body;
@@ -96,7 +97,16 @@ export const createTaxInvoice = async (req, res) => {
       console.error('Failed to upsert customer from invoice:', e?.message || e);
     }
 
-    return sendSuccess(res, 'Tax Invoice created successfully.', taxInvoice, 201);
+    const paymentData = await generatePaymentData(totals.totalAmount, `INV-${taxInvoice.invoiceNumber}`);
+    const bankDetails = getCompanyBankDetails();
+
+    const responseData = {
+      ...taxInvoice.toObject(),
+      payment: paymentData,
+      bankDetails,
+    };
+
+    return sendSuccess(res, 'Tax Invoice created successfully.', responseData, 201);
   } catch (error) {
     if (error instanceof SyntaxError) {
       return sendError(res, 'Invalid JSON payload.', { details: error.message }, 400);
@@ -120,7 +130,6 @@ export const getTaxInvoices = async (req, res) => {
     const invoiceNumber = req.query.invoiceNumber || '';
     const dateFrom = req.query.dateFrom || '';
     const dateTo = req.query.dateTo || '';
-    const paymentStatus = req.query.paymentStatus || '';
 
     const query = {};
 
@@ -140,8 +149,6 @@ export const getTaxInvoices = async (req, res) => {
       query.invoiceNumber = { $regex: invoiceNumber, $options: 'i' };
     }
 
-    // paymentStatus filter removed — invoices are billing-only
-
     if (dateFrom || dateTo) {
       query.invoiceDate = {};
       if (dateFrom) {
@@ -159,9 +166,20 @@ export const getTaxInvoices = async (req, res) => {
       TaxInvoice.countDocuments(query),
     ]);
 
-    // Return invoices as billing documents only (no payment QR / bank details attached)
+    const invoicesWithPayment = await Promise.all(
+      taxInvoices.map(async (invoice) => {
+        const paymentData = await generatePaymentData(invoice.totalAmount, `INV-${invoice.invoiceNumber}`);
+        const bankDetails = getCompanyBankDetails();
+        return {
+          ...invoice.toObject(),
+          payment: paymentData,
+          bankDetails,
+        };
+      })
+    );
+
     return sendSuccess(res, 'Tax Invoices retrieved successfully.', {
-      taxInvoices,
+      taxInvoices: invoicesWithPayment,
       pagination: {
         page,
         limit,
@@ -182,8 +200,16 @@ export const getTaxInvoiceById = async (req, res) => {
       return sendError(res, 'Tax Invoice not found.', {}, 404);
     }
 
-    // Return invoice without payment artifacts
-    return sendSuccess(res, 'Tax Invoice retrieved successfully.', taxInvoice);
+    const paymentData = await generatePaymentData(taxInvoice.totalAmount, `INV-${taxInvoice.invoiceNumber}`);
+    const bankDetails = getCompanyBankDetails();
+
+    const responseData = {
+      ...taxInvoice.toObject(),
+      payment: paymentData,
+      bankDetails,
+    };
+
+    return sendSuccess(res, 'Tax Invoice retrieved successfully.', responseData);
   } catch (error) {
     return sendError(res, 'Failed to fetch Tax Invoice.', { details: error.message }, 500);
   }

@@ -469,7 +469,7 @@ class _EstimateDetailsScreenState extends ConsumerState<EstimateDetailsScreen> w
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Quantity: ${item.quantity} ${item.unit} | Rate: ₹${item.pricePerUnit.toStringAsFixed(2)}',
+                            'Quantity: ${item.quantity} | Rate: ₹${item.pricePerUnit.toStringAsFixed(2)}',
                             style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
                           ),
                           if (item.hsnSac != null && item.hsnSac!.isNotEmpty) ...[

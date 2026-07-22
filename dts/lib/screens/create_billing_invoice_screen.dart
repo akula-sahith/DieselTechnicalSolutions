@@ -1,26 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import '../core/constants/app_colors.dart';
-import '../models/estimate_model.dart';
-import '../models/tax_invoice_model.dart';
-import '../providers/tax_invoice_wizard_provider.dart';
-import '../providers/tax_invoices_provider.dart';
+import '../models/billing_invoice_model.dart';
+import '../providers/billing_invoice_wizard_provider.dart';
 import '../widgets/stepper/stepper_progress_bar.dart';
 import '../widgets/stepper/step_navigation.dart';
 import '../widgets/stepper/step_container.dart';
 import '../widgets/stepper/step_header.dart';
 
-class CreateTaxInvoiceScreen extends ConsumerStatefulWidget {
-  final EstimateModel? initialEstimate;
-  const CreateTaxInvoiceScreen({super.key, this.initialEstimate});
+class CreateBillingInvoiceScreen extends ConsumerStatefulWidget {
+  const CreateBillingInvoiceScreen({super.key});
 
   @override
-  ConsumerState<CreateTaxInvoiceScreen> createState() => _CreateTaxInvoiceScreenState();
+  ConsumerState<CreateBillingInvoiceScreen> createState() => _CreateBillingInvoiceScreenState();
 }
 
-class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen> {
+class _CreateBillingInvoiceScreenState extends ConsumerState<CreateBillingInvoiceScreen> {
   // Customer Step
   final _customerNameCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
@@ -36,31 +32,15 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
 
   // Item Dialog
   final _itemNameCtrl = TextEditingController();
+  final _hsnSacCtrl = TextEditingController();
   final _itemQtyCtrl = TextEditingController();
   final _itemPriceCtrl = TextEditingController();
-  final _gstPctCtrl = TextEditingController(text: '18');
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.initialEstimate != null) {
-        ref.read(taxInvoiceWizardProvider.notifier).loadFromEstimate(widget.initialEstimate!);
-      } else {
-        ref.read(taxInvoiceWizardProvider.notifier).reset();
-      }
-
-      final state = ref.read(taxInvoiceWizardProvider);
-      // Pre-populate controllers
-      _customerNameCtrl.text = state.customerName;
-      _addressCtrl.text = state.address;
-      _contactPersonCtrl.text = state.contactPerson;
-      _contactNumberCtrl.text = state.contactNumber;
-      _gstinCtrl.text = state.gstinNumber;
-      _placeOfSupplyCtrl.text = state.placeOfSupply;
-      _vehicleNumberCtrl.text = state.transportationDetails.vehicleNumber ?? '';
-      _transportNameCtrl.text = state.transportationDetails.transportName ?? '';
-      _lrNumberCtrl.text = state.transportationDetails.lrNumber ?? '';
+      ref.read(billingInvoiceWizardProvider.notifier).reset();
     });
   }
 
@@ -76,13 +56,13 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
     _transportNameCtrl.dispose();
     _lrNumberCtrl.dispose();
     _itemNameCtrl.dispose();
+    _hsnSacCtrl.dispose();
     _itemQtyCtrl.dispose();
     _itemPriceCtrl.dispose();
-    _gstPctCtrl.dispose();
     super.dispose();
   }
 
-  void _handleNext(TaxInvoiceWizardState state, TaxInvoiceWizardNotifier notifier) {
+  void _handleNext(BillingInvoiceWizardState state, BillingInvoiceWizardNotifier notifier) {
     if (notifier.validateCurrentStep()) {
       notifier.updateStep(state.currentStep + 1);
     } else {
@@ -92,22 +72,22 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
     }
   }
 
-  void _handleBack(TaxInvoiceWizardState state, TaxInvoiceWizardNotifier notifier) {
+  void _handleBack(BillingInvoiceWizardState state, BillingInvoiceWizardNotifier notifier) {
     if (state.currentStep > 0) notifier.updateStep(state.currentStep - 1);
   }
 
-  void _submit(TaxInvoiceWizardNotifier notifier) async {
+  void _submit(BillingInvoiceWizardNotifier notifier) async {
     final success = await notifier.submitInvoice();
     if (success && mounted) {
-      final submitted = ref.read(taxInvoiceWizardProvider).submittedInvoice;
+      final submitted = ref.read(billingInvoiceWizardProvider).submittedInvoice;
       if (submitted != null) {
         final docId = submitted.id;
         notifier.reset();
         context.go('/dashboard');
-        context.push('/tax-invoice-details/$docId', extra: submitted);
+        context.push('/billing-invoice-details/$docId', extra: submitted);
       }
     } else {
-      final error = ref.read(taxInvoiceWizardProvider).error;
+      final error = ref.read(billingInvoiceWizardProvider).error;
       if (error != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submission failed: $error'), backgroundColor: AppColors.error));
       }
@@ -116,14 +96,13 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(taxInvoiceWizardProvider);
-    final notifier = ref.read(taxInvoiceWizardProvider.notifier);
-    final isConversion = state.linkedEstimateId != null;
-    final steps = isConversion ? ['Transport', 'Preview'] : ['Customer', 'Transport', 'Items', 'Preview'];
+    final state = ref.watch(billingInvoiceWizardProvider);
+    final notifier = ref.read(billingInvoiceWizardProvider.notifier);
+    final steps = ['Customer', 'Transport', 'Items', 'Preview'];
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Create Tax Invoice')),
+      appBar: AppBar(title: const Text('Create Billing Invoice')),
       body: Stack(
         children: [
           Column(
@@ -150,15 +129,7 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
     );
   }
 
-  Widget _buildStepContent(TaxInvoiceWizardState state, TaxInvoiceWizardNotifier notifier) {
-    final isConversion = state.linkedEstimateId != null;
-    if (isConversion) {
-      switch (state.currentStep) {
-        case 0: return _buildTransportStep(state, notifier);
-        case 1: return _buildPreviewStep(state, notifier);
-        default: return const SizedBox();
-      }
-    }
+  Widget _buildStepContent(BillingInvoiceWizardState state, BillingInvoiceWizardNotifier notifier) {
     switch (state.currentStep) {
       case 0: return _buildCustomerStep(state, notifier);
       case 1: return _buildTransportStep(state, notifier);
@@ -168,7 +139,7 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
     }
   }
 
-  Widget _buildCustomerStep(TaxInvoiceWizardState state, TaxInvoiceWizardNotifier notifier) {
+  Widget _buildCustomerStep(BillingInvoiceWizardState state, BillingInvoiceWizardNotifier notifier) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -181,7 +152,7 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
           const SizedBox(height: 16),
           TextFormField(controller: _contactNumberCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Contact Number *'), onChanged: notifier.updateContactNumber),
           const SizedBox(height: 16),
-          TextFormField(controller: _gstinCtrl, decoration: const InputDecoration(labelText: 'GSTIN'), onChanged: notifier.updateGstinNumber),
+          TextFormField(controller: _gstinCtrl, decoration: const InputDecoration(labelText: 'GSTIN (Optional)'), onChanged: notifier.updateGstinNumber),
           const SizedBox(height: 16),
           TextFormField(
             initialValue: state.termsAndConditions,
@@ -194,7 +165,7 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
     );
   }
 
-  Widget _buildTransportStep(TaxInvoiceWizardState state, TaxInvoiceWizardNotifier notifier) {
+  Widget _buildTransportStep(BillingInvoiceWizardState state, BillingInvoiceWizardNotifier notifier) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -211,11 +182,11 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
     );
   }
 
-  Widget _buildItemsStep(TaxInvoiceWizardState state, TaxInvoiceWizardNotifier notifier) {
+  Widget _buildItemsStep(BillingInvoiceWizardState state, BillingInvoiceWizardNotifier notifier) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const StepHeader(title: '3. INVOICE ITEMS'),
+        const StepHeader(title: '3. INVOICE ITEMS (NO GST)'),
         const SizedBox(height: 16),
         if (state.items.isEmpty)
           Container(padding: const EdgeInsets.all(32), child: const Center(child: Text('No items added.')))
@@ -238,11 +209,11 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
     );
   }
 
-  void _showAddItemDialog(TaxInvoiceWizardNotifier notifier) {
+  void _showAddItemDialog(BillingInvoiceWizardNotifier notifier) {
     _itemNameCtrl.clear();
+    _hsnSacCtrl.clear();
     _itemQtyCtrl.text = '1';
     _itemPriceCtrl.clear();
-    _gstPctCtrl.text = '18';
 
     showDialog(
       context: context,
@@ -253,9 +224,9 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(controller: _itemNameCtrl, decoration: const InputDecoration(labelText: 'Item Name *')),
+              TextFormField(controller: _hsnSacCtrl, decoration: const InputDecoration(labelText: 'HSN/SAC')),
               TextFormField(controller: _itemQtyCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Quantity *')),
               TextFormField(controller: _itemPriceCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Price Per Unit (₹) *')),
-              TextFormField(controller: _gstPctCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'GST %')),
             ],
           ),
         ),
@@ -266,9 +237,8 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
               final name = _itemNameCtrl.text.trim();
               final qty = double.tryParse(_itemQtyCtrl.text) ?? 0;
               final price = double.tryParse(_itemPriceCtrl.text) ?? 0;
-              final gst = double.tryParse(_gstPctCtrl.text) ?? 18;
               if (name.isNotEmpty && qty > 0 && price > 0) {
-                notifier.addItem(EstimateItem(itemName: name, quantity: qty, pricePerUnit: price, gstPercentage: gst, taxApplicable: gst > 0));
+                notifier.addItem(BillingItem(itemName: name, hsnSac: _hsnSacCtrl.text.trim().isNotEmpty ? _hsnSacCtrl.text.trim() : null, quantity: qty, pricePerUnit: price));
                 Navigator.pop(context);
               }
             },
@@ -279,15 +249,13 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
     );
   }
 
-  Widget _buildPreviewStep(TaxInvoiceWizardState state, TaxInvoiceWizardNotifier notifier) {
-    final isConversion = state.linkedEstimateId != null;
+  Widget _buildPreviewStep(BillingInvoiceWizardState state, BillingInvoiceWizardNotifier notifier) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        StepHeader(title: isConversion ? '2. PREVIEW & VERIFY' : '4. PREVIEW'),
+        const StepHeader(title: '4. PREVIEW'),
         const SizedBox(height: 16),
         
-        // Customer Details Card
         Card(
           elevation: 2,
           margin: const EdgeInsets.only(bottom: 16),
@@ -301,35 +269,12 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
                 Text(state.customerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 4),
                 if (state.address.isNotEmpty) Text(state.address),
-                if (state.contactPerson.isNotEmpty) Text('Contact Person: ${state.contactPerson}'),
                 if (state.contactNumber.isNotEmpty) Text('Phone: ${state.contactNumber}'),
-                if (state.gstinNumber.isNotEmpty) Text('GSTIN: ${state.gstinNumber}'),
-                if (state.placeOfSupply.isNotEmpty) Text('Place of Supply: ${state.placeOfSupply}'),
               ],
             ),
           ),
         ),
 
-        // Transportation Details Card
-        Card(
-          elevation: 2,
-          margin: const EdgeInsets.only(bottom: 16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('TRANSPORTATION', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                const Divider(),
-                Text('Vehicle Number: ${state.transportationDetails.vehicleNumber?.isNotEmpty == true ? state.transportationDetails.vehicleNumber : "N/A"}'),
-                Text('Transport Name: ${state.transportationDetails.transportName?.isNotEmpty == true ? state.transportationDetails.transportName : "N/A"}'),
-                Text('LR Number: ${state.transportationDetails.lrNumber?.isNotEmpty == true ? state.transportationDetails.lrNumber : "N/A"}'),
-              ],
-            ),
-          ),
-        ),
-
-        // Items Card
         Card(
           elevation: 2,
           margin: const EdgeInsets.only(bottom: 16),
@@ -348,20 +293,13 @@ class _CreateTaxInvoiceScreenState extends ConsumerState<CreateTaxInvoiceScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(child: Text(item.itemName, style: const TextStyle(fontWeight: FontWeight.w500))),
-                      Text('${item.quantity} x ₹${item.pricePerUnit} (GST: ${item.gstPercentage}%)'),
+                      Text('${item.quantity} x ₹${item.pricePerUnit}'),
                     ],
                   ),
                 )),
               ],
             ),
           ),
-        ),
-
-        const SizedBox(height: 8),
-        const Text(
-          'Invoice totals (including GST) will be auto-calculated by the backend upon submission.',
-          style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey, fontSize: 12),
-          textAlign: TextAlign.center,
         ),
       ],
     );

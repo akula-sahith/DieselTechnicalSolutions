@@ -431,6 +431,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             color: const Color(0xFF7C3AED),
                             onTap: () => context.push('/create-tax-invoice'),
                           ),
+                          _buildQuickActionButton(
+                            label: "Create Billing Invoice",
+                            icon: Icons.subtitles_outlined,
+                            color: const Color(0xFF0284C7),
+                            onTap: () => context.push('/create-billing-invoice'),
+                          ),
                         ],
                       ),
                     ],

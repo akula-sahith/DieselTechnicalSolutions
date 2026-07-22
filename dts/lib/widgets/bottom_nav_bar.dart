@@ -37,6 +37,7 @@ class CustomBottomNavBar extends ConsumerWidget {
   void _showViewSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
@@ -45,7 +46,7 @@ class CustomBottomNavBar extends ConsumerWidget {
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: SafeArea(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -123,6 +124,18 @@ class CustomBottomNavBar extends ConsumerWidget {
                       context.push('/tax-invoices');
                     },
                   ),
+                  const SizedBox(height: 12),
+
+                  _CreateOption(
+                    icon: Icons.subtitles_outlined,
+                    iconColor: const Color(0xFF0284C7),
+                    title: 'Billing Invoices',
+                    subtitle: 'View all billing invoices (Without GST)',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/billing-invoices');
+                    },
+                  ),
                   const SizedBox(height: 8),
                 ],
               ),
@@ -136,6 +149,7 @@ class CustomBottomNavBar extends ConsumerWidget {
   void _showCreateSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
@@ -144,7 +158,7 @@ class CustomBottomNavBar extends ConsumerWidget {
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: SafeArea(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -225,6 +239,19 @@ class CustomBottomNavBar extends ConsumerWidget {
                     onTap: () {
                       Navigator.pop(context);
                       context.push('/create-tax-invoice');
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Billing Invoice Option
+                  _CreateOption(
+                    icon: Icons.subtitles_outlined,
+                    iconColor: const Color(0xFF0284C7),
+                    title: 'Billing Invoice',
+                    subtitle: 'Generate a billing invoice without GST',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/create-billing-invoice');
                     },
                   ),
                   const SizedBox(height: 8),

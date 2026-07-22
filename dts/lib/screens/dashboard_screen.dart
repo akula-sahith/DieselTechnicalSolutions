@@ -8,6 +8,7 @@ import '../providers/reports_provider.dart';
 import '../providers/agreements_provider.dart';
 import '../providers/estimates_provider.dart';
 import '../providers/tax_invoices_provider.dart';
+import '../providers/billing_invoices_provider.dart';
 import '../providers/customers_provider.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/common/section_header.dart';
@@ -28,6 +29,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     Future.microtask(() {
       ref.read(estimatesProvider.notifier).loadEstimates();
       ref.read(taxInvoicesProvider.notifier).loadTaxInvoices();
+      ref.read(billingInvoicesProvider.notifier).loadBillingInvoices();
       ref.read(customersProvider.notifier).loadCustomers();
     });
   }
@@ -770,6 +772,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             statusText: 'Tax Invoice',
             isPending: false,
             onTap: () => context.push('/tax-invoice-details/${invoice.id}'),
+          ),
+        ));
+      }
+    }
+
+    // Billing Invoices
+    final billingInvoicesState = ref.watch(billingInvoicesProvider);
+    for (final invoice in billingInvoicesState.billingInvoices) {
+      if (invoice.id != null) {
+        items.add(_ActivityItem(
+          date: invoice.invoiceDate,
+          widget: DocumentCard(
+            documentNumber: invoice.invoiceNumber ?? 'Bill # Pending',
+            customerName: invoice.billTo.customerName,
+            formattedDate: DateFormat('dd MMM yyyy').format(invoice.invoiceDate),
+            documentType: DocumentType.agreement,
+            amount: '₹${_formatCurrency(invoice.totalAmount ?? 0.0)}',
+            statusText: 'Billing Invoice',
+            isPending: false,
+            onTap: () => context.push('/billing-invoice-details/${invoice.id}', extra: invoice),
           ),
         ));
       }

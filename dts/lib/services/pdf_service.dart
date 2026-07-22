@@ -1469,8 +1469,8 @@ pw.Expanded(
 
           itemsRows.add(pw.TableRow(
             children: [
-              pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
+              pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('${estimate.items.fold<double>(0, (p, e) => p + e.quantity).toInt()}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
@@ -1767,8 +1767,8 @@ pw.Expanded(
 
           itemsRows.add(pw.TableRow(
             children: [
-              pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
+              pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('${invoice.items.fold<double>(0, (p, e) => p + e.quantity).toInt()}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
@@ -2110,8 +2110,8 @@ pw.Expanded(
 
           itemsRows.add(pw.TableRow(
             children: [
-              pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
+              pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('${invoice.items.fold<double>(0, (p, e) => p + e.quantity).toInt()}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),

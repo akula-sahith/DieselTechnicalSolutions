@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:go_router/go_router.dart';
 import '../core/constants/app_colors.dart';
 import '../models/tax_invoice_model.dart';
 import '../repositories/tax_invoice_repository.dart';
@@ -515,11 +514,17 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
                           '₹${item.amount?.toStringAsFixed(2) ?? '0.00'}',
                           style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
                         ),
-                        if ((item.sgst ?? 0) + (item.cgst ?? 0) > 0)
-                          Text(
-                            'GST: ${item.gstPercentage}%',
-                            style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
-                          ),
+                        Builder(
+                          builder: (context) {
+                            final itemTax = ((item.sgst ?? 0) + (item.cgst ?? 0)) > 0
+                                ? ((item.sgst ?? 0) + (item.cgst ?? 0))
+                                : (item.taxApplicable ? (item.pricePerUnit * item.quantity * (item.gstPercentage / 100)) : 0.0);
+                            return Text(
+                              'GST (${item.taxApplicable ? item.gstPercentage : 0}%): ₹${itemTax.toStringAsFixed(2)}',
+                              style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ],

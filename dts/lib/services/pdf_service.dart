@@ -1718,7 +1718,7 @@ pw.Expanded(
       } catch (_) {}
     }
 
-    final tableHeaders = ['#', 'Item Name', 'HSN/ SAC', 'Quantity', 'Price/ Unit', 'Amount'];
+    final tableHeaders = ['#', 'Item Name', 'HSN/ SAC', 'Quantity', 'Price/ Unit', 'GST', 'Amount'];
     
     pdf.addPage(
       pw.MultiPage(
@@ -1746,13 +1746,16 @@ pw.Expanded(
               child: pw.Text(
                 h, 
                 style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5),
-                textAlign: (h == 'Quantity' || h == 'Price/ Unit' || h == 'Amount') ? pw.TextAlign.right : pw.TextAlign.left,
+                textAlign: (h == 'Quantity' || h == 'Price/ Unit' || h == 'GST' || h == 'Amount') ? pw.TextAlign.right : pw.TextAlign.left,
               ),
             )).toList(),
           ));
 
           for (int i = 0; i < invoice.items.length; i++) {
             final item = invoice.items[i];
+            final itemTax = ((item.sgst ?? 0) + (item.cgst ?? 0)) > 0
+                ? ((item.sgst ?? 0) + (item.cgst ?? 0))
+                : (item.taxApplicable ? (item.pricePerUnit * item.quantity * (item.gstPercentage / 100)) : 0.0);
             itemsRows.add(pw.TableRow(
               children: [
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('${i + 1}', style: const pw.TextStyle(fontSize: 8.5))),
@@ -1760,6 +1763,10 @@ pw.Expanded(
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(item.hsnSac ?? '', style: const pw.TextStyle(fontSize: 8.5))),
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('${item.quantity}', textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 8.5))),
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${item.pricePerUnit.toStringAsFixed(2)}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5))),
+                pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [
+                  pw.Text('₹ ${itemTax.toStringAsFixed(2)}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
+                  pw.Text('(${item.taxApplicable ? item.gstPercentage : 0}%)', style: const pw.TextStyle(fontSize: 8.5)),
+                ])),
                 pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${item.amount?.toStringAsFixed(2) ?? ''}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5))),
               ]
             ));
@@ -1772,6 +1779,7 @@ pw.Expanded(
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('${invoice.items.fold<double>(0, (p, e) => p + e.quantity).toInt()}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9))),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('')),
+              pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${invoice.totalTax?.toStringAsFixed(2) ?? ''}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontFallback: [rupeeFont], fontWeight: pw.FontWeight.bold, fontSize: 9))),
               pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${invoice.totalAmount?.toStringAsFixed(2) ?? ''}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontFallback: [rupeeFont], fontWeight: pw.FontWeight.bold, fontSize: 9))),
             ]
           ));
@@ -1849,11 +1857,12 @@ pw.Expanded(
               border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
               columnWidths: const {
                 0: pw.FixedColumnWidth(25),
-                1: pw.FlexColumnWidth(4),
-                2: pw.FixedColumnWidth(65),
-                3: pw.FixedColumnWidth(65),
-                4: pw.FixedColumnWidth(80),
-                5: pw.FixedColumnWidth(85),
+                1: pw.FlexColumnWidth(3.5),
+                2: pw.FixedColumnWidth(60),
+                3: pw.FixedColumnWidth(55),
+                4: pw.FixedColumnWidth(75),
+                5: pw.FixedColumnWidth(75),
+                6: pw.FixedColumnWidth(80),
               },
               children: itemsRows,
             ),
@@ -1915,6 +1924,44 @@ pw.Expanded(
                 ),
               ],
             ),
+
+            // GST Table with proper borders
+            if (invoice.placeOfSupply == '36-Telangana' || invoice.placeOfSupply == null)
+              pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+                columnWidths: const {
+                  0: pw.FlexColumnWidth(2),
+                  1: pw.FlexColumnWidth(3),
+                  2: pw.FlexColumnWidth(2),
+                  3: pw.FlexColumnWidth(3),
+                },
+                children: [
+                  pw.TableRow(
+                    children: [
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Tax type', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Taxable amount', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Rate', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('Tax amount', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5))),
+                    ],
+                  ),
+                  pw.TableRow(
+                    children: [
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('SGST', style: const pw.TextStyle(fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${invoice.subtotal?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('9.0%', style: const pw.TextStyle(fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${((invoice.totalTax ?? 0) / 2).toStringAsFixed(2)}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5))),
+                    ],
+                  ),
+                  pw.TableRow(
+                    children: [
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('CGST', style: const pw.TextStyle(fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${invoice.subtotal?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('9.0%', style: const pw.TextStyle(fontSize: 8.5))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text('₹ ${((invoice.totalTax ?? 0) / 2).toStringAsFixed(2)}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5))),
+                    ],
+                  ),
+                ],
+              ),
 
             // Footer (Bank details | Terms | Signature)
             pw.Table(

@@ -328,26 +328,24 @@ class _CreateAgreementScreenState extends ConsumerState<CreateAgreementScreen> {
           ),
         ),
         
-        if (state.documentType == 'Agreement') ...[
-          const SizedBox(height: 24),
-          const Text(
-            'Maintenance Terms',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
+        const SizedBox(height: 24),
+        const Text(
+          'Maintenance Terms',
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _freeVisitsCtrl,
+          decoration: const InputDecoration(
+            labelText: 'Number of Free Visits (per year) *',
+            hintText: 'e.g., 6',
           ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _freeVisitsCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Number of Free Visits (per year) *',
-              hintText: 'e.g., 6',
-            ),
-            keyboardType: TextInputType.number,
-            onChanged: (val) {
-              final visits = int.tryParse(val) ?? 6;
-              notifier.updateNumberOfFreeVisits(visits);
-            },
-          ),
-        ],
+          keyboardType: TextInputType.number,
+          onChanged: (val) {
+            final visits = int.tryParse(val) ?? 6;
+            notifier.updateNumberOfFreeVisits(visits);
+          },
+        ),
       ],
     );
   }
@@ -671,6 +669,7 @@ class _CreateAgreementScreenState extends ConsumerState<CreateAgreementScreen> {
         _buildPreviewSectionTitle('Document Info'),
         _buildPreviewItem('Type', state.documentType),
         _buildPreviewItem('Date', DateFormat('dd-MM-yyyy').format(state.date)),
+        _buildPreviewItem('Free Visits / year', state.numberOfFreeVisits.toString()),
         const Divider(),
 
         // Section: Customer details

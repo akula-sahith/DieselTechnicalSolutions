@@ -109,6 +109,7 @@ export const createAgreement = async (req, res) => {
       offerValidity: agreementPayload.offerValidity,
       notes: agreementPayload.notes,
       footerText: agreementPayload.footerText,
+      numberOfFreeVisits: agreementPayload.numberOfFreeVisits !== undefined ? Number(agreementPayload.numberOfFreeVisits) : 6,
     };
 
     const agreement = await Agreement.create(agreementDocument);
@@ -287,6 +288,7 @@ export const updateAgreement = async (req, res) => {
       offerValidity: agreementPayload.offerValidity ?? agreement.offerValidity,
       notes: agreementPayload.notes ?? agreement.notes,
       footerText: agreementPayload.footerText ?? agreement.footerText,
+      numberOfFreeVisits: agreementPayload.numberOfFreeVisits !== undefined ? Number(agreementPayload.numberOfFreeVisits) : (agreement.numberOfFreeVisits ?? 6),
     };
 
     const updatedAgreement = await Agreement.findByIdAndUpdate(req.params.id, updatePayload, { new: true, runValidators: true });

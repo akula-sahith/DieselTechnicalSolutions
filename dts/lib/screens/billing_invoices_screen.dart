@@ -29,7 +29,7 @@ class _BillingInvoicesScreenState extends ConsumerState<BillingInvoicesScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Billing Invoices'),
+        title: const Text('Cash Invoices'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -40,7 +40,7 @@ class _BillingInvoicesScreenState extends ConsumerState<BillingInvoicesScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/create-billing-invoice'),
         icon: const Icon(Icons.add),
-        label: const Text('Create Invoice'),
+        label: const Text('Create Cash Invoice'),
       ),
       body: Column(
         children: [
@@ -49,7 +49,7 @@ class _BillingInvoicesScreenState extends ConsumerState<BillingInvoicesScreen> {
             child: TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: 'Search Billing Invoices...',
+                hintText: 'Search Cash Invoices...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchCtrl.text.isNotEmpty
                     ? IconButton(
@@ -88,7 +88,7 @@ class _BillingInvoicesScreenState extends ConsumerState<BillingInvoicesScreen> {
                         ),
                       )
                     : state.billingInvoices.isEmpty
-                        ? const Center(child: Text('No Billing Invoices found.'))
+                        ? const Center(child: Text('No Cash Invoices found.'))
                         : RefreshIndicator(
                             onRefresh: () => notifier.refresh(),
                             child: ListView.builder(

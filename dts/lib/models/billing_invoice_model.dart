@@ -48,6 +48,7 @@ class BillingInvoiceModel {
   final List<BillingItem> items;
   final String? termsAndConditions;
   final double? totalAmount;
+  final double receivedAmount;
   final String? amountInWords;
   final String? linkedEstimateId;
   final String? technicianSignatureUrl;
@@ -68,6 +69,7 @@ class BillingInvoiceModel {
     required this.items,
     this.termsAndConditions,
     this.totalAmount,
+    this.receivedAmount = 0.0,
     this.amountInWords,
     this.linkedEstimateId,
     this.technicianSignatureUrl,
@@ -110,6 +112,7 @@ class BillingInvoiceModel {
       items: itemsList,
       termsAndConditions: docJson['termsAndConditions'],
       totalAmount: (docJson['totalAmount'] as num?)?.toDouble(),
+      receivedAmount: (docJson['receivedAmount'] as num?)?.toDouble() ?? 0.0,
       amountInWords: docJson['amountInWords'],
       linkedEstimateId: docJson['linkedEstimateId'] is Map
           ? (docJson['linkedEstimateId']['_id'] ?? docJson['linkedEstimateId']['id'])?.toString()
@@ -132,6 +135,7 @@ class BillingInvoiceModel {
       'invoiceDate': invoiceDate.toIso8601String(),
       'billTo': billTo.toJson(),
       'items': items.map((e) => e.toJson()).toList(),
+      'receivedAmount': receivedAmount,
     };
 
     if (id != null) map['id'] = id;

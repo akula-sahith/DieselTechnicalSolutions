@@ -73,10 +73,14 @@ export const createBillingInvoice = async (req, res) => {
       },
       items: totals.items,
       totalAmount: totals.totalAmount,
+      receivedAmount: Number(invoicePayload.receivedAmount || 0),
       amountInWords: numberToWords(totals.totalAmount),
       termsAndConditions: invoicePayload.termsAndConditions,
       authorizedSignatureUrl: invoicePayload.authorizedSignatureUrl,
     };
+
+    console.log("createBillingInvoice payload receivedAmount:", invoicePayload.receivedAmount);
+    console.log("createBillingInvoice document receivedAmount:", invoiceDocument.receivedAmount);
 
     const billingInvoice = await BillingInvoice.create(invoiceDocument);
 
@@ -88,7 +92,7 @@ export const createBillingInvoice = async (req, res) => {
       console.error('Failed to upsert customer from billing invoice:', e?.message || e);
     }
 
-    const paymentData = await generatePaymentData(totals.totalAmount, `BILL-${billingInvoice.invoiceNumber}`);
+    const paymentData = await generatePaymentData(totals.totalAmount - (billingInvoice.receivedAmount || 0), `BILL-${billingInvoice.invoiceNumber}`);
     const bankDetails = getCompanyBankDetails();
 
     const responseData = {
@@ -245,10 +249,14 @@ export const updateBillingInvoice = async (req, res) => {
       },
       items: totals.items,
       totalAmount: totals.totalAmount,
+      receivedAmount: Number(invoicePayload.receivedAmount !== undefined ? invoicePayload.receivedAmount : billingInvoice.receivedAmount),
       amountInWords: numberToWords(totals.totalAmount),
       termsAndConditions: invoicePayload.termsAndConditions || billingInvoice.termsAndConditions,
       authorizedSignatureUrl: invoicePayload.authorizedSignatureUrl || billingInvoice.authorizedSignatureUrl,
     };
+
+    console.log("updateBillingInvoice payload receivedAmount:", invoicePayload.receivedAmount);
+    console.log("updateBillingInvoice document receivedAmount:", updatePayload.receivedAmount);
 
     const updatedInvoice = await BillingInvoice.findByIdAndUpdate(req.params.id, updatePayload, {
       new: true,
@@ -262,7 +270,7 @@ export const updateBillingInvoice = async (req, res) => {
       console.error('Failed to upsert customer from updated billing invoice:', e?.message || e);
     }
 
-    const paymentData = await generatePaymentData(updatedInvoice.totalAmount, `BILL-${updatedInvoice.invoiceNumber}`);
+    const paymentData = await generatePaymentData(updatedInvoice.totalAmount - (updatedInvoice.receivedAmount || 0), `BILL-${updatedInvoice.invoiceNumber}`);
     const bankDetails = getCompanyBankDetails();
 
     const responseData = {

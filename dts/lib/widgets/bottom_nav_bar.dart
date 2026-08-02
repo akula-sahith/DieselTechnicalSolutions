@@ -129,8 +129,8 @@ class CustomBottomNavBar extends ConsumerWidget {
                   _CreateOption(
                     icon: Icons.subtitles_outlined,
                     iconColor: const Color(0xFF0284C7),
-                    title: 'Billing Invoices',
-                    subtitle: 'View all billing invoices (Without GST)',
+                    title: 'Cash Invoices',
+                    subtitle: 'View all cash invoices (Without GST)',
                     onTap: () {
                       Navigator.pop(context);
                       context.push('/billing-invoices');
@@ -243,12 +243,12 @@ class CustomBottomNavBar extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // Billing Invoice Option
+                  // Cash Invoice Option
                   _CreateOption(
                     icon: Icons.subtitles_outlined,
                     iconColor: const Color(0xFF0284C7),
-                    title: 'Billing Invoice',
-                    subtitle: 'Generate a billing invoice without GST',
+                    title: 'Cash Invoice',
+                    subtitle: 'Generate a cash invoice without GST',
                     onTap: () {
                       Navigator.pop(context);
                       context.push('/create-billing-invoice');

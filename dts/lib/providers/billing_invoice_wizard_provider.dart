@@ -19,6 +19,7 @@ class BillingInvoiceWizardState {
   final List<BillingItem> items;
   final String termsAndConditions;
   final String? linkedEstimateId;
+  final double receivedAmount;
   
   final int currentStep;
   final bool isSubmitting;
@@ -39,6 +40,7 @@ class BillingInvoiceWizardState {
     required this.items,
     required this.termsAndConditions,
     this.linkedEstimateId,
+    required this.receivedAmount,
     required this.currentStep,
     required this.isSubmitting,
     this.error,
@@ -60,6 +62,7 @@ class BillingInvoiceWizardState {
       items: [],
       termsAndConditions: 'Thank you for doing business with us.\n*100% advance is mandatory',
       linkedEstimateId: null,
+      receivedAmount: 0.0,
       currentStep: 0,
       isSubmitting: false,
       error: null,
@@ -81,6 +84,7 @@ class BillingInvoiceWizardState {
     List<BillingItem>? items,
     String? termsAndConditions,
     String? linkedEstimateId,
+    double? receivedAmount,
     int? currentStep,
     bool? isSubmitting,
     String? error,
@@ -100,6 +104,7 @@ class BillingInvoiceWizardState {
       items: items ?? this.items,
       termsAndConditions: termsAndConditions ?? this.termsAndConditions,
       linkedEstimateId: linkedEstimateId ?? this.linkedEstimateId,
+      receivedAmount: receivedAmount ?? this.receivedAmount,
       currentStep: currentStep ?? this.currentStep,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: error,
@@ -123,6 +128,7 @@ class BillingInvoiceWizardState {
       items: items,
       termsAndConditions: termsAndConditions.isNotEmpty ? termsAndConditions : null,
       linkedEstimateId: linkedEstimateId,
+      receivedAmount: receivedAmount,
     );
   }
 }
@@ -152,6 +158,7 @@ class BillingInvoiceWizardNotifier extends StateNotifier<BillingInvoiceWizardSta
       items: invoice.items,
       termsAndConditions: invoice.termsAndConditions ?? '',
       linkedEstimateId: invoice.linkedEstimateId,
+      receivedAmount: invoice.receivedAmount,
       currentStep: 0,
       isSubmitting: false,
       error: null,
@@ -171,6 +178,7 @@ class BillingInvoiceWizardNotifier extends StateNotifier<BillingInvoiceWizardSta
   void updateGstinNumber(String gstin) => state = state.copyWith(gstinNumber: gstin);
   
   void updateTermsAndConditions(String terms) => state = state.copyWith(termsAndConditions: terms);
+  void updateReceivedAmount(double amount) => state = state.copyWith(receivedAmount: amount);
 
   void updateVehicleNumber(String val) => state = state.copyWith(transportationDetails: TransportationDetails(vehicleNumber: val, transportName: state.transportationDetails.transportName, lrNumber: state.transportationDetails.lrNumber, dispatchDetails: state.transportationDetails.dispatchDetails, deliveryDetails: state.transportationDetails.deliveryDetails));
   void updateTransportName(String val) => state = state.copyWith(transportationDetails: TransportationDetails(vehicleNumber: state.transportationDetails.vehicleNumber, transportName: val, lrNumber: state.transportationDetails.lrNumber, dispatchDetails: state.transportationDetails.dispatchDetails, deliveryDetails: state.transportationDetails.deliveryDetails));

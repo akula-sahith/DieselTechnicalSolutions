@@ -35,12 +35,14 @@ class _CreateBillingInvoiceScreenState extends ConsumerState<CreateBillingInvoic
   final _hsnSacCtrl = TextEditingController();
   final _itemQtyCtrl = TextEditingController();
   final _itemPriceCtrl = TextEditingController();
+  final _receivedAmountCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(billingInvoiceWizardProvider.notifier).reset();
+      _receivedAmountCtrl.clear();
     });
   }
 
@@ -59,6 +61,7 @@ class _CreateBillingInvoiceScreenState extends ConsumerState<CreateBillingInvoic
     _hsnSacCtrl.dispose();
     _itemQtyCtrl.dispose();
     _itemPriceCtrl.dispose();
+    _receivedAmountCtrl.dispose();
     super.dispose();
   }
 
@@ -102,7 +105,7 @@ class _CreateBillingInvoiceScreenState extends ConsumerState<CreateBillingInvoic
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Create Billing Invoice')),
+      appBar: AppBar(title: const Text('Create Cash Invoice')),
       body: Stack(
         children: [
           Column(
@@ -183,28 +186,98 @@ class _CreateBillingInvoiceScreenState extends ConsumerState<CreateBillingInvoic
   }
 
   Widget _buildItemsStep(BillingInvoiceWizardState state, BillingInvoiceWizardNotifier notifier) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    final totalAmount = state.items.fold<double>(0.0, (sum, item) => sum + (item.pricePerUnit * item.quantity));
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const StepHeader(title: '3. INVOICE ITEMS (NO GST)'),
+          const SizedBox(height: 16),
+          if (state.items.isEmpty)
+            Container(padding: const EdgeInsets.all(32), child: const Center(child: Text('No items added.')))
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: state.items.length,
+              itemBuilder: (context, index) {
+                final item = state.items[index];
+                return ListTile(
+                  title: Text(item.itemName),
+                  subtitle: Text('₹${item.pricePerUnit} x ${item.quantity}'),
+                  trailing: IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => notifier.removeItem(index)),
+                );
+              },
+            ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(onPressed: () => _showAddItemDialog(notifier), icon: const Icon(Icons.add), label: const Text('Add Item')),
+          
+          if (state.items.isNotEmpty) ...[
+            const Divider(height: 32),
+            const Text('Financial Summary', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primary)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                children: [
+                  _buildSummaryRow('Total Amount', '₹${totalAmount.toStringAsFixed(2)}'),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _receivedAmountCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Advanced Amount Received (₹)',
+                      prefixIcon: Icon(Icons.currency_rupee),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    onChanged: (val) {
+                      final parsed = double.tryParse(val) ?? 0.0;
+                      debugPrint("CreateBillingInvoiceScreen: onChanged parsed receivedAmount = $parsed");
+                      notifier.updateReceivedAmount(parsed);
+                    },
+                  ),
+                  const Divider(height: 24),
+                  _buildSummaryRow(
+                    'Remaining Balance',
+                    '₹${(totalAmount - state.receivedAmount).toStringAsFixed(2)}',
+                    isBold: true,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value, {bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const StepHeader(title: '3. INVOICE ITEMS (NO GST)'),
-        const SizedBox(height: 16),
-        if (state.items.isEmpty)
-          Container(padding: const EdgeInsets.all(32), child: const Center(child: Text('No items added.')))
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: state.items.length,
-            itemBuilder: (context, index) {
-              final item = state.items[index];
-              return ListTile(
-                title: Text(item.itemName),
-                subtitle: Text('₹${item.pricePerUnit} x ${item.quantity}'),
-                trailing: IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => notifier.removeItem(index)),
-              );
-            },
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: isBold ? 14 : 13,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            color: isBold ? AppColors.primary : AppColors.textSecondary,
           ),
-        OutlinedButton.icon(onPressed: () => _showAddItemDialog(notifier), icon: const Icon(Icons.add), label: const Text('Add Item')),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: isBold ? 15 : 13,
+            fontWeight: FontWeight.bold,
+            color: isBold ? AppColors.accent : AppColors.textPrimary,
+          ),
+        ),
       ],
     );
   }
@@ -250,6 +323,9 @@ class _CreateBillingInvoiceScreenState extends ConsumerState<CreateBillingInvoic
   }
 
   Widget _buildPreviewStep(BillingInvoiceWizardState state, BillingInvoiceWizardNotifier notifier) {
+    final totalAmount = state.items.fold<double>(0.0, (sum, item) => sum + (item.pricePerUnit * item.quantity));
+    debugPrint("CreateBillingInvoiceScreen: preview step receivedAmount = ${state.receivedAmount}");
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -297,6 +373,31 @@ class _CreateBillingInvoiceScreenState extends ConsumerState<CreateBillingInvoic
                     ],
                   ),
                 )),
+                const Divider(),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Total Amount', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('₹${totalAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Advanced Received', style: TextStyle(color: Colors.grey)),
+                    Text('₹${state.receivedAmount.toStringAsFixed(2)}', style: const TextStyle(color: Colors.grey)),
+                  ],
+                ),
+                const Divider(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Remaining Balance', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.accent)),
+                    Text('₹${(totalAmount - state.receivedAmount).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.accent)),
+                  ],
+                ),
               ],
             ),
           ),

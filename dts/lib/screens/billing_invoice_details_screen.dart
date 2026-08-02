@@ -106,7 +106,7 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => PdfViewerScreen(
-          title: _invoice!.invoiceNumber ?? 'Billing Invoice PDF',
+          title: _invoice!.invoiceNumber ?? 'Cash Invoice PDF',
           pdfBuilder: () {
             final pdfService = ref.read(pdfServiceProvider);
             return pdfService.generateBillingInvoicePdf(_invoice!);
@@ -121,7 +121,7 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Billing Invoice'),
+        title: const Text('Delete Cash Invoice'),
         content: const Text('Are you sure you want to delete this invoice? This action cannot be undone.'),
         actions: [
           TextButton(
@@ -146,7 +146,7 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
         ref.read(billingInvoicesProvider.notifier).refresh();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Billing Invoice deleted successfully.')),
+            const SnackBar(content: Text('Cash Invoice deleted successfully.')),
           );
           Navigator.of(context).pop();
         }
@@ -200,7 +200,7 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(invoice.invoiceNumber ?? 'Billing Invoice'),
+            Text(invoice.invoiceNumber ?? 'Cash Invoice'),
             Text(
               invoice.billTo.customerName,
               style: const TextStyle(fontSize: 12, color: Colors.white70),
@@ -248,7 +248,7 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
                   children: [
                     Icon(Icons.delete_outline_rounded, color: AppColors.error),
                     SizedBox(width: 8),
-                    Text('Delete Invoice', style: TextStyle(color: AppColors.error)),
+                    Text('Delete Cash Invoice', style: TextStyle(color: AppColors.error)),
                   ],
                 ),
               ),
@@ -333,7 +333,7 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Billing Invoice (Without GST)',
+                    'Cash Invoice (Without GST)',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
                   ),
                   const Divider(height: 24),
@@ -379,6 +379,18 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
                     '₹${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
                     isBold: true,
                     valueColor: AppColors.textPrimary,
+                  ),
+                  _buildDetailRow(
+                    'Advanced Amount Received',
+                    '₹${invoice.receivedAmount.toStringAsFixed(2)}',
+                    valueColor: AppColors.textSecondary,
+                  ),
+                  const Divider(),
+                  _buildDetailRow(
+                    'Balance Remaining',
+                    '₹${((invoice.totalAmount ?? 0.0) - invoice.receivedAmount).toStringAsFixed(2)}',
+                    isBold: true,
+                    valueColor: AppColors.accent,
                   ),
                 ],
               ),

@@ -2117,12 +2117,12 @@ pw.Expanded(
         header: (pw.Context context) {
           return pw.Column(
             children: [
-              pw.Text('Billing Invoice', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              pw.Text('Cash Invoice', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 4),
               pw.Container(
                 decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.black, width: 0.5)),
                 padding: const pw.EdgeInsets.all(8),
-                child: _buildEstimateHeader(logoImage, 'Billing Invoice', null, null),
+                child: _buildEstimateHeader(logoImage, 'Cash Invoice', null, null),
               ),
             ]
           );
@@ -2288,6 +2288,28 @@ pw.Expanded(
                               ],
                             ),
                           ),
+                          pw.Container(
+                            decoration: const pw.BoxDecoration(border: pw.Border(top: pw.BorderSide(color: PdfColors.black, width: 0.5))),
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            child: pw.Row(
+                              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                              children: [
+                                pw.Text('Received Amount', style: pw.TextStyle(fontSize: 8.5)),
+                                pw.Text('₹ ${invoice.receivedAmount.toStringAsFixed(2)}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
+                              ],
+                            ),
+                          ),
+                          pw.Container(
+                            decoration: const pw.BoxDecoration(border: pw.Border(top: pw.BorderSide(color: PdfColors.black, width: 0.5))),
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            child: pw.Row(
+                              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                              children: [
+                                pw.Text('Balance Remaining', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                                pw.Text('₹ ${((invoice.totalAmount ?? 0.0) - invoice.receivedAmount).toStringAsFixed(2)}', style: pw.TextStyle(fontFallback: [rupeeFont], fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -2367,7 +2389,7 @@ pw.Expanded(
     await file.writeAsBytes(bytes);
     
     final upiLink = invoice.paymentData?.clickToPayLink;
-    final shareText = StringBuffer('Diesel Technical Solutions Billing Invoice - ${invoice.invoiceNumber ?? invoice.billTo.customerName}');
+    final shareText = StringBuffer('Diesel Technical Solutions Cash Invoice - ${invoice.invoiceNumber ?? invoice.billTo.customerName}');
     if (upiLink != null && upiLink.isNotEmpty) {
       shareText.write('\n\n💳 Click to Pay via UPI:\n$upiLink');
     }

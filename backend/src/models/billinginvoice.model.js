@@ -119,6 +119,11 @@ const billingInvoiceSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    receivedAmount: {
+      type: Number,
+      default: 0,
+      min: [0, 'Received amount cannot be negative.'],
+    },
     amountInWords: {
       type: String,
       trim: true,

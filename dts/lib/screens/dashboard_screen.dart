@@ -434,7 +434,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             onTap: () => context.push('/create-tax-invoice'),
                           ),
                           _buildQuickActionButton(
-                            label: "Create Billing Invoice",
+                            label: "Create Cash Invoice",
                             icon: Icons.subtitles_outlined,
                             color: const Color(0xFF0284C7),
                             onTap: () => context.push('/create-billing-invoice'),
@@ -777,7 +777,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       }
     }
 
-    // Billing Invoices
+    // Cash Invoices
     final billingInvoicesState = ref.watch(billingInvoicesProvider);
     for (final invoice in billingInvoicesState.billingInvoices) {
       if (invoice.id != null) {
@@ -789,7 +789,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             formattedDate: DateFormat('dd MMM yyyy').format(invoice.invoiceDate),
             documentType: DocumentType.agreement,
             amount: '₹${_formatCurrency(invoice.totalAmount ?? 0.0)}',
-            statusText: 'Billing Invoice',
+            statusText: 'Cash Invoice',
             isPending: false,
             onTap: () => context.push('/billing-invoice-details/${invoice.id}', extra: invoice),
           ),

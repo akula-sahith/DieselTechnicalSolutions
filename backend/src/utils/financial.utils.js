@@ -68,13 +68,11 @@ export const formatEstimateNumber = (sequence) => {
 };
 
 export const formatInvoiceNumber = (sequence) => {
-  const year = new Date().getFullYear();
-  return `INV-${year}-${String(sequence).padStart(4, '0')}`;
+  return String(sequence).padStart(2, '0');
 };
 
 export const formatBillingInvoiceNumber = (sequence) => {
-  const year = new Date().getFullYear();
-  return `BILL-${year}-${String(sequence).padStart(4, '0')}`;
+  return String(sequence).padStart(2, '0');
 };
 
 export const calculateBillingItems = (items = []) => {

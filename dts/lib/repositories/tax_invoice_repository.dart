@@ -36,6 +36,7 @@ class TaxInvoiceRepository {
     String search = '',
     String dateFrom = '',
     String dateTo = '',
+    bool all = false,
   }) async {
     try {
       final queryParams = <String, dynamic>{
@@ -43,6 +44,9 @@ class TaxInvoiceRepository {
         'limit': limit,
         'search': search,
       };
+      if (all) {
+        queryParams['all'] = 'true';
+      }
       if (dateFrom.isNotEmpty) {
         queryParams['dateFrom'] = dateFrom;
       }

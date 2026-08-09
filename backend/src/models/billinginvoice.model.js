@@ -61,6 +61,31 @@ const transportationDetailsSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const paymentSchema = new mongoose.Schema(
+  {
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    date: {
+      type: Date,
+      default: Date.now,
+    },
+    method: {
+      type: String,
+      enum: ['cash', 'bank_transfer', 'upi', 'cheque', 'other'],
+      default: 'upi',
+    },
+    transactionId: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+  },
+  { _id: true }
+);
+
 const billingInvoiceSchema = new mongoose.Schema(
   {
     invoiceNumber: {
@@ -119,11 +144,35 @@ const billingInvoiceSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    discountType: {
+      type: String,
+      enum: ['none', 'percentage', 'fixed'],
+      default: 'none',
+    },
+    discountValue: {
+      type: Number,
+      default: 0,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+    },
     receivedAmount: {
       type: Number,
       default: 0,
       min: [0, 'Received amount cannot be negative.'],
     },
+    outstandingAmount: {
+      type: Number,
+      default: 0,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ['unpaid', 'partially_paid', 'paid'],
+      default: 'unpaid',
+      index: true,
+    },
+    payments: [paymentSchema],
     amountInWords: {
       type: String,
       trim: true,

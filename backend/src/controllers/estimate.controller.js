@@ -1,10 +1,12 @@
 import Estimate from '../models/estimate.model.js';
 import TaxInvoice from '../models/taxinvoice.model.js';
+import BillingInvoice from '../models/billinginvoice.model.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 import {
   calculateEstimateTotals,
   formatEstimateNumber,
   formatInvoiceNumber,
+  formatBillingInvoiceNumber,
   generateNextSequence,
   calculatePaymentDetails,
 } from '../utils/financial.utils.js';
@@ -73,7 +75,11 @@ export const createEstimate = async (req, res) => {
       );
     }
 
-    const totals = calculateEstimateTotals(items);
+    const discount = {
+      discountType: estimatePayload.discountType || 'none',
+      discountValue: Number(estimatePayload.discountValue || 0),
+    };
+    const totals = calculateEstimateTotals(items, discount);
     const sequence = await generateNextSequence(Estimate, 'estimateNumber');
 
     const estimateDocument = {
@@ -87,8 +93,13 @@ export const createEstimate = async (req, res) => {
         gstinNumber: estimatePayload.estimateFor.gstinNumber || '',
       },
       placeOfSupply: estimatePayload.placeOfSupply || '',
+      taxMode: estimatePayload.taxMode || 'tax',
       items: totals.items,
       subtotal: totals.subtotal,
+      discountType: totals.discountType,
+      discountValue: totals.discountValue,
+      discountAmount: totals.discountAmount,
+      taxableAmount: totals.taxableAmount,
       totalTax: totals.totalTax,
       totalAmount: totals.totalAmount,
       amountInWords: numberToWords(totals.totalAmount),
@@ -257,7 +268,11 @@ export const updateEstimate = async (req, res) => {
       return sendError(res, 'At least one item is required.', {}, 400);
     }
 
-    const totals = calculateEstimateTotals(items);
+    const discount = {
+      discountType: estimatePayload.discountType !== undefined ? estimatePayload.discountType : estimate.discountType,
+      discountValue: estimatePayload.discountValue !== undefined ? Number(estimatePayload.discountValue) : estimate.discountValue,
+    };
+    const totals = calculateEstimateTotals(items, discount);
 
     const updatePayload = {
       estimateDate: estimatePayload.estimateDate ? new Date(estimatePayload.estimateDate) : estimate.estimateDate,
@@ -269,8 +284,13 @@ export const updateEstimate = async (req, res) => {
         gstinNumber: estimatePayload.estimateFor?.gstinNumber || estimate.estimateFor.gstinNumber,
       },
       placeOfSupply: estimatePayload.placeOfSupply || estimate.placeOfSupply,
+      taxMode: estimatePayload.taxMode || estimate.taxMode,
       items: totals.items,
       subtotal: totals.subtotal,
+      discountType: totals.discountType,
+      discountValue: totals.discountValue,
+      discountAmount: totals.discountAmount,
+      taxableAmount: totals.taxableAmount,
       totalTax: totals.totalTax,
       totalAmount: totals.totalAmount,
       amountInWords: numberToWords(totals.totalAmount),
@@ -335,6 +355,78 @@ export const convertEstimateToInvoice = async (req, res) => {
       return sendError(res, 'This estimate has already been converted to an invoice.', {}, 400);
     }
 
+    if (estimate.taxMode === 'no-tax') {
+      const payload = req.body?.billingInvoice ?? req.body ?? {};
+      const transportationDetails = payload.transportationDetails || {};
+      const receivedAmount = Number(payload.receivedAmount || 0);
+
+      const sequence = await generateNextSequence(BillingInvoice, 'invoiceNumber');
+
+      const invoiceDocument = {
+        invoiceNumber: formatBillingInvoiceNumber(sequence),
+        invoiceDate: payload.invoiceDate ? new Date(payload.invoiceDate) : new Date(),
+        billTo: {
+          customerName: estimate.estimateFor.customerName,
+          address: estimate.estimateFor.address,
+          contactPerson: estimate.estimateFor.contactPerson,
+          contactNumber: estimate.estimateFor.contactNumber,
+          gstinNumber: estimate.estimateFor.gstinNumber,
+        },
+        placeOfSupply: estimate.placeOfSupply,
+        transportationDetails: {
+          vehicleNumber: transportationDetails.vehicleNumber || '',
+          transportName: transportationDetails.transportName || '',
+          lrNumber: transportationDetails.lrNumber || '',
+          dispatchDetails: transportationDetails.dispatchDetails || '',
+          deliveryDetails: transportationDetails.deliveryDetails || '',
+        },
+        items: estimate.items.map(item => ({
+          itemName: item.itemName,
+          hsnSac: item.hsnSac || '',
+          quantity: item.quantity,
+          pricePerUnit: item.pricePerUnit,
+          amount: item.amount,
+        })),
+        totalAmount: estimate.totalAmount,
+        discountType: estimate.discountType,
+        discountValue: estimate.discountValue,
+        discountAmount: estimate.discountAmount,
+        receivedAmount,
+        outstandingAmount: Math.max(0, Number((estimate.totalAmount - receivedAmount).toFixed(2))),
+        paymentStatus: receivedAmount >= estimate.totalAmount ? 'paid' : (receivedAmount > 0 ? 'partially_paid' : 'unpaid'),
+        payments: receivedAmount > 0 ? [{
+          amount: receivedAmount,
+          date: payload.invoiceDate ? new Date(payload.invoiceDate) : new Date(),
+          method: 'cash',
+          transactionId: 'Initial Payment (Conversion)',
+        }] : [],
+        amountInWords: estimate.amountInWords,
+        termsAndConditions: estimate.termsAndConditions,
+        authorizedSignatureUrl: estimate.authorizedSignatureUrl,
+        linkedEstimateId: estimate._id,
+      };
+
+      const billingInvoice = await BillingInvoice.create(invoiceDocument);
+
+      await Estimate.findByIdAndUpdate(req.params.id, { status: 'converted' });
+
+      try {
+        await upsertCustomerFromInvoice(billingInvoice.billTo, billingInvoice);
+      } catch (e) {
+        console.error('Failed to upsert customer from billing invoice:', e?.message || e);
+      }
+
+      return sendSuccess(
+        res,
+        'Estimate converted to Cash Invoice successfully.',
+        {
+          estimate: { _id: estimate._id, status: 'converted' },
+          billingInvoice,
+        },
+        201
+      );
+    }
+
     const payload = req.body?.taxInvoice ?? req.body ?? {};
     const transportationDetails = payload.transportationDetails || {};
 
@@ -360,12 +452,20 @@ export const convertEstimateToInvoice = async (req, res) => {
       },
       items: estimate.items,
       subtotal: estimate.subtotal,
+      discountType: estimate.discountType,
+      discountValue: estimate.discountValue,
+      discountAmount: estimate.discountAmount,
+      taxableAmount: estimate.taxableAmount,
       totalTax: estimate.totalTax,
       totalAmount: estimate.totalAmount,
       amountInWords: estimate.amountInWords,
       termsAndConditions: estimate.termsAndConditions,
       authorizedSignatureUrl: estimate.authorizedSignatureUrl,
       linkedEstimateId: estimate._id,
+      paymentStatus: 'unpaid',
+      receivedAmount: 0,
+      outstandingAmount: estimate.totalAmount,
+      payments: [],
     };
 
     const taxInvoice = await TaxInvoice.create(invoiceDocument);

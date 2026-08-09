@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../core/constants/app_colors.dart';
 import '../core/constants/app_constants.dart';
+import '../models/report_model.dart';
 import '../providers/report_wizard_provider.dart';
 import '../providers/reports_provider.dart';
 import '../widgets/stepper/stepper_progress_bar.dart';
@@ -15,7 +16,8 @@ import '../widgets/stepper/step_header.dart';
 
 class CreateReportScreen extends ConsumerStatefulWidget {
   final String? draftId;
-  const CreateReportScreen({super.key, this.draftId});
+  final ReportModel? initialReport;
+  const CreateReportScreen({super.key, this.draftId, this.initialReport});
 
   @override
   ConsumerState<CreateReportScreen> createState() => _CreateReportScreenState();
@@ -45,15 +47,15 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
   final _techNameCtrl = TextEditingController();
   final _customerRepNameCtrl = TextEditingController();
 
-
-
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // 1. Reset state first or load draft synchronously if draftId is provided
-      if (widget.draftId != null) {
+      if (widget.initialReport != null) {
+        ref.read(reportWizardProvider.notifier).loadFromReport(widget.initialReport!);
+      } else if (widget.draftId != null) {
         try {
           final drafts = ref.read(reportsProvider).drafts;
           final draft = drafts.firstWhere(

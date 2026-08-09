@@ -153,6 +153,33 @@ class TaxInvoiceRepository {
     }
   }
 
+  Future<TaxInvoiceModel> recordPayment({
+    required String id,
+    required double amount,
+    required String method,
+    required String transactionId,
+    required DateTime date,
+  }) async {
+    try {
+      final map = <String, dynamic>{
+        'amount': amount,
+        'method': method,
+        'transactionId': transactionId,
+        'date': date.toIso8601String(),
+      };
+
+      final response = await _apiService.post(
+        '${ApiConstants.taxInvoices}/$id/payments',
+        data: map,
+      );
+
+      final data = response.data['data'] as Map<String, dynamic>;
+      return TaxInvoiceModel.fromJson(data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> deleteTaxInvoice(String id) async {
     try {
       await _apiService.delete('${ApiConstants.taxInvoices}/$id');

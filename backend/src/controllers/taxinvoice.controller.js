@@ -56,9 +56,14 @@ export const createTaxInvoice = async (req, res) => {
       return sendError(res, 'Invalid GST percentage. Must be one of: 0, 0.25, 3, 5, 12, 18, 28, 40.', {}, 400);
     }
 
-    const totals = calculateEstimateTotals(items);
+    const discount = {
+      discountType: invoicePayload.discountType || 'none',
+      discountValue: Number(invoicePayload.discountValue || 0),
+    };
+    const totals = calculateEstimateTotals(items, discount);
     const sequence = await generateNextSequence(TaxInvoice, 'invoiceNumber');
-    // Payment-related fields removed: invoices are billing-only documents
+    
+    const receivedAmount = Number(invoicePayload.receivedAmount || 0);
 
     const invoiceDocument = {
       invoiceNumber: formatInvoiceNumber(sequence),
@@ -80,11 +85,24 @@ export const createTaxInvoice = async (req, res) => {
       },
       items: totals.items,
       subtotal: totals.subtotal,
+      discountType: totals.discountType,
+      discountValue: totals.discountValue,
+      discountAmount: totals.discountAmount,
+      taxableAmount: totals.taxableAmount,
       totalTax: totals.totalTax,
       totalAmount: totals.totalAmount,
       amountInWords: numberToWords(totals.totalAmount),
       termsAndConditions: invoicePayload.termsAndConditions,
       authorizedSignatureUrl: invoicePayload.authorizedSignatureUrl,
+      paymentStatus: receivedAmount >= totals.totalAmount ? 'paid' : (receivedAmount > 0 ? 'partially_paid' : 'unpaid'),
+      receivedAmount,
+      outstandingAmount: Math.max(0, Number((totals.totalAmount - receivedAmount).toFixed(2))),
+      payments: receivedAmount > 0 ? [{
+        amount: receivedAmount,
+        date: invoicePayload.invoiceDate ? new Date(invoicePayload.invoiceDate) : new Date(),
+        method: 'cash',
+        transactionId: 'Initial Payment',
+      }] : [],
     };
 
     const taxInvoice = await TaxInvoice.create(invoiceDocument);
@@ -234,7 +252,15 @@ export const updateTaxInvoice = async (req, res) => {
       return sendError(res, 'At least one item is required.', {}, 400);
     }
 
-    const totals = calculateEstimateTotals(items);
+    const discount = {
+      discountType: invoicePayload.discountType !== undefined ? invoicePayload.discountType : taxInvoice.discountType,
+      discountValue: invoicePayload.discountValue !== undefined ? Number(invoicePayload.discountValue) : taxInvoice.discountValue,
+    };
+    const totals = calculateEstimateTotals(items, discount);
+
+    const receivedAmount = taxInvoice.receivedAmount;
+    const outstandingAmount = Math.max(0, Number((totals.totalAmount - receivedAmount).toFixed(2)));
+    const paymentStatus = receivedAmount >= totals.totalAmount ? 'paid' : (receivedAmount > 0 ? 'partially_paid' : 'unpaid');
 
     const updatePayload = {
       invoiceDate: invoicePayload.invoiceDate ? new Date(invoicePayload.invoiceDate) : taxInvoice.invoiceDate,
@@ -255,10 +281,15 @@ export const updateTaxInvoice = async (req, res) => {
       },
       items: totals.items,
       subtotal: totals.subtotal,
+      discountType: totals.discountType,
+      discountValue: totals.discountValue,
+      discountAmount: totals.discountAmount,
+      taxableAmount: totals.taxableAmount,
       totalTax: totals.totalTax,
       totalAmount: totals.totalAmount,
       amountInWords: numberToWords(totals.totalAmount),
-      // paymentDetails removed from invoice updates
+      paymentStatus,
+      outstandingAmount,
       termsAndConditions: invoicePayload.termsAndConditions || taxInvoice.termsAndConditions,
       authorizedSignatureUrl: invoicePayload.authorizedSignatureUrl || taxInvoice.authorizedSignatureUrl,
     };
@@ -268,7 +299,7 @@ export const updateTaxInvoice = async (req, res) => {
       runValidators: true,
     });
 
-    // After update, return updated invoice without payment artifacts
+    // After update, return updated invoice
     // Also upsert customer to ensure invoice history stays in sync
     try {
       const { upsertCustomerFromInvoice } = await import('../utils/customer.utils.js');
@@ -285,10 +316,68 @@ export const updateTaxInvoice = async (req, res) => {
 
 export const updatePaymentStatus = async (req, res) => {
   try {
-    // Payment updates are no longer supported at invoice level.
-    return sendError(res, 'Updating payment status on Tax Invoice is not supported. Use Estimate payment tracking instead.', {}, 400);
+    const { status, receivedAmount, method, transactionId } = req.body;
+    const taxInvoice = await TaxInvoice.findById(req.params.id);
+    if (!taxInvoice) {
+      return sendError(res, 'Tax Invoice not found.', {}, 404);
+    }
+
+    if (receivedAmount !== undefined && Number(receivedAmount) > 0) {
+      const amt = Number(receivedAmount);
+      const payment = {
+        amount: amt,
+        date: new Date(),
+        method: method || 'upi',
+        transactionId: transactionId || 'Legacy Update',
+      };
+      taxInvoice.payments.push(payment);
+      taxInvoice.receivedAmount = Number((taxInvoice.receivedAmount + amt).toFixed(2));
+    }
+
+    if (status) {
+      taxInvoice.paymentStatus = status;
+    } else {
+      taxInvoice.paymentStatus = taxInvoice.receivedAmount >= taxInvoice.totalAmount ? 'paid' : (taxInvoice.receivedAmount > 0 ? 'partially_paid' : 'unpaid');
+    }
+
+    taxInvoice.outstandingAmount = Math.max(0, Number((taxInvoice.totalAmount - taxInvoice.receivedAmount).toFixed(2)));
+
+    await taxInvoice.save();
+    return sendSuccess(res, 'Payment status updated successfully.', taxInvoice);
   } catch (error) {
     return sendError(res, 'Failed to update payment status.', { details: error.message }, 500);
+  }
+};
+
+export const addTaxInvoicePayment = async (req, res) => {
+  try {
+    const { amount, date, method, transactionId } = req.body;
+    if (amount === undefined || Number(amount) <= 0) {
+      return sendError(res, 'A valid positive payment amount is required.', {}, 400);
+    }
+
+    const taxInvoice = await TaxInvoice.findById(req.params.id);
+    if (!taxInvoice) {
+      return sendError(res, 'Tax Invoice not found.', {}, 404);
+    }
+
+    const payment = {
+      amount: Number(amount),
+      date: date ? new Date(date) : new Date(),
+      method: method || 'upi',
+      transactionId: transactionId || '',
+    };
+
+    taxInvoice.payments.push(payment);
+    taxInvoice.receivedAmount = Number((taxInvoice.receivedAmount + payment.amount).toFixed(2));
+    taxInvoice.outstandingAmount = Math.max(0, Number((taxInvoice.totalAmount - taxInvoice.receivedAmount).toFixed(2)));
+    taxInvoice.paymentStatus = taxInvoice.receivedAmount >= taxInvoice.totalAmount ? 'paid' : 'partially_paid';
+
+    await taxInvoice.save();
+
+    return sendSuccess(res, 'Payment recorded successfully.', taxInvoice);
+  } catch (error) {
+    return sendError(res, 'Failed to record payment.', { details: error.message }, 500);
   }
 };
 

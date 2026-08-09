@@ -12,7 +12,8 @@ import '../widgets/stepper/step_container.dart';
 import '../widgets/stepper/step_header.dart';
 
 class CreateEstimateScreen extends ConsumerStatefulWidget {
-  const CreateEstimateScreen({super.key});
+  final EstimateModel? initialEstimate;
+  const CreateEstimateScreen({super.key, this.initialEstimate});
 
   @override
   ConsumerState<CreateEstimateScreen> createState() => _CreateEstimateScreenState();
@@ -40,7 +41,19 @@ class _CreateEstimateScreenState extends ConsumerState<CreateEstimateScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(estimateWizardProvider.notifier).reset();
+      if (widget.initialEstimate != null) {
+        ref.read(estimateWizardProvider.notifier).loadFromEstimate(widget.initialEstimate!);
+      } else {
+        ref.read(estimateWizardProvider.notifier).reset();
+      }
+
+      final state = ref.read(estimateWizardProvider);
+      _customerNameCtrl.text = state.customerName;
+      _addressCtrl.text = state.address;
+      _contactPersonCtrl.text = state.contactPerson;
+      _contactNumberCtrl.text = state.contactNumber;
+      _gstinCtrl.text = state.gstinNumber;
+      _placeOfSupplyCtrl.text = state.placeOfSupply;
     });
   }
 
@@ -290,6 +303,78 @@ class _CreateEstimateScreenState extends ConsumerState<CreateEstimateScreen> {
           onPressed: () => _showAddItemDialog(notifier),
           icon: const Icon(Icons.add),
           label: const Text('Add Item'),
+        ),
+        const SizedBox(height: 24),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: AppColors.border),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Tax & Discount Options',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: state.taxMode,
+                  decoration: const InputDecoration(
+                    labelText: 'Tax Mode',
+                    prefixIcon: Icon(Icons.money_off),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'tax', child: Text('Tax Estimate (Standard)')),
+                    DropdownMenuItem(value: 'no-tax', child: Text('No-Tax Estimate (Cash Invoice Conversion)')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) notifier.updateTaxMode(val);
+                  },
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: state.discountType,
+                  decoration: const InputDecoration(
+                    labelText: 'Discount Type',
+                    prefixIcon: Icon(Icons.discount),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'none', child: Text('No Discount')),
+                    DropdownMenuItem(value: 'percentage', child: Text('Percentage Discount (%)')),
+                    DropdownMenuItem(value: 'fixed', child: Text('Fixed Discount (₹)')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) notifier.updateDiscountType(val);
+                  },
+                ),
+                if (state.discountType != 'none') ...[
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    initialValue: state.discountValue > 0 ? state.discountValue.toString() : '',
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: state.discountType == 'percentage'
+                          ? 'Discount Percentage (%)'
+                          : 'Discount Amount (₹)',
+                      prefixIcon: const Icon(Icons.edit),
+                    ),
+                    onChanged: (val) {
+                      final doubleVal = double.tryParse(val) ?? 0.0;
+                      notifier.updateDiscountValue(doubleVal);
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ],
     );

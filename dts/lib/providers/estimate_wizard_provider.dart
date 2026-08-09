@@ -16,6 +16,9 @@ class EstimateWizardState {
   final String placeOfSupply;
   final List<EstimateItem> items;
   final String termsAndConditions;
+  final String discountType;
+  final double discountValue;
+  final String taxMode;
   
   final int currentStep;
   final bool isSubmitting;
@@ -35,6 +38,9 @@ class EstimateWizardState {
     required this.placeOfSupply,
     required this.items,
     required this.termsAndConditions,
+    this.discountType = 'none',
+    this.discountValue = 0.0,
+    this.taxMode = 'tax',
     required this.currentStep,
     required this.isSubmitting,
     this.error,
@@ -55,6 +61,9 @@ class EstimateWizardState {
       placeOfSupply: '',
       items: [],
       termsAndConditions: 'Thank you for doing business with us.\n*100% advance is mandatory',
+      discountType: 'none',
+      discountValue: 0.0,
+      taxMode: 'tax',
       currentStep: 0,
       isSubmitting: false,
       error: null,
@@ -75,6 +84,9 @@ class EstimateWizardState {
     String? placeOfSupply,
     List<EstimateItem>? items,
     String? termsAndConditions,
+    String? discountType,
+    double? discountValue,
+    String? taxMode,
     int? currentStep,
     bool? isSubmitting,
     String? error,
@@ -93,9 +105,12 @@ class EstimateWizardState {
       placeOfSupply: placeOfSupply ?? this.placeOfSupply,
       items: items ?? this.items,
       termsAndConditions: termsAndConditions ?? this.termsAndConditions,
+      discountType: discountType ?? this.discountType,
+      discountValue: discountValue ?? this.discountValue,
+      taxMode: taxMode ?? this.taxMode,
       currentStep: currentStep ?? this.currentStep,
       isSubmitting: isSubmitting ?? this.isSubmitting,
-      error: error, // intentionally reset if not provided
+      error: error,
       submittedEstimate: submittedEstimate ?? this.submittedEstimate,
     );
   }
@@ -115,6 +130,9 @@ class EstimateWizardState {
       ),
       items: items,
       termsAndConditions: termsAndConditions.isNotEmpty ? termsAndConditions : null,
+      discountType: discountType,
+      discountValue: discountValue,
+      taxMode: taxMode,
     );
   }
 }
@@ -143,6 +161,9 @@ class EstimateWizardNotifier extends StateNotifier<EstimateWizardState> {
       placeOfSupply: estimate.placeOfSupply ?? '',
       items: estimate.items,
       termsAndConditions: estimate.termsAndConditions ?? '',
+      discountType: estimate.discountType,
+      discountValue: estimate.discountValue,
+      taxMode: estimate.taxMode,
       currentStep: 0,
       isSubmitting: false,
       error: null,
@@ -163,6 +184,9 @@ class EstimateWizardNotifier extends StateNotifier<EstimateWizardState> {
   void updateGstinNumber(String gstin) => state = state.copyWith(gstinNumber: gstin);
   
   void updateTermsAndConditions(String terms) => state = state.copyWith(termsAndConditions: terms);
+  void updateDiscountType(String type) => state = state.copyWith(discountType: type);
+  void updateDiscountValue(double value) => state = state.copyWith(discountValue: value);
+  void updateTaxMode(String mode) => state = state.copyWith(taxMode: mode);
 
   // Items
   void addItem(EstimateItem item) {

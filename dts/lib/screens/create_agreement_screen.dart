@@ -15,7 +15,8 @@ import '../widgets/stepper/step_header.dart';
 
 class CreateAgreementScreen extends ConsumerStatefulWidget {
   final String? draftId;
-  const CreateAgreementScreen({super.key, this.draftId});
+  final AgreementModel? initialAgreement;
+  const CreateAgreementScreen({super.key, this.draftId, this.initialAgreement});
 
   @override
   ConsumerState<CreateAgreementScreen> createState() => _CreateAgreementScreenState();
@@ -43,7 +44,9 @@ class _CreateAgreementScreenState extends ConsumerState<CreateAgreementScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // 1. Reset state first or load draft synchronously if draftId is provided
-      if (widget.draftId != null) {
+      if (widget.initialAgreement != null) {
+        ref.read(agreementWizardProvider.notifier).loadFromAgreement(widget.initialAgreement!);
+      } else if (widget.draftId != null) {
         try {
           final drafts = ref.read(agreementsProvider).drafts;
           final draft = drafts.firstWhere(

@@ -50,8 +50,14 @@ export const createBillingInvoice = async (req, res) => {
       return sendError(res, 'Each item must have a valid name, quantity > 0, and price > 0.', {}, 400);
     }
 
-    const totals = calculateBillingTotals(items);
+    const discount = {
+      discountType: invoicePayload.discountType || 'none',
+      discountValue: Number(invoicePayload.discountValue || 0),
+    };
+    const totals = calculateBillingTotals(items, discount);
     const sequence = await generateNextSequence(BillingInvoice, 'invoiceNumber');
+    
+    const receivedAmount = Number(invoicePayload.receivedAmount || 0);
 
     const invoiceDocument = {
       invoiceNumber: formatBillingInvoiceNumber(sequence),
@@ -72,8 +78,20 @@ export const createBillingInvoice = async (req, res) => {
         deliveryDetails: invoicePayload.transportationDetails?.deliveryDetails || '',
       },
       items: totals.items,
+      subtotal: totals.subtotal,
+      discountType: totals.discountType,
+      discountValue: totals.discountValue,
+      discountAmount: totals.discountAmount,
       totalAmount: totals.totalAmount,
-      receivedAmount: Number(invoicePayload.receivedAmount || 0),
+      receivedAmount,
+      outstandingAmount: Math.max(0, Number((totals.totalAmount - receivedAmount).toFixed(2))),
+      paymentStatus: receivedAmount >= totals.totalAmount ? 'paid' : (receivedAmount > 0 ? 'partially_paid' : 'unpaid'),
+      payments: receivedAmount > 0 ? [{
+        amount: receivedAmount,
+        date: invoicePayload.invoiceDate ? new Date(invoicePayload.invoiceDate) : new Date(),
+        method: 'cash',
+        transactionId: 'Initial Payment',
+      }] : [],
       amountInWords: numberToWords(totals.totalAmount),
       termsAndConditions: invoicePayload.termsAndConditions,
       authorizedSignatureUrl: invoicePayload.authorizedSignatureUrl,
@@ -228,7 +246,37 @@ export const updateBillingInvoice = async (req, res) => {
       return sendError(res, 'At least one item is required.', {}, 400);
     }
 
-    const totals = calculateBillingTotals(items);
+    const discount = {
+      discountType: invoicePayload.discountType !== undefined ? invoicePayload.discountType : billingInvoice.discountType,
+      discountValue: invoicePayload.discountValue !== undefined ? Number(invoicePayload.discountValue) : billingInvoice.discountValue,
+    };
+    const totals = calculateBillingTotals(items, discount);
+
+    const receivedAmount = invoicePayload.receivedAmount !== undefined ? Number(invoicePayload.receivedAmount) : billingInvoice.receivedAmount;
+    const outstandingAmount = Math.max(0, Number((totals.totalAmount - receivedAmount).toFixed(2)));
+    const paymentStatus = receivedAmount >= totals.totalAmount ? 'paid' : (receivedAmount > 0 ? 'partially_paid' : 'unpaid');
+
+    let payments = billingInvoice.payments || [];
+    if (invoicePayload.receivedAmount !== undefined) {
+      const payloadRec = Number(invoicePayload.receivedAmount);
+      if (payloadRec !== billingInvoice.receivedAmount) {
+        const initialPayIndex = payments.findIndex(p => p.transactionId === 'Initial Payment' || p.transactionId === 'Initial Payment (Conversion)');
+        if (initialPayIndex !== -1) {
+          if (payloadRec === 0) {
+            payments.splice(initialPayIndex, 1);
+          } else {
+            payments[initialPayIndex].amount = payloadRec;
+          }
+        } else if (payloadRec > 0) {
+          payments.push({
+            amount: payloadRec,
+            date: new Date(),
+            method: 'cash',
+            transactionId: 'Initial Payment',
+          });
+        }
+      }
+    }
 
     const updatePayload = {
       invoiceDate: invoicePayload.invoiceDate ? new Date(invoicePayload.invoiceDate) : billingInvoice.invoiceDate,
@@ -248,8 +296,15 @@ export const updateBillingInvoice = async (req, res) => {
         deliveryDetails: invoicePayload.transportationDetails?.deliveryDetails || billingInvoice.transportationDetails.deliveryDetails,
       },
       items: totals.items,
+      subtotal: totals.subtotal,
+      discountType: totals.discountType,
+      discountValue: totals.discountValue,
+      discountAmount: totals.discountAmount,
       totalAmount: totals.totalAmount,
-      receivedAmount: Number(invoicePayload.receivedAmount !== undefined ? invoicePayload.receivedAmount : billingInvoice.receivedAmount),
+      receivedAmount,
+      outstandingAmount,
+      paymentStatus,
+      payments,
       amountInWords: numberToWords(totals.totalAmount),
       termsAndConditions: invoicePayload.termsAndConditions || billingInvoice.termsAndConditions,
       authorizedSignatureUrl: invoicePayload.authorizedSignatureUrl || billingInvoice.authorizedSignatureUrl,
@@ -282,6 +337,38 @@ export const updateBillingInvoice = async (req, res) => {
     return sendSuccess(res, 'Billing Invoice updated successfully.', responseData);
   } catch (error) {
     return sendError(res, 'Failed to update Billing Invoice.', { details: error.message }, 500);
+  }
+};
+
+export const addBillingInvoicePayment = async (req, res) => {
+  try {
+    const { amount, date, method, transactionId } = req.body;
+    if (amount === undefined || Number(amount) <= 0) {
+      return sendError(res, 'A valid positive payment amount is required.', {}, 400);
+    }
+
+    const billingInvoice = await BillingInvoice.findById(req.params.id);
+    if (!billingInvoice) {
+      return sendError(res, 'Billing Invoice not found.', {}, 404);
+    }
+
+    const payment = {
+      amount: Number(amount),
+      date: date ? new Date(date) : new Date(),
+      method: method || 'cash',
+      transactionId: transactionId || '',
+    };
+
+    billingInvoice.payments.push(payment);
+    billingInvoice.receivedAmount = Number((billingInvoice.receivedAmount + payment.amount).toFixed(2));
+    billingInvoice.outstandingAmount = Math.max(0, Number((billingInvoice.totalAmount - billingInvoice.receivedAmount).toFixed(2)));
+    billingInvoice.paymentStatus = billingInvoice.receivedAmount >= billingInvoice.totalAmount ? 'paid' : 'partially_paid';
+
+    await billingInvoice.save();
+
+    return sendSuccess(res, 'Payment recorded successfully.', billingInvoice);
+  } catch (error) {
+    return sendError(res, 'Failed to record payment.', { details: error.message }, 500);
   }
 };
 

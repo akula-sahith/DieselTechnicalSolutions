@@ -179,6 +179,11 @@ class EstimateModel {
   final String? customerSignatureUrl;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String discountType;
+  final double discountValue;
+  final double? discountAmount;
+  final double? taxableAmount;
+  final String taxMode;
   
   // Extra payment data returned by the backend endpoint alongside the document
   final EstimatePaymentData? paymentData;
@@ -201,6 +206,11 @@ class EstimateModel {
     this.customerSignatureUrl,
     this.createdAt,
     this.updatedAt,
+    this.discountType = 'none',
+    this.discountValue = 0.0,
+    this.discountAmount,
+    this.taxableAmount,
+    this.taxMode = 'tax',
     this.paymentData,
   });
 
@@ -249,6 +259,11 @@ class EstimateModel {
       updatedAt: docJson['updatedAt'] != null
           ? DateTime.tryParse(docJson['updatedAt'].toString())
           : null,
+      discountType: docJson['discountType'] ?? 'none',
+      discountValue: (docJson['discountValue'] as num?)?.toDouble() ?? 0.0,
+      discountAmount: (docJson['discountAmount'] as num?)?.toDouble(),
+      taxableAmount: (docJson['taxableAmount'] as num?)?.toDouble(),
+      taxMode: docJson['taxMode'] ?? 'tax',
       paymentData: paymentData,
     );
   }
@@ -259,6 +274,9 @@ class EstimateModel {
       'estimateFor': estimateFor.toJson(),
       'items': items.map((e) => e.toJson()).toList(),
       'status': status,
+      'discountType': discountType,
+      'discountValue': discountValue,
+      'taxMode': taxMode,
     };
 
     if (id != null) map['id'] = id;

@@ -10,6 +10,8 @@ import taxInvoiceRoutes from './routes/taxinvoice.routes.js';
 import billingInvoiceRoutes from './routes/billinginvoice.routes.js';
 import cloudinaryRoutes from './routes/cloudinary.routes.js';
 import customerRoutes from './routes/customer.routes.js';
+import purchaseBillRoutes from './routes/purchasebill.routes.js';
+import dashboardRoutes from './routes/dashboard.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { notFoundHandler } from './middleware/notFound.middleware.js';
 import appVersionRoutes from "./routes/appVersion.routes.js";
@@ -44,6 +46,8 @@ app.use('/api/billing-invoices', billingInvoiceRoutes);
 app.use('/api/cloudinary', cloudinaryRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/app-versions', appVersionRoutes);
+app.use('/api/purchase-bills', purchaseBillRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

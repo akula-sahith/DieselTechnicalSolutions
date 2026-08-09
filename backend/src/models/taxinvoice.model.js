@@ -47,8 +47,30 @@ const invoiceItemSchema = new mongoose.Schema(
   { _id: false }
 );
 
-// Payment details removed from TaxInvoice model.
-// Invoice is now a billing-only document; payment tracking lives on Estimates and Customers.
+const paymentSchema = new mongoose.Schema(
+  {
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    date: {
+      type: Date,
+      default: Date.now,
+    },
+    method: {
+      type: String,
+      enum: ['cash', 'bank_transfer', 'upi', 'cheque', 'other'],
+      default: 'upi',
+    },
+    transactionId: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+  },
+  { _id: true }
+);
 
 const transportationDetailsSchema = new mongoose.Schema(
   {
@@ -139,6 +161,23 @@ const taxInvoiceSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    discountType: {
+      type: String,
+      enum: ['none', 'percentage', 'fixed'],
+      default: 'none',
+    },
+    discountValue: {
+      type: Number,
+      default: 0,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+    },
+    taxableAmount: {
+      type: Number,
+      default: 0,
+    },
     totalTax: {
       type: Number,
       default: 0,
@@ -151,7 +190,21 @@ const taxInvoiceSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    // paymentDetails removed: invoices are billing documents only
+    paymentStatus: {
+      type: String,
+      enum: ['unpaid', 'partially_paid', 'paid'],
+      default: 'unpaid',
+      index: true,
+    },
+    payments: [paymentSchema],
+    receivedAmount: {
+      type: Number,
+      default: 0,
+    },
+    outstandingAmount: {
+      type: Number,
+      default: 0,
+    },
     termsAndConditions: {
       type: String,
       trim: true,

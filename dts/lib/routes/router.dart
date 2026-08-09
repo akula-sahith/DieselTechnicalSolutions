@@ -1,5 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/report_model.dart';
+import '../models/agreement_model.dart';
 import '../models/estimate_model.dart';
 import '../models/tax_invoice_model.dart';
 import '../providers/auth_provider.dart';
@@ -26,6 +28,7 @@ import '../screens/billing_invoice_details_screen.dart';
 import '../models/billing_invoice_model.dart';
 import '../screens/customers_screen.dart';
 import '../screens/customer_details_screen.dart';
+import '../screens/purchase_bills_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -57,14 +60,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/create-report',
         builder: (context, state) {
           final draftId = state.uri.queryParameters['draftId'];
-          return CreateReportScreen(draftId: draftId);
+          final initialReport = state.extra as ReportModel?;
+          return CreateReportScreen(draftId: draftId, initialReport: initialReport);
         },
       ),
       GoRoute(
         path: '/create-agreement',
         builder: (context, state) {
           final draftId = state.uri.queryParameters['draftId'];
-          return CreateAgreementScreen(draftId: draftId);
+          final initialAgreement = state.extra as AgreementModel?;
+          return CreateAgreementScreen(draftId: draftId, initialAgreement: initialAgreement);
         },
       ),
       GoRoute(
@@ -93,13 +98,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/create-estimate',
-        builder: (context, state) => const CreateEstimateScreen(),
+        builder: (context, state) {
+          final initialEstimate = state.extra as EstimateModel?;
+          return CreateEstimateScreen(initialEstimate: initialEstimate);
+        },
       ),
       GoRoute(
         path: '/create-tax-invoice',
         builder: (context, state) {
-          final estimate = state.extra as EstimateModel?;
-          return CreateTaxInvoiceScreen(initialEstimate: estimate);
+          final extra = state.extra;
+          if (extra is EstimateModel) {
+            return CreateTaxInvoiceScreen(initialEstimate: extra);
+          } else if (extra is TaxInvoiceModel) {
+            return CreateTaxInvoiceScreen(initialInvoice: extra);
+          }
+          return const CreateTaxInvoiceScreen();
         },
       ),
       GoRoute(
@@ -123,7 +136,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/create-billing-invoice',
-        builder: (context, state) => const CreateBillingInvoiceScreen(),
+        builder: (context, state) {
+          final extra = state.extra;
+          if (extra is EstimateModel) {
+            return CreateBillingInvoiceScreen(initialEstimate: extra);
+          } else if (extra is BillingInvoiceModel) {
+            return CreateBillingInvoiceScreen(initialInvoice: extra);
+          }
+          return const CreateBillingInvoiceScreen();
+        },
       ),
       GoRoute(
         path: '/billing-invoice-details/:id',
@@ -147,6 +168,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           final id = state.pathParameters['id']!;
           return CustomerDetailsScreen(customerId: id);
         },
+      ),
+      GoRoute(
+        path: '/purchase-bills',
+        builder: (context, state) => const PurchaseBillsScreen(),
       ),
       GoRoute(
         path: '/report-success/:id',

@@ -136,6 +136,18 @@ class CustomBottomNavBar extends ConsumerWidget {
                       context.push('/billing-invoices');
                     },
                   ),
+                  const SizedBox(height: 12),
+
+                  _CreateOption(
+                    icon: Icons.shopping_bag_outlined,
+                    iconColor: const Color(0xFF7C3AED),
+                    title: 'Purchase Bills',
+                    subtitle: 'View supplier scanned bills',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/purchase-bills');
+                    },
+                  ),
                   const SizedBox(height: 8),
                 ],
               ),

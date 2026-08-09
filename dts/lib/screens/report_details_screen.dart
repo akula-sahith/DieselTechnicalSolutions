@@ -215,9 +215,22 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen> with 
             onSelected: (value) {
               if (value == 'download') _downloadPdf();
               if (value == 'share') _sharePdf();
+              if (value == 'edit') {
+                context.push('/create-report', extra: report);
+              }
               if (value == 'delete') _deleteReport();
             },
             itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_rounded, color: AppColors.textSecondary),
+                    SizedBox(width: 8),
+                    Text('Edit Report'),
+                  ],
+                ),
+              ),
               const PopupMenuItem(
                 value: 'download',
                 child: Row(

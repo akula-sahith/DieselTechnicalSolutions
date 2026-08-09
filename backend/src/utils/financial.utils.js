@@ -35,16 +35,67 @@ export const calculateEstimateItems = (items = []) => {
   });
 };
 
-export const calculateEstimateTotals = (items = []) => {
-  const calculatedItems = calculateEstimateItems(items);
+export const calculateEstimateTotals = (items = [], discount = {}) => {
+  const discountType = discount.discountType || 'none';
+  const discountValue = Number(discount.discountValue || 0);
 
-  const subtotal = Number(
-    calculatedItems.reduce((sum, item) => {
-      const quantity = Number(item.quantity || 0);
-      const pricePerUnit = Number(item.pricePerUnit || 0);
-      return sum + quantity * pricePerUnit;
-    }, 0).toFixed(2)
-  );
+  // 1. Calculate raw subtotals for each item
+  const rawItems = items.map(item => {
+    const qty = Number(item.quantity || 0);
+    const price = Number(item.pricePerUnit || 0);
+    const itemSubtotal = Number((qty * price).toFixed(2));
+    return {
+      ...item,
+      quantity: qty,
+      pricePerUnit: price,
+      itemSubtotal,
+    };
+  });
+
+  const subtotal = Number(rawItems.reduce((sum, item) => sum + item.itemSubtotal, 0).toFixed(2));
+
+  // 2. Calculate global discount amount
+  let discountAmount = 0;
+  if (discountType === 'percentage') {
+    discountAmount = Number((subtotal * discountValue / 100).toFixed(2));
+  } else if (discountType === 'fixed') {
+    discountAmount = Math.min(discountValue, subtotal);
+  }
+
+  const taxableAmount = Number((subtotal - discountAmount).toFixed(2));
+
+  // 3. Pro-rate the discount to calculate item-wise tax
+  const discountRatio = subtotal > 0 ? (discountAmount / subtotal) : 0;
+
+  const calculatedItems = rawItems.map(item => {
+    // Pro-rated discount for this item
+    const itemDiscount = Number((item.itemSubtotal * discountRatio).toFixed(2));
+    const itemTaxable = Number((item.itemSubtotal - itemDiscount).toFixed(2));
+
+    if (!item.taxApplicable) {
+      return {
+        ...item,
+        gstPercentage: 0,
+        sgst: 0,
+        cgst: 0,
+        amount: itemTaxable,
+      };
+    }
+
+    const gstPercentage = Number(item.gstPercentage || 18);
+    const gstAmount = Number((itemTaxable * gstPercentage) / 100).toFixed(2);
+    const sgst = Number((gstAmount / 2).toFixed(2));
+    const cgst = Number((gstAmount / 2).toFixed(2));
+
+    return {
+      ...item,
+      taxApplicable: true,
+      gstPercentage,
+      sgst: Number(sgst),
+      cgst: Number(cgst),
+      amount: Number((itemTaxable + Number(sgst) + Number(cgst)).toFixed(2)),
+    };
+  });
 
   const totalTax = Number(
     calculatedItems.reduce((sum, item) => {
@@ -52,11 +103,15 @@ export const calculateEstimateTotals = (items = []) => {
     }, 0).toFixed(2)
   );
 
-  const totalAmount = Number((subtotal + totalTax).toFixed(2));
+  const totalAmount = Number((taxableAmount + totalTax).toFixed(2));
 
   return {
     items: calculatedItems,
     subtotal,
+    discountType,
+    discountValue,
+    discountAmount,
+    taxableAmount,
     totalTax,
     totalAmount,
   };
@@ -91,15 +146,31 @@ export const calculateBillingItems = (items = []) => {
   });
 };
 
-export const calculateBillingTotals = (items = []) => {
+export const calculateBillingTotals = (items = [], discount = {}) => {
   const calculatedItems = calculateBillingItems(items);
 
-  const totalAmount = Number(
+  const subtotal = Number(
     calculatedItems.reduce((sum, item) => sum + item.amount, 0).toFixed(2)
   );
 
+  const discountType = discount.discountType || 'none';
+  const discountValue = Number(discount.discountValue || 0);
+
+  let discountAmount = 0;
+  if (discountType === 'percentage') {
+    discountAmount = Number((subtotal * discountValue / 100).toFixed(2));
+  } else if (discountType === 'fixed') {
+    discountAmount = Math.min(discountValue, subtotal);
+  }
+
+  const totalAmount = Number((subtotal - discountAmount).toFixed(2));
+
   return {
     items: calculatedItems,
+    subtotal,
+    discountType,
+    discountValue,
+    discountAmount,
     totalAmount,
   };
 };

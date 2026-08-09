@@ -156,7 +156,11 @@ class _EstimateDetailsScreenState extends ConsumerState<EstimateDetailsScreen> w
 
   void _convertToInvoice() async {
     if (_estimate == null) return;
-    context.push('/create-tax-invoice', extra: _estimate);
+    if (_estimate!.taxMode == 'no-tax') {
+      context.push('/create-billing-invoice', extra: _estimate);
+    } else {
+      context.push('/create-tax-invoice', extra: _estimate);
+    }
   }
 
   @override
@@ -217,10 +221,23 @@ class _EstimateDetailsScreenState extends ConsumerState<EstimateDetailsScreen> w
             onSelected: (value) {
               if (value == 'download') _downloadPdf();
               if (value == 'share') _sharePdf();
+              if (value == 'edit') {
+                context.push('/create-estimate', extra: estimate);
+              }
               if (value == 'convert') _convertToInvoice();
               if (value == 'delete') _deleteEstimate();
             },
             itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_rounded, color: AppColors.textSecondary),
+                    SizedBox(width: 8),
+                    Text('Edit Estimate'),
+                  ],
+                ),
+              ),
               const PopupMenuItem(
                 value: 'download',
                 child: Row(
@@ -243,13 +260,16 @@ class _EstimateDetailsScreenState extends ConsumerState<EstimateDetailsScreen> w
               ),
               if (estimate.status != 'converted') ...[
                 const PopupMenuDivider(),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'convert',
                   child: Row(
                     children: [
-                      Icon(Icons.autorenew_rounded, color: AppColors.primary),
-                      SizedBox(width: 8),
-                      Text('Convert to Tax Invoice', style: TextStyle(color: AppColors.primary)),
+                      const Icon(Icons.autorenew_rounded, color: AppColors.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        estimate.taxMode == 'no-tax' ? 'Convert to Cash Invoice' : 'Convert to Tax Invoice',
+                        style: const TextStyle(color: AppColors.primary),
+                      ),
                     ],
                   ),
                 ),

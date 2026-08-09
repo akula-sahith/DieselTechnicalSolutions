@@ -20,6 +20,8 @@ class BillingInvoiceWizardState {
   final String termsAndConditions;
   final String? linkedEstimateId;
   final double receivedAmount;
+  final String discountType;
+  final double discountValue;
   
   final int currentStep;
   final bool isSubmitting;
@@ -41,6 +43,8 @@ class BillingInvoiceWizardState {
     required this.termsAndConditions,
     this.linkedEstimateId,
     required this.receivedAmount,
+    this.discountType = 'none',
+    this.discountValue = 0.0,
     required this.currentStep,
     required this.isSubmitting,
     this.error,
@@ -63,6 +67,8 @@ class BillingInvoiceWizardState {
       termsAndConditions: 'Thank you for doing business with us.\n*100% advance is mandatory',
       linkedEstimateId: null,
       receivedAmount: 0.0,
+      discountType: 'none',
+      discountValue: 0.0,
       currentStep: 0,
       isSubmitting: false,
       error: null,
@@ -85,6 +91,8 @@ class BillingInvoiceWizardState {
     String? termsAndConditions,
     String? linkedEstimateId,
     double? receivedAmount,
+    String? discountType,
+    double? discountValue,
     int? currentStep,
     bool? isSubmitting,
     String? error,
@@ -105,6 +113,8 @@ class BillingInvoiceWizardState {
       termsAndConditions: termsAndConditions ?? this.termsAndConditions,
       linkedEstimateId: linkedEstimateId ?? this.linkedEstimateId,
       receivedAmount: receivedAmount ?? this.receivedAmount,
+      discountType: discountType ?? this.discountType,
+      discountValue: discountValue ?? this.discountValue,
       currentStep: currentStep ?? this.currentStep,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: error,
@@ -129,6 +139,8 @@ class BillingInvoiceWizardState {
       termsAndConditions: termsAndConditions.isNotEmpty ? termsAndConditions : null,
       linkedEstimateId: linkedEstimateId,
       receivedAmount: receivedAmount,
+      discountType: discountType,
+      discountValue: discountValue,
     );
   }
 }
@@ -159,6 +171,39 @@ class BillingInvoiceWizardNotifier extends StateNotifier<BillingInvoiceWizardSta
       termsAndConditions: invoice.termsAndConditions ?? '',
       linkedEstimateId: invoice.linkedEstimateId,
       receivedAmount: invoice.receivedAmount,
+      discountType: invoice.discountType,
+      discountValue: invoice.discountValue,
+      currentStep: 0,
+      isSubmitting: false,
+      error: null,
+      submittedInvoice: null,
+    );
+  }
+
+  void loadFromEstimate(EstimateModel estimate) {
+    state = BillingInvoiceWizardState(
+      id: null,
+      invoiceNumber: null,
+      invoiceDate: DateTime.now(),
+      customerName: estimate.estimateFor.customerName,
+      address: estimate.estimateFor.address,
+      contactPerson: estimate.estimateFor.contactPerson ?? '',
+      contactNumber: estimate.estimateFor.contactNumber,
+      gstinNumber: estimate.estimateFor.gstinNumber ?? '',
+      placeOfSupply: estimate.placeOfSupply ?? '',
+      transportationDetails: TransportationDetails(),
+      items: estimate.items.map((item) => BillingItem(
+        itemName: item.itemName,
+        hsnSac: item.hsnSac,
+        quantity: item.quantity,
+        pricePerUnit: item.pricePerUnit,
+        amount: item.amount,
+      )).toList(),
+      termsAndConditions: estimate.termsAndConditions ?? '',
+      linkedEstimateId: estimate.id,
+      receivedAmount: 0.0,
+      discountType: estimate.discountType,
+      discountValue: estimate.discountValue,
       currentStep: 0,
       isSubmitting: false,
       error: null,
@@ -179,6 +224,8 @@ class BillingInvoiceWizardNotifier extends StateNotifier<BillingInvoiceWizardSta
   
   void updateTermsAndConditions(String terms) => state = state.copyWith(termsAndConditions: terms);
   void updateReceivedAmount(double amount) => state = state.copyWith(receivedAmount: amount);
+  void updateDiscountType(String type) => state = state.copyWith(discountType: type);
+  void updateDiscountValue(double value) => state = state.copyWith(discountValue: value);
 
   void updateVehicleNumber(String val) => state = state.copyWith(transportationDetails: TransportationDetails(vehicleNumber: val, transportName: state.transportationDetails.transportName, lrNumber: state.transportationDetails.lrNumber, dispatchDetails: state.transportationDetails.dispatchDetails, deliveryDetails: state.transportationDetails.deliveryDetails));
   void updateTransportName(String val) => state = state.copyWith(transportationDetails: TransportationDetails(vehicleNumber: state.transportationDetails.vehicleNumber, transportName: val, lrNumber: state.transportationDetails.lrNumber, dispatchDetails: state.transportationDetails.dispatchDetails, deliveryDetails: state.transportationDetails.deliveryDetails));

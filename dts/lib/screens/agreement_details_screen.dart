@@ -220,9 +220,22 @@ class _AgreementDetailsScreenState extends ConsumerState<AgreementDetailsScreen>
             onSelected: (value) {
               if (value == 'download') _downloadPdf();
               if (value == 'share') _sharePdf();
+              if (value == 'edit') {
+                context.push('/create-agreement', extra: agreement);
+              }
               if (value == 'delete') _deleteAgreement();
             },
             itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_rounded, color: AppColors.textSecondary),
+                    SizedBox(width: 8),
+                    Text('Edit Proposal'),
+                  ],
+                ),
+              ),
               const PopupMenuItem(
                 value: 'download',
                 child: Row(

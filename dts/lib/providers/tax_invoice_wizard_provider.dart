@@ -18,6 +18,8 @@ class TaxInvoiceWizardState {
   final List<EstimateItem> items;
   final String termsAndConditions;
   final String? linkedEstimateId;
+  final String discountType;
+  final double discountValue;
   
   final int currentStep;
   final bool isSubmitting;
@@ -38,6 +40,8 @@ class TaxInvoiceWizardState {
     required this.items,
     required this.termsAndConditions,
     this.linkedEstimateId,
+    this.discountType = 'none',
+    this.discountValue = 0.0,
     required this.currentStep,
     required this.isSubmitting,
     this.error,
@@ -59,6 +63,8 @@ class TaxInvoiceWizardState {
       items: [],
       termsAndConditions: 'Thank you for doing business with us.\n*You want a tax bill that will be his higher.',
       linkedEstimateId: null,
+      discountType: 'none',
+      discountValue: 0.0,
       currentStep: 0,
       isSubmitting: false,
       error: null,
@@ -80,6 +86,8 @@ class TaxInvoiceWizardState {
     List<EstimateItem>? items,
     String? termsAndConditions,
     String? linkedEstimateId,
+    String? discountType,
+    double? discountValue,
     int? currentStep,
     bool? isSubmitting,
     String? error,
@@ -99,6 +107,8 @@ class TaxInvoiceWizardState {
       items: items ?? this.items,
       termsAndConditions: termsAndConditions ?? this.termsAndConditions,
       linkedEstimateId: linkedEstimateId ?? this.linkedEstimateId,
+      discountType: discountType ?? this.discountType,
+      discountValue: discountValue ?? this.discountValue,
       currentStep: currentStep ?? this.currentStep,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: error,
@@ -122,6 +132,8 @@ class TaxInvoiceWizardState {
       items: items,
       termsAndConditions: termsAndConditions.isNotEmpty ? termsAndConditions : null,
       linkedEstimateId: linkedEstimateId,
+      discountType: discountType,
+      discountValue: discountValue,
     );
   }
 }
@@ -151,6 +163,8 @@ class TaxInvoiceWizardNotifier extends StateNotifier<TaxInvoiceWizardState> {
       items: invoice.items,
       termsAndConditions: invoice.termsAndConditions ?? '',
       linkedEstimateId: invoice.linkedEstimateId,
+      discountType: invoice.discountType,
+      discountValue: invoice.discountValue,
       currentStep: 0,
       isSubmitting: false,
       error: null,
@@ -173,6 +187,8 @@ class TaxInvoiceWizardNotifier extends StateNotifier<TaxInvoiceWizardState> {
       items: estimate.items,
       termsAndConditions: 'Thank you for doing business with us.\n*100% advance is mandatory',
       linkedEstimateId: estimate.id,
+      discountType: estimate.discountType,
+      discountValue: estimate.discountValue,
       currentStep: 0,
       isSubmitting: false,
       error: null,
@@ -193,6 +209,8 @@ class TaxInvoiceWizardNotifier extends StateNotifier<TaxInvoiceWizardState> {
   void updateGstinNumber(String gstin) => state = state.copyWith(gstinNumber: gstin);
   
   void updateTermsAndConditions(String terms) => state = state.copyWith(termsAndConditions: terms);
+  void updateDiscountType(String type) => state = state.copyWith(discountType: type);
+  void updateDiscountValue(double value) => state = state.copyWith(discountValue: value);
 
   // Transportation Details
   void updateVehicleNumber(String val) => state = state.copyWith(transportationDetails: TransportationDetails(vehicleNumber: val, transportName: state.transportationDetails.transportName, lrNumber: state.transportationDetails.lrNumber, dispatchDetails: state.transportationDetails.dispatchDetails, deliveryDetails: state.transportationDetails.deliveryDetails));

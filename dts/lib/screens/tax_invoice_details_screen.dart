@@ -6,6 +6,7 @@ import '../core/constants/app_colors.dart';
 import '../models/tax_invoice_model.dart';
 import '../repositories/tax_invoice_repository.dart';
 import '../services/pdf_service.dart';
+import '../providers/dashboard_stats_provider.dart';
 import 'pdf_viewer_screen.dart';
 
 class TaxInvoiceDetailsScreen extends ConsumerStatefulWidget {
@@ -274,7 +275,7 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildCommercialTab(invoice, payment),
+                _buildCommercialTab(invoice),
                 _buildItemsTab(invoice),
                 _buildTermsTab(invoice),
                 _buildSignaturesTab(invoice),
@@ -320,7 +321,139 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
     );
   }
 
-  Widget _buildCommercialTab(TaxInvoiceModel invoice, InvoicePaymentDetails? payment) {
+  void _showRecordPaymentDialog(TaxInvoiceModel invoice) {
+    final amountCtrl = TextEditingController();
+    final txIdCtrl = TextEditingController();
+    String method = 'Bank Transfer';
+    DateTime selectedDate = DateTime.now();
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Record Payment', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: amountCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Amount (₹) *',
+                    prefixIcon: Icon(Icons.currency_rupee),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: method,
+                  decoration: const InputDecoration(
+                    labelText: 'Payment Method *',
+                    prefixIcon: Icon(Icons.payment),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'Cash', child: Text('Cash')),
+                    DropdownMenuItem(value: 'Bank Transfer', child: Text('Bank Transfer')),
+                    DropdownMenuItem(value: 'UPI / GPay / PhonePe', child: Text('UPI / GPay / PhonePe')),
+                    DropdownMenuItem(value: 'Cheque', child: Text('Cheque')),
+                    DropdownMenuItem(value: 'Others', child: Text('Others')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setState(() => method = val);
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: txIdCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Transaction ID / Reference',
+                    prefixIcon: Icon(Icons.receipt),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) {
+                      setState(() => selectedDate = picked);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today, color: AppColors.primary),
+                        const SizedBox(width: 12),
+                        Text(DateFormat('dd-MM-yyyy').format(selectedDate)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final amt = double.tryParse(amountCtrl.text) ?? 0.0;
+                if (amt <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a valid positive amount'), backgroundColor: AppColors.error),
+                  );
+                  return;
+                }
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Recording payment...')),
+                );
+                try {
+                  final repo = ref.read(taxInvoiceRepositoryProvider);
+                  await repo.recordPayment(
+                    id: invoice.id!,
+                    amount: amt,
+                    method: method,
+                    transactionId: txIdCtrl.text.trim(),
+                    date: selectedDate,
+                  );
+                  
+                  ref.read(dashboardStatsProvider.notifier).fetchStats();
+                  _loadInvoice();
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Payment recorded successfully!'), backgroundColor: AppColors.success),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to record payment: $e'), backgroundColor: AppColors.error),
+                    );
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCommercialTab(TaxInvoiceModel invoice) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -341,22 +474,21 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
                         'Tax Invoice',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
                       ),
-                      if (payment != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: _getStatusColor(payment.status).withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            payment.status.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: _getStatusColor(payment.status),
-                            ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(invoice.paymentStatus).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          invoice.paymentStatus.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: _getStatusColor(invoice.paymentStatus),
                           ),
                         ),
+                      ),
                     ],
                   ),
                   const Divider(height: 24),
@@ -429,6 +561,14 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
                   const Text('Payment Summary', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primary)),
                   const Divider(height: 20),
                   _buildDetailRow('Sub Total', '₹${invoice.subtotal?.toStringAsFixed(2) ?? '0.00'}'),
+                  if (invoice.discountType != 'none')
+                    _buildDetailRow(
+                      'Discount (${invoice.discountType})',
+                      '- ₹${invoice.discountAmount?.toStringAsFixed(2) ?? '0.00'}',
+                      valueColor: AppColors.success,
+                    ),
+                  if (invoice.discountType != 'none')
+                    _buildDetailRow('Taxable Amount', '₹${invoice.taxableAmount?.toStringAsFixed(2) ?? '0.00'}'),
                   if ((invoice.totalTax ?? 0) > 0)
                     _buildDetailRow('GST Amount', '₹${invoice.totalTax?.toStringAsFixed(2) ?? '0.00'}'),
                   const Divider(),
@@ -438,16 +578,98 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
                     isBold: true,
                     valueColor: AppColors.textPrimary,
                   ),
-                  if (payment != null) ...[
-                    _buildDetailRow('Amount Received', '₹${payment.advanceAmountReceived?.toStringAsFixed(2) ?? '0.00'}', valueColor: AppColors.success),
-                    const Divider(),
-                    _buildDetailRow(
-                      'Balance Due',
-                      '₹${payment.remainingAmount?.toStringAsFixed(2) ?? '0.00'}',
-                      isBold: true,
-                      valueColor: AppColors.error,
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Payments & Tracking Card
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Payment History',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primary),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(invoice.paymentStatus).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          invoice.paymentStatus.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: _getStatusColor(invoice.paymentStatus),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 20),
+                  _buildDetailRow('Received Amount', '₹${invoice.receivedAmount.toStringAsFixed(2)}', valueColor: AppColors.success),
+                  _buildDetailRow('Outstanding Balance', '₹${invoice.outstandingAmount.toStringAsFixed(2)}', valueColor: AppColors.error),
+                  const SizedBox(height: 12),
+                  if (invoice.payments.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text('No payments recorded yet.', style: TextStyle(fontStyle: FontStyle.italic, color: AppColors.textSecondary)),
+                    )
+                  else ...[
+                    const Text('Past Payments:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    const SizedBox(height: 8),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: invoice.payments.length,
+                      itemBuilder: (context, idx) {
+                        final p = invoice.payments[idx];
+                        final pDate = DateFormat('dd-MM-yyyy').format(p.paymentDate);
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.background,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('₹${p.amountReceived.toStringAsFixed(2)} - ${p.paymentMethod ?? 'Others'}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  if (p.referenceNumber != null && p.referenceNumber!.isNotEmpty)
+                                    Text('TxID: ${p.referenceNumber}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                ],
+                              ),
+                              Text(pDate, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ],
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showRecordPaymentDialog(invoice),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Record Payment'),
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -100,7 +100,29 @@ const estimateSchema = new mongoose.Schema(
         'At least one item is required.',
       ],
     },
+    taxMode: {
+      type: String,
+      enum: ['tax', 'no-tax'],
+      default: 'tax',
+    },
     subtotal: {
+      type: Number,
+      default: 0,
+    },
+    discountType: {
+      type: String,
+      enum: ['none', 'percentage', 'fixed'],
+      default: 'none',
+    },
+    discountValue: {
+      type: Number,
+      default: 0,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+    },
+    taxableAmount: {
       type: Number,
       default: 0,
     },

@@ -55,6 +55,13 @@ class BillingInvoiceModel {
   final String? customerSignatureUrl;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String discountType;
+  final double discountValue;
+  final double? discountAmount;
+  final String paymentStatus;
+  final double outstandingAmount;
+  final List<InvoicePaymentHistory> payments;
+  final double? subtotal;
   
   final EstimatePaymentData? paymentData;
   final BankDetails? companyBankDetails;
@@ -76,6 +83,13 @@ class BillingInvoiceModel {
     this.customerSignatureUrl,
     this.createdAt,
     this.updatedAt,
+    this.discountType = 'none',
+    this.discountValue = 0.0,
+    this.discountAmount,
+    this.paymentStatus = 'unpaid',
+    this.outstandingAmount = 0.0,
+    this.payments = const [],
+    this.subtotal,
     this.paymentData,
     this.companyBankDetails,
   });
@@ -97,6 +111,11 @@ class BillingInvoiceModel {
     if (json.containsKey('bankDetails') && json['bankDetails'] != null) {
       companyBankDetailsObj = BankDetails.fromJson(json['bankDetails']);
     }
+
+    final paymentsRaw = docJson['payments'] as List?;
+    final paymentsList = paymentsRaw != null
+        ? paymentsRaw.map((e) => InvoicePaymentHistory.fromJson(e as Map<String, dynamic>)).toList()
+        : <InvoicePaymentHistory>[];
 
     return BillingInvoiceModel(
       id: docJson['_id'] ?? docJson['id'],
@@ -125,6 +144,13 @@ class BillingInvoiceModel {
       updatedAt: docJson['updatedAt'] != null
           ? DateTime.tryParse(docJson['updatedAt'].toString())
           : null,
+      discountType: docJson['discountType'] ?? 'none',
+      discountValue: (docJson['discountValue'] as num?)?.toDouble() ?? 0.0,
+      discountAmount: (docJson['discountAmount'] as num?)?.toDouble(),
+      paymentStatus: docJson['paymentStatus'] ?? 'unpaid',
+      outstandingAmount: (docJson['outstandingAmount'] as num?)?.toDouble() ?? 0.0,
+      payments: paymentsList,
+      subtotal: (docJson['subtotal'] as num?)?.toDouble(),
       paymentData: paymentData,
       companyBankDetails: companyBankDetailsObj,
     );
@@ -136,6 +162,8 @@ class BillingInvoiceModel {
       'billTo': billTo.toJson(),
       'items': items.map((e) => e.toJson()).toList(),
       'receivedAmount': receivedAmount,
+      'discountType': discountType,
+      'discountValue': discountValue,
     };
 
     if (id != null) map['id'] = id;

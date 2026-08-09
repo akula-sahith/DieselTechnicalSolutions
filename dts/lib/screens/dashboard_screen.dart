@@ -10,6 +10,7 @@ import '../providers/estimates_provider.dart';
 import '../providers/tax_invoices_provider.dart';
 import '../providers/billing_invoices_provider.dart';
 import '../providers/customers_provider.dart';
+import '../providers/dashboard_stats_provider.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/common/section_header.dart';
 import '../widgets/common/document_card.dart';
@@ -27,6 +28,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     super.initState();
     // Ensure all providers load data on dashboard initial mount
     Future.microtask(() {
+      ref.read(dashboardStatsProvider.notifier).fetchStats();
       ref.read(estimatesProvider.notifier).loadEstimates();
       ref.read(taxInvoicesProvider.notifier).loadTaxInvoices();
       ref.read(billingInvoicesProvider.notifier).loadBillingInvoices();
@@ -54,6 +56,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final invoicesNotifier = ref.read(taxInvoicesProvider.notifier);
     final customersState = ref.watch(customersProvider);
     final customersNotifier = ref.read(customersProvider.notifier);
+    final statsAsync = ref.watch(dashboardStatsProvider);
 
     final todayStr = DateFormat('EEEE, dd MMM yyyy').format(DateTime.now());
     final now = DateTime.now();
@@ -117,6 +120,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
+            ref.read(dashboardStatsProvider.notifier).fetchStats(),
             reportsNotifier.refresh(),
             agreementsNotifier.refresh(),
             estimatesNotifier.refresh(),
@@ -350,34 +354,88 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          // Bills Pending Card
-                          Expanded(
-                            child: _buildFinancialCard(
-                              title: "Bills Pending",
-                              subtitle: "${pendingEstimates.length} Unconverted Estimates",
-                              amount: "₹${_formatCurrency(billsPendingAmount)}",
-                              icon: Icons.hourglass_top_rounded,
-                              accentColor: const Color(0xFFEA580C),
-                              bgColor: const Color(0xFFFFF7ED),
-                              borderColor: const Color(0xFFFFEDD5),
-                            ),
+                      statsAsync.when(
+                        loading: () => const SizedBox(
+                          height: 120,
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                        error: (err, stack) => SizedBox(
+                          height: 120,
+                          child: Center(child: Text('Error loading stats: $err')),
+                        ),
+                        data: (stats) => SizedBox(
+                          height: 120,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            children: [
+                              SizedBox(
+                                width: 180,
+                                child: _buildFinancialCard(
+                                  title: "Revenue Generated",
+                                  subtitle: "Total Sales",
+                                  amount: "₹${_formatCurrency(stats.revenueGenerated)}",
+                                  icon: Icons.account_balance_wallet_outlined,
+                                  accentColor: const Color(0xFF16A34A),
+                                  bgColor: const Color(0xFFF0FDF4),
+                                  borderColor: const Color(0xFFDCFCE7),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              SizedBox(
+                                width: 180,
+                                child: _buildFinancialCard(
+                                  title: "Payment Received",
+                                  subtitle: "Collected Balance",
+                                  amount: "₹${_formatCurrency(stats.paymentReceived)}",
+                                  icon: Icons.check_circle_outline,
+                                  accentColor: const Color(0xFF2563EB),
+                                  bgColor: const Color(0xFFEFF6FF),
+                                  borderColor: const Color(0xFFDBEAFE),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              SizedBox(
+                                width: 180,
+                                child: _buildFinancialCard(
+                                  title: "Outstanding Amount",
+                                  subtitle: "Receivables",
+                                  amount: "₹${_formatCurrency(stats.outstandingAmount)}",
+                                  icon: Icons.warning_amber_rounded,
+                                  accentColor: const Color(0xFFDC2626),
+                                  bgColor: const Color(0xFFFEF2F2),
+                                  borderColor: const Color(0xFFFEE2E2),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              SizedBox(
+                                width: 180,
+                                child: _buildFinancialCard(
+                                  title: "Bills Pending",
+                                  subtitle: "Unconverted Estimates",
+                                  amount: "₹${_formatCurrency(stats.estimateAmountPending)}",
+                                  icon: Icons.hourglass_top_rounded,
+                                  accentColor: const Color(0xFFD97706),
+                                  bgColor: const Color(0xFFFFFBEB),
+                                  borderColor: const Color(0xFFFEF3C7),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              SizedBox(
+                                width: 180,
+                                child: _buildFinancialCard(
+                                  title: "Purchase Bills",
+                                  subtitle: "Supplier Bills",
+                                  amount: "₹${_formatCurrency(stats.purchaseBills)}",
+                                  icon: Icons.shopping_bag_outlined,
+                                  accentColor: const Color(0xFF7C3AED),
+                                  bgColor: const Color(0xFFF5F3FF),
+                                  borderColor: const Color(0xFFEDE9FE),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          // Revenue Generated Card
-                          Expanded(
-                            child: _buildFinancialCard(
-                              title: "Revenue Generated",
-                              subtitle: "${invoicesState.taxInvoices.length} Total Invoices",
-                              amount: "₹${_formatCurrency(revenueGeneratedAmount)}",
-                              icon: Icons.account_balance_wallet_outlined,
-                              accentColor: const Color(0xFF16A34A),
-                              bgColor: const Color(0xFFF0FDF4),
-                              borderColor: const Color(0xFFDCFCE7),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
@@ -438,6 +496,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             icon: Icons.subtitles_outlined,
                             color: const Color(0xFF0284C7),
                             onTap: () => context.push('/create-billing-invoice'),
+                          ),
+                          _buildQuickActionButton(
+                            label: "Purchase Bills",
+                            icon: Icons.shopping_bag_outlined,
+                            color: const Color(0xFF7C3AED),
+                            onTap: () => context.push('/purchase-bills'),
                           ),
                         ],
                       ),

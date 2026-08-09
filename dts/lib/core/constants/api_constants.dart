@@ -9,6 +9,7 @@ class ApiConstants {
   static const String taxInvoices = '/tax-invoices';
   static const String billingInvoices = '/billing-invoices';
   static const String customers = '/customers';
-  static const String appVersions = "/app-versions";
-
+  static const String appVersions = '/app-versions';
+  static const String purchaseBills = '/purchase-bills';
+  static const String dashboard = '/dashboard';
 }

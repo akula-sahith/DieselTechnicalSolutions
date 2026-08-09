@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/constants/app_colors.dart';
 import '../models/billing_invoice_model.dart';
+import '../models/estimate_model.dart';
 import '../providers/billing_invoice_wizard_provider.dart';
 import '../widgets/stepper/stepper_progress_bar.dart';
 import '../widgets/stepper/step_navigation.dart';
@@ -10,7 +11,9 @@ import '../widgets/stepper/step_container.dart';
 import '../widgets/stepper/step_header.dart';
 
 class CreateBillingInvoiceScreen extends ConsumerStatefulWidget {
-  const CreateBillingInvoiceScreen({super.key});
+  final EstimateModel? initialEstimate;
+  final BillingInvoiceModel? initialInvoice;
+  const CreateBillingInvoiceScreen({super.key, this.initialEstimate, this.initialInvoice});
 
   @override
   ConsumerState<CreateBillingInvoiceScreen> createState() => _CreateBillingInvoiceScreenState();
@@ -41,8 +44,26 @@ class _CreateBillingInvoiceScreenState extends ConsumerState<CreateBillingInvoic
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(billingInvoiceWizardProvider.notifier).reset();
-      _receivedAmountCtrl.clear();
+      if (widget.initialInvoice != null) {
+        ref.read(billingInvoiceWizardProvider.notifier).loadFromInvoice(widget.initialInvoice!);
+      } else if (widget.initialEstimate != null) {
+        ref.read(billingInvoiceWizardProvider.notifier).loadFromEstimate(widget.initialEstimate!);
+      } else {
+        ref.read(billingInvoiceWizardProvider.notifier).reset();
+      }
+
+      final state = ref.read(billingInvoiceWizardProvider);
+      // Pre-populate controllers
+      _customerNameCtrl.text = state.customerName;
+      _addressCtrl.text = state.address;
+      _contactPersonCtrl.text = state.contactPerson;
+      _contactNumberCtrl.text = state.contactNumber;
+      _gstinCtrl.text = state.gstinNumber;
+      _placeOfSupplyCtrl.text = state.placeOfSupply;
+      _vehicleNumberCtrl.text = state.transportationDetails.vehicleNumber ?? '';
+      _transportNameCtrl.text = state.transportationDetails.transportName ?? '';
+      _lrNumberCtrl.text = state.transportationDetails.lrNumber ?? '';
+      _receivedAmountCtrl.text = state.receivedAmount.toString();
     });
   }
 
@@ -214,6 +235,63 @@ class _CreateBillingInvoiceScreenState extends ConsumerState<CreateBillingInvoic
           OutlinedButton.icon(onPressed: () => _showAddItemDialog(notifier), icon: const Icon(Icons.add), label: const Text('Add Item')),
           
           if (state.items.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: AppColors.border),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Discount Options',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: state.discountType,
+                      decoration: const InputDecoration(
+                        labelText: 'Discount Type',
+                        prefixIcon: Icon(Icons.discount),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'none', child: Text('No Discount')),
+                        DropdownMenuItem(value: 'percentage', child: Text('Percentage Discount (%)')),
+                        DropdownMenuItem(value: 'fixed', child: Text('Fixed Discount (₹)')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) notifier.updateDiscountType(val);
+                      },
+                    ),
+                    if (state.discountType != 'none') ...[
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        initialValue: state.discountValue > 0 ? state.discountValue.toString() : '',
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(
+                          labelText: state.discountType == 'percentage'
+                              ? 'Discount Percentage (%)'
+                              : 'Discount Amount (₹)',
+                          prefixIcon: const Icon(Icons.edit),
+                        ),
+                        onChanged: (val) {
+                          final doubleVal = double.tryParse(val) ?? 0.0;
+                          notifier.updateDiscountValue(doubleVal);
+                        },
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
             const Divider(height: 32),
             const Text('Financial Summary', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primary)),
             const SizedBox(height: 12),
@@ -226,7 +304,20 @@ class _CreateBillingInvoiceScreenState extends ConsumerState<CreateBillingInvoic
               ),
               child: Column(
                 children: [
-                  _buildSummaryRow('Total Amount', '₹${totalAmount.toStringAsFixed(2)}'),
+                  _buildSummaryRow('Subtotal', '₹${totalAmount.toStringAsFixed(2)}'),
+                  if (state.discountType != 'none') ...[
+                    const SizedBox(height: 8),
+                    _buildSummaryRow(
+                      'Discount (${state.discountType})', 
+                      '- ₹${(state.discountType == 'percentage' ? totalAmount * (state.discountValue / 100) : state.discountValue).toStringAsFixed(2)}',
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  _buildSummaryRow(
+                    'Net Amount', 
+                    '₹${(totalAmount - (state.discountType == 'percentage' ? totalAmount * (state.discountValue / 100) : state.discountValue)).toStringAsFixed(2)}',
+                    isBold: true,
+                  ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _receivedAmountCtrl,
@@ -246,7 +337,7 @@ class _CreateBillingInvoiceScreenState extends ConsumerState<CreateBillingInvoic
                   const Divider(height: 24),
                   _buildSummaryRow(
                     'Remaining Balance',
-                    '₹${(totalAmount - state.receivedAmount).toStringAsFixed(2)}',
+                    '₹${(totalAmount - (state.discountType == 'percentage' ? totalAmount * (state.discountValue / 100) : state.discountValue) - state.receivedAmount).toStringAsFixed(2)}',
                     isBold: true,
                   ),
                 ],

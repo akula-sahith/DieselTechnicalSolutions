@@ -131,6 +131,14 @@ class TaxInvoiceModel {
   final String? customerSignatureUrl;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String discountType;
+  final double discountValue;
+  final double? discountAmount;
+  final double? taxableAmount;
+  final String paymentStatus;
+  final double receivedAmount;
+  final double outstandingAmount;
+  final List<InvoicePaymentHistory> payments;
   
   // Extra payment data returned by the backend endpoint alongside the document
   final EstimatePaymentData? paymentData;
@@ -155,6 +163,14 @@ class TaxInvoiceModel {
     this.customerSignatureUrl,
     this.createdAt,
     this.updatedAt,
+    this.discountType = 'none',
+    this.discountValue = 0.0,
+    this.discountAmount,
+    this.taxableAmount,
+    this.paymentStatus = 'unpaid',
+    this.receivedAmount = 0.0,
+    this.outstandingAmount = 0.0,
+    this.payments = const [],
     this.paymentData,
     this.companyBankDetails,
   });
@@ -176,6 +192,11 @@ class TaxInvoiceModel {
     if (json.containsKey('bankDetails') && json['bankDetails'] != null) {
       companyBankDetailsObj = BankDetails.fromJson(json['bankDetails']);
     }
+
+    final paymentsRaw = docJson['payments'] as List?;
+    final paymentsList = paymentsRaw != null
+        ? paymentsRaw.map((e) => InvoicePaymentHistory.fromJson(e as Map<String, dynamic>)).toList()
+        : <InvoicePaymentHistory>[];
 
     return TaxInvoiceModel(
       id: docJson['_id'] ?? docJson['id'],
@@ -208,6 +229,14 @@ class TaxInvoiceModel {
       updatedAt: docJson['updatedAt'] != null
           ? DateTime.tryParse(docJson['updatedAt'].toString())
           : null,
+      discountType: docJson['discountType'] ?? 'none',
+      discountValue: (docJson['discountValue'] as num?)?.toDouble() ?? 0.0,
+      discountAmount: (docJson['discountAmount'] as num?)?.toDouble(),
+      taxableAmount: (docJson['taxableAmount'] as num?)?.toDouble(),
+      paymentStatus: docJson['paymentStatus'] ?? 'unpaid',
+      receivedAmount: (docJson['receivedAmount'] as num?)?.toDouble() ?? 0.0,
+      outstandingAmount: (docJson['outstandingAmount'] as num?)?.toDouble() ?? 0.0,
+      payments: paymentsList,
       paymentData: paymentData,
       companyBankDetails: companyBankDetailsObj,
     );
@@ -218,6 +247,9 @@ class TaxInvoiceModel {
       'invoiceDate': invoiceDate.toIso8601String(),
       'billTo': billTo.toJson(),
       'items': items.map((e) => e.toJson()).toList(),
+      'discountType': discountType,
+      'discountValue': discountValue,
+      'receivedAmount': receivedAmount,
     };
 
     if (id != null) map['id'] = id;

@@ -1574,6 +1574,28 @@ pw.Expanded(
                               ],
                             ),
                           ),
+                          if (estimate.discountType != 'none')
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              child: pw.Row(
+                                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                                children: [
+                                  pw.Text('Discount (${estimate.discountType})', style: const pw.TextStyle(fontSize: 8.5)),
+                                  pw.Text('- ₹ ${estimate.discountAmount?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
+                                ],
+                              ),
+                            ),
+                          if (estimate.discountType != 'none')
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              child: pw.Row(
+                                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                                children: [
+                                  pw.Text('Taxable Value', style: const pw.TextStyle(fontSize: 8.5)),
+                                  pw.Text('₹ ${estimate.taxableAmount?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
+                                ],
+                              ),
+                            ),
                           pw.Container(
                             decoration: const pw.BoxDecoration(border: pw.Border(top: pw.BorderSide(color: PdfColors.black, width: 0.5))),
                             padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -1902,6 +1924,36 @@ pw.Expanded(
                               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                               children: [
                                 pw.Text('Sub Total', style: const pw.TextStyle(fontSize: 8.5)),
+                              ],
+                            ),
+                          ),
+                          if (invoice.discountType != 'none')
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              child: pw.Row(
+                                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                                children: [
+                                  pw.Text('Discount (${invoice.discountType})', style: const pw.TextStyle(fontSize: 8.5)),
+                                  pw.Text('- ₹ ${invoice.discountAmount?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
+                                ],
+                              ),
+                            ),
+                          if (invoice.discountType != 'none')
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              child: pw.Row(
+                                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                                children: [
+                                  pw.Text('Taxable Value', style: const pw.TextStyle(fontSize: 8.5)),
+                                  pw.Text('₹ ${invoice.taxableAmount?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
+                                ],
+                              ),
+                            ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            child: pw.Row(
+                              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                              children: [
                                 pw.Text('₹ ${invoice.subtotal?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
                               ],
                             ),
@@ -2277,6 +2329,27 @@ pw.Expanded(
                             padding: const pw.EdgeInsets.all(4),
                             child: pw.Text('Amounts', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
                           ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            child: pw.Row(
+                              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                              children: [
+                                pw.Text('Sub Total', style: const pw.TextStyle(fontSize: 8.5)),
+                                pw.Text('₹ ${invoice.subtotal?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
+                              ],
+                            ),
+                          ),
+                          if (invoice.discountType != 'none')
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              child: pw.Row(
+                                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                                children: [
+                                  pw.Text('Discount (${invoice.discountType})', style: const pw.TextStyle(fontSize: 8.5)),
+                                  pw.Text('- ₹ ${invoice.discountAmount?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
+                                ],
+                              ),
+                            ),
                           pw.Container(
                             decoration: const pw.BoxDecoration(border: pw.Border(top: pw.BorderSide(color: PdfColors.black, width: 0.5))),
                             padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -2609,6 +2682,36 @@ pw.Expanded(
                                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                                 children: [
                                   pw.Text('Sub Total', style: const pw.TextStyle(fontSize: 8.5)),
+                                ],
+                              ),
+                            ),
+                            if (invoice.discountType != 'none')
+                              pw.Padding(
+                                padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                child: pw.Row(
+                                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    pw.Text('Discount (${invoice.discountType})', style: const pw.TextStyle(fontSize: 8.5)),
+                                    pw.Text('- ₹ ${invoice.discountAmount?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
+                                  ],
+                                ),
+                              ),
+                            if (invoice.discountType != 'none')
+                              pw.Padding(
+                                padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                child: pw.Row(
+                                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    pw.Text('Taxable Value', style: const pw.TextStyle(fontSize: 8.5)),
+                                    pw.Text('₹ ${invoice.taxableAmount?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
+                                  ],
+                                ),
+                              ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              child: pw.Row(
+                                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                                children: [
                                   pw.Text('₹ ${invoice.subtotal?.toStringAsFixed(2) ?? ''}', style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5)),
                                 ],
                               ),

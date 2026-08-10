@@ -13,10 +13,10 @@ const companyPaymentDetails = {
   companyName: 'Diesel Technical Solutions',
 
   // Bank Details
-  bankName: 'ICICI Bank',
-  accountHolderName: 'GPS Technical Services',
-  accountNumber: '1234567890',
-  ifscCode: 'ICIC0000001',
+  bankName: 'Federal Bank',
+  accountHolderName: 'Diesel Technical Solutions',
+  accountNumber: '24780200001898',
+  ifscCode: 'FDRL0002478',
 
   // UPI Details
   upiId: '9491435957@ybl',

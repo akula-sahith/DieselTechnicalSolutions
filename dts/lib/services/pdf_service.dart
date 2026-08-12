@@ -1956,7 +1956,7 @@ pw.Expanded(
                               children: [
                                 pw.Expanded(child: pw.Text('Total Tax (GST)', style: const pw.TextStyle(fontSize: 8.5))),
                                 pw.Text(
-                                  '₹ ${((invoice.totalTax != null && invoice.totalTax! > 0) ? invoice.totalTax! : invoice.items.fold<double>(0.0, (s, e) => s + (e.sgst + e.cgst))).toStringAsFixed(2)}',
+                                  '₹ ${((invoice.totalTax != null && invoice.totalTax! > 0) ? invoice.totalTax! : invoice.items.fold<double>(0.0, (s, e) => s + ((e.sgst ?? 0.0) + (e.cgst ?? 0.0)))).toStringAsFixed(2)}',
                                   style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5),
                                 ),
                               ],
@@ -2718,7 +2718,7 @@ pw.Expanded(
                                 children: [
                                   pw.Expanded(child: pw.Text('Total Tax (GST)', style: const pw.TextStyle(fontSize: 8.5))),
                                   pw.Text(
-                                    '₹ ${((invoice.totalTax != null && invoice.totalTax! > 0) ? invoice.totalTax! : invoice.items.fold<double>(0.0, (s, e) => s + (e.sgst + e.cgst))).toStringAsFixed(2)}',
+                                    '₹ ${((invoice.totalTax != null && invoice.totalTax! > 0) ? invoice.totalTax! : invoice.items.fold<double>(0.0, (s, e) => s + ((e.sgst ?? 0.0) + (e.cgst ?? 0.0)))).toStringAsFixed(2)}',
                                     style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5),
                                   ),
                                 ],

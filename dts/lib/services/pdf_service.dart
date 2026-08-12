@@ -1950,6 +1950,18 @@ pw.Expanded(
                                 ],
                               ),
                             ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            child: pw.Row(
+                              children: [
+                                pw.Expanded(child: pw.Text('Total Tax (GST)', style: const pw.TextStyle(fontSize: 8.5))),
+                                pw.Text(
+                                  '₹ ${((invoice.totalTax != null && invoice.totalTax! > 0) ? invoice.totalTax! : invoice.items.fold<double>(0.0, (s, e) => s + (e.sgst + e.cgst))).toStringAsFixed(2)}',
+                                  style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5),
+                                ),
+                              ],
+                            ),
+                          ),
                           pw.Container(
                             decoration: const pw.BoxDecoration(border: pw.Border(top: pw.BorderSide(color: PdfColors.black, width: 0.5))),
                             padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -2700,6 +2712,18 @@ pw.Expanded(
                                   ],
                                 ),
                               ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              child: pw.Row(
+                                children: [
+                                  pw.Expanded(child: pw.Text('Total Tax (GST)', style: const pw.TextStyle(fontSize: 8.5))),
+                                  pw.Text(
+                                    '₹ ${((invoice.totalTax != null && invoice.totalTax! > 0) ? invoice.totalTax! : invoice.items.fold<double>(0.0, (s, e) => s + (e.sgst + e.cgst))).toStringAsFixed(2)}',
+                                    style: pw.TextStyle(fontFallback: [rupeeFont], fontSize: 8.5),
+                                  ),
+                                ],
+                              ),
+                            ),
                             pw.Container(
                               decoration: const pw.BoxDecoration(border: pw.Border(top: pw.BorderSide(color: PdfColors.black, width: 0.5))),
                               padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),

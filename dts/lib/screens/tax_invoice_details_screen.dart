@@ -575,8 +575,10 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
                     ),
                   if (invoice.discountType != 'none')
                     _buildDetailRow('Taxable Amount', '₹${invoice.taxableAmount?.toStringAsFixed(2) ?? '0.00'}'),
-                  if ((invoice.totalTax ?? 0) > 0)
-                    _buildDetailRow('GST Amount', '₹${invoice.totalTax?.toStringAsFixed(2) ?? '0.00'}'),
+                  _buildDetailRow(
+                    'Total Tax (GST)',
+                    '₹${((invoice.totalTax != null && invoice.totalTax! > 0) ? invoice.totalTax! : invoice.items.fold<double>(0.0, (s, e) => s + (e.sgst + e.cgst))).toStringAsFixed(2)}',
+                  ),
                   const Divider(),
                   _buildDetailRow(
                     'Total Amount',

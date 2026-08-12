@@ -356,15 +356,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       const SizedBox(height: 10),
                       statsAsync.when(
                         loading: () => const SizedBox(
-                          height: 136,
+                          height: 146,
                           child: Center(child: CircularProgressIndicator()),
                         ),
                         error: (err, stack) => SizedBox(
-                          height: 136,
+                          height: 146,
                           child: Center(child: Text('Error loading stats: $err')),
                         ),
                         data: (stats) => SizedBox(
-                          height: 136,
+                          height: 146,
                           child: ListView(
                             scrollDirection: Axis.horizontal,
                             physics: const BouncingScrollPhysics(),
@@ -463,7 +463,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         crossAxisCount: 2,
-                        childAspectRatio: 2.5,
+                        childAspectRatio: 2.1,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 10,
                         children: [

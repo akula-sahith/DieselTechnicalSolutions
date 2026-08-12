@@ -421,7 +421,7 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
                 );
                 try {
                   final repo = ref.read(taxInvoiceRepositoryProvider);
-                  await repo.recordPayment(
+                  final updatedInvoice = await repo.recordPayment(
                     id: invoice.id!,
                     amount: amt,
                     method: method,
@@ -430,7 +430,12 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
                   );
                   
                   ref.read(dashboardStatsProvider.notifier).fetchStats();
-                  _loadInvoice();
+                  ref.read(taxInvoicesProvider.notifier).refresh();
+                  if (mounted) {
+                    setState(() {
+                      _invoice = updatedInvoice;
+                    });
+                  }
                   
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(

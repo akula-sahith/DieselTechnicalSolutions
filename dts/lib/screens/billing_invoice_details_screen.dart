@@ -447,7 +447,7 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
                 );
                 try {
                   final repo = ref.read(billingInvoiceRepositoryProvider);
-                  await repo.recordPayment(
+                  final updatedInvoice = await repo.recordPayment(
                     id: invoice.id!,
                     amount: amt,
                     method: method,
@@ -456,7 +456,12 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
                   );
                   
                   ref.read(dashboardStatsProvider.notifier).fetchStats();
-                  _loadInvoice();
+                  ref.read(billingInvoicesProvider.notifier).refresh();
+                  if (mounted) {
+                    setState(() {
+                      _invoice = updatedInvoice;
+                    });
+                  }
                   
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(

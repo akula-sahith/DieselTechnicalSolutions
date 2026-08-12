@@ -314,6 +314,16 @@ export const updateTaxInvoice = async (req, res) => {
   }
 };
 
+const normalizePaymentMethod = (methodStr) => {
+  if (!methodStr) return 'upi';
+  const m = String(methodStr).toLowerCase().trim();
+  if (m.includes('cash')) return 'cash';
+  if (m.includes('bank') || m.includes('transfer')) return 'bank_transfer';
+  if (m.includes('upi') || m.includes('gpay') || m.includes('phonepe') || m.includes('paytm')) return 'upi';
+  if (m.includes('cheque') || m.includes('check')) return 'cheque';
+  return 'other';
+};
+
 export const updatePaymentStatus = async (req, res) => {
   try {
     const { status, receivedAmount, method, transactionId } = req.body;
@@ -327,7 +337,7 @@ export const updatePaymentStatus = async (req, res) => {
       const payment = {
         amount: amt,
         date: new Date(),
-        method: method || 'upi',
+        method: normalizePaymentMethod(method),
         transactionId: transactionId || 'Legacy Update',
       };
       taxInvoice.payments.push(payment);
@@ -343,7 +353,16 @@ export const updatePaymentStatus = async (req, res) => {
     taxInvoice.outstandingAmount = Math.max(0, Number((taxInvoice.totalAmount - taxInvoice.receivedAmount).toFixed(2)));
 
     await taxInvoice.save();
-    return sendSuccess(res, 'Payment status updated successfully.', taxInvoice);
+
+    const paymentData = await generatePaymentData(taxInvoice.outstandingAmount, `INV-${taxInvoice.invoiceNumber}`);
+    const bankDetails = getCompanyBankDetails();
+    const responseData = {
+      ...taxInvoice.toObject(),
+      payment: paymentData,
+      bankDetails,
+    };
+
+    return sendSuccess(res, 'Payment status updated successfully.', responseData);
   } catch (error) {
     return sendError(res, 'Failed to update payment status.', { details: error.message }, 500);
   }
@@ -364,7 +383,7 @@ export const addTaxInvoicePayment = async (req, res) => {
     const payment = {
       amount: Number(amount),
       date: date ? new Date(date) : new Date(),
-      method: method || 'upi',
+      method: normalizePaymentMethod(method),
       transactionId: transactionId || '',
     };
 
@@ -375,7 +394,15 @@ export const addTaxInvoicePayment = async (req, res) => {
 
     await taxInvoice.save();
 
-    return sendSuccess(res, 'Payment recorded successfully.', taxInvoice);
+    const paymentData = await generatePaymentData(taxInvoice.outstandingAmount, `INV-${taxInvoice.invoiceNumber}`);
+    const bankDetails = getCompanyBankDetails();
+    const responseData = {
+      ...taxInvoice.toObject(),
+      payment: paymentData,
+      bankDetails,
+    };
+
+    return sendSuccess(res, 'Payment recorded successfully.', responseData);
   } catch (error) {
     return sendError(res, 'Failed to record payment.', { details: error.message }, 500);
   }

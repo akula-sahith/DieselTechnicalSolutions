@@ -51,13 +51,19 @@ class InvoicePaymentHistory {
   });
 
   factory InvoicePaymentHistory.fromJson(Map<String, dynamic> json) {
+    final amt = (json['amountReceived'] as num?)?.toDouble() ?? (json['amount'] as num?)?.toDouble() ?? 0.0;
+    final dateStr = json['paymentDate'] ?? json['date'];
+    final dateVal = dateStr != null 
+        ? DateTime.tryParse(dateStr.toString()) ?? DateTime.now()
+        : DateTime.now();
+    final methodVal = json['paymentMethod'] ?? json['method'];
+    final refVal = json['referenceNumber'] ?? json['transactionId'];
+
     return InvoicePaymentHistory(
-      amountReceived: (json['amountReceived'] as num?)?.toDouble() ?? 0.0,
-      paymentDate: json['paymentDate'] != null 
-          ? DateTime.tryParse(json['paymentDate'].toString()) ?? DateTime.now()
-          : DateTime.now(),
-      paymentMethod: json['paymentMethod'],
-      referenceNumber: json['referenceNumber'],
+      amountReceived: amt,
+      paymentDate: dateVal,
+      paymentMethod: methodVal?.toString(),
+      referenceNumber: refVal?.toString(),
     );
   }
 

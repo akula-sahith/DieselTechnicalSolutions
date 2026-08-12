@@ -387,6 +387,7 @@ export const convertEstimateToInvoice = async (req, res) => {
           pricePerUnit: item.pricePerUnit,
           amount: item.amount,
         })),
+        subtotal: estimate.subtotal,
         totalAmount: estimate.totalAmount,
         discountType: estimate.discountType,
         discountValue: estimate.discountValue,

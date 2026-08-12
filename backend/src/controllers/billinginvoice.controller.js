@@ -340,6 +340,16 @@ export const updateBillingInvoice = async (req, res) => {
   }
 };
 
+const normalizePaymentMethod = (methodStr) => {
+  if (!methodStr) return 'cash';
+  const m = String(methodStr).toLowerCase().trim();
+  if (m.includes('cash')) return 'cash';
+  if (m.includes('bank') || m.includes('transfer')) return 'bank_transfer';
+  if (m.includes('upi') || m.includes('gpay') || m.includes('phonepe') || m.includes('paytm')) return 'upi';
+  if (m.includes('cheque') || m.includes('check')) return 'cheque';
+  return 'other';
+};
+
 export const addBillingInvoicePayment = async (req, res) => {
   try {
     const { amount, date, method, transactionId } = req.body;
@@ -355,7 +365,7 @@ export const addBillingInvoicePayment = async (req, res) => {
     const payment = {
       amount: Number(amount),
       date: date ? new Date(date) : new Date(),
-      method: method || 'cash',
+      method: normalizePaymentMethod(method),
       transactionId: transactionId || '',
     };
 
@@ -366,7 +376,15 @@ export const addBillingInvoicePayment = async (req, res) => {
 
     await billingInvoice.save();
 
-    return sendSuccess(res, 'Payment recorded successfully.', billingInvoice);
+    const paymentData = await generatePaymentData(billingInvoice.outstandingAmount, `BILL-${billingInvoice.invoiceNumber}`);
+    const bankDetails = getCompanyBankDetails();
+    const responseData = {
+      ...billingInvoice.toObject(),
+      payment: paymentData,
+      bankDetails,
+    };
+
+    return sendSuccess(res, 'Payment recorded successfully.', responseData);
   } catch (error) {
     return sendError(res, 'Failed to record payment.', { details: error.message }, 500);
   }

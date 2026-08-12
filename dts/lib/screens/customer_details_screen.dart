@@ -301,7 +301,12 @@ class _CustomerDetailsScreenState extends ConsumerState<CustomerDetailsScreen> w
       itemBuilder: (context, index) {
         final invoice = customer.taxInvoices[index];
         final formattedDate = DateFormat('dd MMM yyyy').format(invoice.invoiceDate);
-        final paymentStatus = invoice.paymentDetails?.status ?? 'Unpaid';
+        final paymentStatus = invoice.paymentDetails?.status ??
+            (invoice.paymentStatus.replaceAll('_', ' ').toLowerCase() == 'paid'
+                ? 'Paid'
+                : (invoice.paymentStatus.replaceAll('_', ' ').toLowerCase() == 'partially paid'
+                    ? 'Partially Paid'
+                    : 'Unpaid'));
 
         return DocumentCard(
           documentNumber: invoice.invoiceNumber ?? 'Pending',

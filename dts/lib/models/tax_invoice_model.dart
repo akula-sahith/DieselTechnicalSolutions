@@ -204,6 +204,22 @@ class TaxInvoiceModel {
         ? paymentsRaw.map((e) => InvoicePaymentHistory.fromJson(e as Map<String, dynamic>)).toList()
         : <InvoicePaymentHistory>[];
 
+    final rawStatus = (docJson['paymentStatus'] ?? docJson['paymentDetails']?['status'] ?? 'unpaid').toString();
+    final cleanStatus = rawStatus.replaceAll('_', ' ').toLowerCase();
+    final formattedStatus = cleanStatus == 'paid'
+        ? 'Paid'
+        : (cleanStatus == 'partially paid' ? 'Partially Paid' : 'Unpaid');
+
+    final InvoicePaymentDetails effectivePaymentDetails = docJson['paymentDetails'] != null
+        ? InvoicePaymentDetails.fromJson(docJson['paymentDetails'])
+        : InvoicePaymentDetails(
+            totalAmount: (docJson['totalAmount'] as num?)?.toDouble(),
+            advanceAmountReceived: (docJson['receivedAmount'] as num?)?.toDouble() ?? 0.0,
+            remainingAmount: (docJson['outstandingAmount'] as num?)?.toDouble() ?? 0.0,
+            status: formattedStatus,
+            paymentHistory: paymentsList,
+          );
+
     return TaxInvoiceModel(
       id: docJson['_id'] ?? docJson['id'],
       invoiceNumber: docJson['invoiceNumber'],
@@ -221,9 +237,7 @@ class TaxInvoiceModel {
       totalTax: (docJson['totalTax'] as num?)?.toDouble(),
       totalAmount: (docJson['totalAmount'] as num?)?.toDouble(),
       amountInWords: docJson['amountInWords'],
-      paymentDetails: docJson['paymentDetails'] != null
-          ? InvoicePaymentDetails.fromJson(docJson['paymentDetails'])
-          : null,
+      paymentDetails: effectivePaymentDetails,
       linkedEstimateId: docJson['linkedEstimateId'] is Map
           ? (docJson['linkedEstimateId']['_id'] ?? docJson['linkedEstimateId']['id'])?.toString()
           : docJson['linkedEstimateId']?.toString(),
@@ -239,7 +253,7 @@ class TaxInvoiceModel {
       discountValue: (docJson['discountValue'] as num?)?.toDouble() ?? 0.0,
       discountAmount: (docJson['discountAmount'] as num?)?.toDouble(),
       taxableAmount: (docJson['taxableAmount'] as num?)?.toDouble(),
-      paymentStatus: docJson['paymentStatus'] ?? 'unpaid',
+      paymentStatus: formattedStatus.toLowerCase().replaceAll(' ', '_'),
       receivedAmount: (docJson['receivedAmount'] as num?)?.toDouble() ?? 0.0,
       outstandingAmount: (docJson['outstandingAmount'] as num?)?.toDouble() ?? 0.0,
       payments: paymentsList,

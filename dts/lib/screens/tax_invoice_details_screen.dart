@@ -7,6 +7,7 @@ import '../models/tax_invoice_model.dart';
 import '../repositories/tax_invoice_repository.dart';
 import '../services/pdf_service.dart';
 import '../providers/dashboard_stats_provider.dart';
+import '../providers/tax_invoices_provider.dart';
 import 'pdf_viewer_screen.dart';
 
 class TaxInvoiceDetailsScreen extends ConsumerStatefulWidget {

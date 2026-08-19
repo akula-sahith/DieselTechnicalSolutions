@@ -14,6 +14,7 @@ import '../models/agreement_model.dart';
 import '../models/estimate_model.dart';
 import '../models/tax_invoice_model.dart';
 import '../models/billing_invoice_model.dart';
+import '../models/delivery_challan_model.dart';
 import 'api_service.dart';
 
 final pdfServiceProvider = Provider<PdfService>((ref) {
@@ -2854,4 +2855,411 @@ pw.Expanded(
       text: filename,
     );
   }
+
+  Future<Uint8List> generateDeliveryChallanPdf(DeliveryChallanModel challan) async {
+    final pdf = pw.Document();
+
+    pw.ImageProvider? logoImage;
+    try {
+      final logoBytes = (await rootBundle.load('assets/images/logo.png')).buffer.asUint8List();
+      logoImage = pw.MemoryImage(logoBytes);
+    } catch (_) {}
+
+    pw.ImageProvider? authorizedSignatureImage;
+    if (challan.authorizedSignatureUrl != null && challan.authorizedSignatureUrl!.isNotEmpty) {
+      final resolvedUrl = _resolveUrl(challan.authorizedSignatureUrl!);
+      if (resolvedUrl.startsWith('http')) {
+        authorizedSignatureImage = await _loadNetworkImage(resolvedUrl);
+      } else {
+        final file = File(resolvedUrl);
+        if (await file.exists()) {
+          try {
+            authorizedSignatureImage = pw.MemoryImage(await file.readAsBytes());
+          } catch (_) {}
+        }
+      }
+    }
+
+    final tableHeaders = ['#', 'Item Name', 'HSN/ SAC', 'Quantity'];
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(24),
+        build: (pw.Context context) {
+          final itemsRows = <pw.TableRow>[];
+
+          // Table Headers
+          itemsRows.add(
+            pw.TableRow(
+              decoration: pw.BoxDecoration(color: PdfColors.grey100),
+              children: tableHeaders.map((h) => pw.Padding(
+                padding: const pw.EdgeInsets.all(5),
+                child: pw.Text(
+                  h,
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9.5),
+                  textAlign: h == 'Quantity' ? pw.TextAlign.right : pw.TextAlign.left,
+                ),
+              )).toList(),
+            ),
+          );
+
+          // Table Data Rows
+          for (int i = 0; i < challan.items.length; i++) {
+            final item = challan.items[i];
+            itemsRows.add(
+              pw.TableRow(
+                children: [
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(5),
+                    child: pw.Text('${i + 1}', style: const pw.TextStyle(fontSize: 9.0)),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(5),
+                    child: pw.Text(
+                      item.itemName,
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9.0),
+                    ),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(5),
+                    child: pw.Text(item.hsnSac ?? '', style: const pw.TextStyle(fontSize: 9.0)),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(5),
+                    child: pw.Text(
+                      '${item.quantity}',
+                      textAlign: pw.TextAlign.right,
+                      style: const pw.TextStyle(fontSize: 9.0),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Total Row
+          final double totalQty = challan.items.fold<double>(0, (p, e) => p + e.quantity);
+          itemsRows.add(
+            pw.TableRow(
+              children: [
+                pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('')),
+                pw.Padding(
+                  padding: const pw.EdgeInsets.all(5),
+                  child: pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9.5)),
+                ),
+                pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('')),
+                pw.Padding(
+                  padding: const pw.EdgeInsets.all(5),
+                  child: pw.Text(
+                    totalQty % 1 == 0 ? totalQty.toInt().toString() : totalQty.toString(),
+                    textAlign: pw.TextAlign.right,
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9.5),
+                  ),
+                ),
+              ],
+            ),
+          );
+
+          final recDateStr = challan.receivedBy?.date != null
+              ? DateFormat('dd/MM/yyyy').format(challan.receivedBy!.date!)
+              : '';
+          final delDateStr = challan.deliveredBy?.date != null
+              ? DateFormat('dd/MM/yyyy').format(challan.deliveredBy!.date!)
+              : '';
+
+          return [
+            pw.Container(
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfColors.black, width: 1.0),
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                children: [
+                  // 1. Top Title
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(vertical: 4),
+                    alignment: pw.Alignment.center,
+                    child: pw.Text(
+                      'Delivery Challan',
+                      style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+                    ),
+                  ),
+                  pw.Divider(thickness: 1.0, color: PdfColors.black, height: 1),
+
+                  // 2. Header: Logo & Supplier Info
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(8),
+                    child: pw.Row(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Expanded(
+                          flex: 3,
+                          child: logoImage != null
+                              ? pw.Container(
+                                  height: 60,
+                                  alignment: pw.Alignment.centerLeft,
+                                  child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+                                )
+                              : pw.Text('DTS', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Expanded(
+                          flex: 7,
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.end,
+                            children: [
+                              pw.Text('Diesel Technical Solutions', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                              pw.SizedBox(height: 2),
+                              pw.Text(
+                                '2-2-128/G/100/1,PLOT NO 100, Sai Baba nagar colony, Road No.1, Laxma Reddy Colony, Uppal, Hyderabad, Telangana\nPhone no.: 8121312253 Email: dieseltechnicalsolutions@zohomail.in\nGSTIN: 36EXIPR5533Q1ZJ, State: 36-Telangana',
+                                textAlign: pw.TextAlign.right,
+                                style: const pw.TextStyle(fontSize: 8.5),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  pw.Divider(thickness: 1.0, color: PdfColors.black, height: 1),
+
+                  // 3. Main Details 3-Column Box
+                  pw.Table(
+                    border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+                    columnWidths: const {
+                      0: pw.FlexColumnWidth(3.8),
+                      1: pw.FlexColumnWidth(3.5),
+                      2: pw.FlexColumnWidth(2.7),
+                    },
+                    children: [
+                      // Subheaders
+                      pw.TableRow(
+                        decoration: pw.BoxDecoration(color: PdfColors.grey100),
+                        children: [
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(4),
+                            child: pw.Text('Delivery Challan for', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(4),
+                            child: pw.Text('Transportation Details', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(4),
+                            child: pw.Text('Challan Details', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9), textAlign: pw.TextAlign.right),
+                          ),
+                        ],
+                      ),
+                      // Details Content
+                      pw.TableRow(
+                        children: [
+                          // Col 1: Customer Info
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(6),
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Text(
+                                  challan.deliveryChallanFor.customerName,
+                                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9.5),
+                                ),
+                                pw.SizedBox(height: 3),
+                                pw.Text(challan.deliveryChallanFor.address, style: const pw.TextStyle(fontSize: 8.5)),
+                                pw.SizedBox(height: 3),
+                                pw.Text('Contact No.: ${challan.deliveryChallanFor.contactNumber}', style: const pw.TextStyle(fontSize: 8.5)),
+                                if (challan.deliveryChallanFor.gstinNumber != null && challan.deliveryChallanFor.gstinNumber!.isNotEmpty) ...[
+                                  pw.SizedBox(height: 3),
+                                  pw.Text('GSTIN Number: ${challan.deliveryChallanFor.gstinNumber}', style: const pw.TextStyle(fontSize: 8.5)),
+                                ],
+                                pw.SizedBox(height: 3),
+                                pw.Text('State: ${challan.deliveryChallanFor.state}', style: const pw.TextStyle(fontSize: 8.5)),
+                              ],
+                            ),
+                          ),
+
+                          // Col 2: Transportation Details
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(6),
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Text(
+                                  challan.transportationDetails.vehicleNumber?.isNotEmpty == true
+                                      ? '${challan.transportationDetails.vehicleNumber}:'
+                                      : '',
+                                  style: const pw.TextStyle(fontSize: 8.5),
+                                ),
+                                pw.SizedBox(height: 3),
+                                pw.Text(
+                                  challan.transportationDetails.dispatchDate != null
+                                      ? '${DateFormat('dd/MM/yyyy:').format(challan.transportationDetails.dispatchDate!)}'
+                                      : '',
+                                  style: const pw.TextStyle(fontSize: 8.5),
+                                ),
+                                pw.SizedBox(height: 3),
+                                pw.Text(
+                                  challan.transportationDetails.destinationLocation?.isNotEmpty == true
+                                      ? '${challan.transportationDetails.destinationLocation}:'
+                                      : '',
+                                  style: const pw.TextStyle(fontSize: 8.5),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Col 3: Challan Details
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(6),
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.end,
+                              children: [
+                                pw.Text('Challan No. ${challan.challanNumber ?? ''}', style: const pw.TextStyle(fontSize: 8.5)),
+                                pw.SizedBox(height: 3),
+                                pw.Text('Date: ${DateFormat('dd-MM-yyyy').format(challan.challanDate)}', style: const pw.TextStyle(fontSize: 8.5)),
+                                pw.SizedBox(height: 3),
+                                pw.Text('Place of Supply: ${challan.placeOfSupply}', style: const pw.TextStyle(fontSize: 8.5)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  // 4. Items Table
+                  pw.Table(
+                    border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+                    columnWidths: const {
+                      0: pw.FixedColumnWidth(25),
+                      1: pw.FlexColumnWidth(5.0),
+                      2: pw.FixedColumnWidth(100),
+                      3: pw.FixedColumnWidth(80),
+                    },
+                    children: itemsRows,
+                  ),
+
+                  // 5. Terms & Conditions
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(8),
+                    decoration: const pw.BoxDecoration(
+                      border: pw.Border(
+                        bottom: pw.BorderSide(color: PdfColors.black, width: 0.5),
+                      ),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('Terms and conditions', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          challan.termsAndConditions ??
+                              'Thank you for doing business with us.\n1. All disputes subject to Secunderabad Jurisdiction only\n2. Does not include erection & commissioning at site\n3. Transit insurance from factory to site will be buyer\'s responsibility\n4. Interest @ 24% p.a. will be charged on balance payments, if material not collected against confirmed order within one week of our intimation of material being ready for dispatch',
+                          style: const pw.TextStyle(fontSize: 8.0, height: 1.3),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 6. Signatures 3-Column Footer
+                  pw.Table(
+                    border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+                    columnWidths: const {
+                      0: pw.FlexColumnWidth(1),
+                      1: pw.FlexColumnWidth(1),
+                      2: pw.FlexColumnWidth(1),
+                    },
+                    children: [
+                      pw.TableRow(
+                        children: [
+                          // Col 1: Received By
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Text('Received By:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                                pw.SizedBox(height: 4),
+                                pw.Text('Name: ${challan.receivedBy?.name ?? ''}', style: const pw.TextStyle(fontSize: 8)),
+                                pw.SizedBox(height: 2),
+                                pw.Text('Comment: ${challan.receivedBy?.comment ?? ''}', style: const pw.TextStyle(fontSize: 8)),
+                                pw.SizedBox(height: 2),
+                                pw.Text('Date: $recDateStr', style: const pw.TextStyle(fontSize: 8)),
+                                pw.SizedBox(height: 2),
+                                pw.Text('Signature:', style: const pw.TextStyle(fontSize: 8)),
+                              ],
+                            ),
+                          ),
+
+                          // Col 2: Delivered By
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Text('Delivered By:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                                pw.SizedBox(height: 4),
+                                pw.Text('Name: ${challan.deliveredBy?.name ?? ''}', style: const pw.TextStyle(fontSize: 8)),
+                                pw.SizedBox(height: 2),
+                                pw.Text('Comment: ${challan.deliveredBy?.comment ?? ''}', style: const pw.TextStyle(fontSize: 8)),
+                                pw.SizedBox(height: 2),
+                                pw.Text('Date: $delDateStr', style: const pw.TextStyle(fontSize: 8)),
+                                pw.SizedBox(height: 2),
+                                pw.Text('Signature:', style: const pw.TextStyle(fontSize: 8)),
+                              ],
+                            ),
+                          ),
+
+                          // Col 3: Authorized Signatory
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.center,
+                              children: [
+                                pw.Text('For: Diesel Technical Solutions', style: const pw.TextStyle(fontSize: 8.5)),
+                                pw.SizedBox(height: 10),
+                                if (authorizedSignatureImage != null)
+                                  pw.Image(authorizedSignatureImage, height: 40, width: 80)
+                                else
+                                  pw.SizedBox(height: 40),
+                                pw.SizedBox(height: 10),
+                                pw.Text('Authorized Signatory', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ];
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  Future<void> printOrSaveDeliveryChallanPdf(DeliveryChallanModel challan) async {
+    final bytes = await generateDeliveryChallanPdf(challan);
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => bytes,
+      name: 'DeliveryChallan_${challan.challanNumber ?? "Doc"}',
+    );
+  }
+
+  Future<void> shareDeliveryChallanPdf(DeliveryChallanModel challan) async {
+    final bytes = await generateDeliveryChallanPdf(challan);
+    final tempDir = await getTemporaryDirectory();
+    final filename = 'DeliveryChallan_${challan.challanNumber ?? "Doc"}';
+    final file = File('${tempDir.path}/$filename.pdf');
+    await file.writeAsBytes(bytes);
+
+    await Share.shareXFiles(
+      [XFile(file.path)],
+      text: 'Delivery Challan No. ${challan.challanNumber ?? ""}',
+    );
+  }
 }
+

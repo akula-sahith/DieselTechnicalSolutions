@@ -498,6 +498,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             onTap: () => context.push('/create-billing-invoice'),
                           ),
                           _buildQuickActionButton(
+                            label: "Delivery Challans",
+                            icon: Icons.local_shipping_outlined,
+                            color: const Color(0xFF059669),
+                            onTap: () => context.push('/delivery-challans'),
+                          ),
+                          _buildQuickActionButton(
                             label: "Purchase Bills",
                             icon: Icons.shopping_bag_outlined,
                             color: const Color(0xFF7C3AED),

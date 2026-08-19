@@ -163,6 +163,11 @@ class _EstimateDetailsScreenState extends ConsumerState<EstimateDetailsScreen> w
     }
   }
 
+  void _convertToChallan() async {
+    if (_estimate == null) return;
+    context.push('/create-delivery-challan', extra: _estimate);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -225,6 +230,7 @@ class _EstimateDetailsScreenState extends ConsumerState<EstimateDetailsScreen> w
                 context.push('/create-estimate', extra: estimate);
               }
               if (value == 'convert') _convertToInvoice();
+              if (value == 'convert_challan') _convertToChallan();
               if (value == 'delete') _deleteEstimate();
             },
             itemBuilder: (context) => [
@@ -258,8 +264,21 @@ class _EstimateDetailsScreenState extends ConsumerState<EstimateDetailsScreen> w
                   ],
                 ),
               ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                value: 'convert_challan',
+                child: const Row(
+                  children: [
+                    Icon(Icons.local_shipping_outlined, color: AppColors.primary),
+                    SizedBox(width: 8),
+                    Text(
+                      'Convert to Delivery Challan',
+                      style: TextStyle(color: AppColors.primary),
+                    ),
+                  ],
+                ),
+              ),
               if (estimate.status != 'converted') ...[
-                const PopupMenuDivider(),
                 PopupMenuItem(
                   value: 'convert',
                   child: Row(

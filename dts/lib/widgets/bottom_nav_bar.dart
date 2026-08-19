@@ -139,6 +139,18 @@ class CustomBottomNavBar extends ConsumerWidget {
                   const SizedBox(height: 12),
 
                   _CreateOption(
+                    icon: Icons.local_shipping_outlined,
+                    iconColor: const Color(0xFF059669),
+                    title: 'Delivery Challans',
+                    subtitle: 'View all delivery challan documents',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/delivery-challans');
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  _CreateOption(
                     icon: Icons.shopping_bag_outlined,
                     iconColor: const Color(0xFF7C3AED),
                     title: 'Purchase Bills',
@@ -264,6 +276,19 @@ class CustomBottomNavBar extends ConsumerWidget {
                     onTap: () {
                       Navigator.pop(context);
                       context.push('/create-billing-invoice');
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Delivery Challan Option
+                  _CreateOption(
+                    icon: Icons.local_shipping_outlined,
+                    iconColor: const Color(0xFF059669),
+                    title: 'Delivery Challan',
+                    subtitle: 'Create a new delivery challan',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/create-delivery-challan');
                     },
                   ),
                   const SizedBox(height: 8),

@@ -5,6 +5,7 @@ import {
   calculateEstimateTotals,
   formatEstimateNumber,
   formatInvoiceNumber,
+  formatChallanNumber,
   calculatePaymentDetails,
 } from '../src/utils/financial.utils.js';
 
@@ -81,6 +82,11 @@ test('formatEstimateNumber generates correct format', () => {
 test('formatInvoiceNumber generates correct format', () => {
   const invoiceNo = formatInvoiceNumber(5);
   assert.match(invoiceNo, /^05$/);
+});
+
+test('formatChallanNumber generates correct format', () => {
+  const challanNo = formatChallanNumber(1);
+  assert.equal(challanNo, '1');
 });
 
 test('calculatePaymentDetails tracks payment status correctly', () => {

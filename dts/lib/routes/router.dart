@@ -29,6 +29,10 @@ import '../models/billing_invoice_model.dart';
 import '../screens/customers_screen.dart';
 import '../screens/customer_details_screen.dart';
 import '../screens/purchase_bills_screen.dart';
+import '../models/delivery_challan_model.dart';
+import '../screens/delivery_challans_screen.dart';
+import '../screens/create_delivery_challan_screen.dart';
+import '../screens/delivery_challan_details_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -172,6 +176,30 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/purchase-bills',
         builder: (context, state) => const PurchaseBillsScreen(),
+      ),
+      GoRoute(
+        path: '/delivery-challans',
+        builder: (context, state) => const DeliveryChallansScreen(),
+      ),
+      GoRoute(
+        path: '/create-delivery-challan',
+        builder: (context, state) {
+          final extra = state.extra;
+          if (extra is EstimateModel) {
+            return CreateDeliveryChallanScreen(initialEstimate: extra);
+          } else if (extra is DeliveryChallanModel) {
+            return CreateDeliveryChallanScreen(initialChallan: extra);
+          }
+          return const CreateDeliveryChallanScreen();
+        },
+      ),
+      GoRoute(
+        path: '/delivery-challan-details/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          final initialChallan = state.extra as DeliveryChallanModel?;
+          return DeliveryChallanDetailsScreen(challanId: id, initialChallan: initialChallan);
+        },
       ),
       GoRoute(
         path: '/report-success/:id',

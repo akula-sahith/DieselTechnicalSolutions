@@ -130,6 +130,10 @@ export const formatBillingInvoiceNumber = (sequence) => {
   return String(sequence).padStart(2, '0');
 };
 
+export const formatChallanNumber = (sequence) => {
+  return String(sequence);
+};
+
 export const calculateBillingItems = (items = []) => {
   return items.map((item) => {
     const quantity = Number(item.quantity || 0);

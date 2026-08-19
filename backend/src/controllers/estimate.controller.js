@@ -1,12 +1,14 @@
 import Estimate from '../models/estimate.model.js';
 import TaxInvoice from '../models/taxinvoice.model.js';
 import BillingInvoice from '../models/billinginvoice.model.js';
+import DeliveryChallan from '../models/deliverychallan.model.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 import {
   calculateEstimateTotals,
   formatEstimateNumber,
   formatInvoiceNumber,
   formatBillingInvoiceNumber,
+  formatChallanNumber,
   generateNextSequence,
   calculatePaymentDetails,
 } from '../utils/financial.utils.js';
@@ -498,5 +500,88 @@ export const convertEstimateToInvoice = async (req, res) => {
     }
 
     return sendError(res, 'Failed to convert estimate to invoice.', { details: error.message }, 500);
+  }
+};
+
+export const convertEstimateToDeliveryChallan = async (req, res) => {
+  try {
+    const estimate = await Estimate.findById(req.params.id);
+    if (!estimate) {
+      return sendError(res, 'Estimate not found.', {}, 404);
+    }
+
+    const payload = req.body?.deliveryChallan ?? req.body ?? {};
+    const transportationDetails = payload.transportationDetails || {};
+    const items = payload.items || estimate.items.map((item) => ({
+      itemName: item.itemName,
+      hsnSac: item.hsnSac || '',
+      quantity: item.quantity,
+    }));
+
+    const sequence = await generateNextSequence(DeliveryChallan, 'challanNumber');
+
+    const totalQuantity = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+
+    const documentData = {
+      challanNumber: formatChallanNumber(sequence),
+      challanDate: payload.challanDate ? new Date(payload.challanDate) : new Date(),
+      deliveryChallanFor: {
+        customerName: estimate.estimateFor.customerName,
+        address: estimate.estimateFor.address,
+        contactPerson: estimate.estimateFor.contactPerson || '',
+        contactNumber: estimate.estimateFor.contactNumber || '',
+        gstinNumber: estimate.estimateFor.gstinNumber || '',
+        state: payload.deliveryChallanFor?.state || '36-Telangana',
+      },
+      transportationDetails: {
+        vehicleNumber: transportationDetails.vehicleNumber || '',
+        dispatchDate: transportationDetails.dispatchDate ? new Date(transportationDetails.dispatchDate) : null,
+        destinationLocation: transportationDetails.destinationLocation || '',
+        transportName: transportationDetails.transportName || '',
+        lrNumber: transportationDetails.lrNumber || '',
+      },
+      placeOfSupply: estimate.placeOfSupply || '36-Telangana',
+      items,
+      totalQuantity,
+      termsAndConditions: payload.termsAndConditions || undefined,
+      receivedBy: payload.receivedBy || {},
+      deliveredBy: payload.deliveredBy || {},
+      authorizedSignatureUrl: estimate.authorizedSignatureUrl,
+      linkedEstimateId: estimate._id,
+      status: 'issued',
+    };
+
+    const deliveryChallan = await DeliveryChallan.create(documentData);
+
+    try {
+      await upsertCustomerFromInvoice(
+        {
+          customerName: deliveryChallan.deliveryChallanFor.customerName,
+          address: deliveryChallan.deliveryChallanFor.address,
+          contactPerson: deliveryChallan.deliveryChallanFor.contactPerson,
+          contactNumber: deliveryChallan.deliveryChallanFor.contactNumber,
+          gstinNumber: deliveryChallan.deliveryChallanFor.gstinNumber,
+        },
+        deliveryChallan
+      );
+    } catch (e) {
+      console.error('Failed to upsert customer from delivery challan:', e?.message || e);
+    }
+
+    return sendSuccess(
+      res,
+      'Estimate converted to Delivery Challan successfully.',
+      {
+        estimate: { _id: estimate._id },
+        deliveryChallan,
+      },
+      201
+    );
+  } catch (error) {
+    if (error.code === 11000) {
+      return sendError(res, 'Challan number already exists.', { details: error.message }, 400);
+    }
+
+    return sendError(res, 'Failed to convert estimate to Delivery Challan.', { details: error.message }, 500);
   }
 };

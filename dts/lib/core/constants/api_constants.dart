@@ -12,4 +12,5 @@ class ApiConstants {
   static const String appVersions = '/app-versions';
   static const String purchaseBills = '/purchase-bills';
   static const String dashboard = '/dashboard';
+  static const String deliveryChallans = '/delivery-challans';
 }

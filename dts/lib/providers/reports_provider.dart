@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/legacy.dart';
 import '../models/report_model.dart';
 import '../repositories/report_repository.dart';
+import 'auth_provider.dart';
 
 class ReportsState {
   final List<ReportModel> reports; // Combined list or submitted list

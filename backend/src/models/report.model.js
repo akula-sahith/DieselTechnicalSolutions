@@ -146,6 +146,11 @@ const reportSchema = new mongoose.Schema(
       default: 'submitted',
       index: true,
     },
+    createdBy: {
+      userId: { type: String, trim: true, default: '' },
+      name: { type: String, trim: true, default: '' },
+      email: { type: String, trim: true, default: '', index: true },
+    },
   },
   {
     timestamps: true,

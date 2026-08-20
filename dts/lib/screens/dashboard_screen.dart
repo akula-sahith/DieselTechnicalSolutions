@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../core/constants/app_colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/reports_provider.dart';
 import '../providers/agreements_provider.dart';
@@ -28,11 +27,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     super.initState();
     // Ensure all providers load data on dashboard initial mount
     Future.microtask(() {
-      ref.read(dashboardStatsProvider.notifier).fetchStats();
-      ref.read(estimatesProvider.notifier).loadEstimates();
-      ref.read(taxInvoicesProvider.notifier).loadTaxInvoices();
-      ref.read(billingInvoicesProvider.notifier).loadBillingInvoices();
-      ref.read(customersProvider.notifier).loadCustomers();
+      final auth = ref.read(authProvider);
+      ref.read(reportsProvider.notifier).loadReports();
+      if (auth.isAdmin) {
+        ref.read(dashboardStatsProvider.notifier).fetchStats();
+        ref.read(estimatesProvider.notifier).loadEstimates();
+        ref.read(taxInvoicesProvider.notifier).loadTaxInvoices();
+        ref.read(billingInvoicesProvider.notifier).loadBillingInvoices();
+        ref.read(customersProvider.notifier).loadCustomers();
+      }
     });
   }
 
@@ -98,14 +101,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final totalEstimates = estimatesState.estimates.length;
     final totalInvoices = invoicesState.taxInvoices.length;
     final totalCustomers = customersState.customers.length;
-
-    // Financial Metrics Calculation
-    // Bills Pending: total value of active estimates not converted into tax invoices
-    final pendingEstimates = estimatesState.estimates.where((e) => e.status != 'converted');
-    final double billsPendingAmount = pendingEstimates.fold(0.0, (sum, e) => sum + (e.totalAmount ?? 0.0));
-
-    // Revenue Generated: total value of all tax invoices
-    final double revenueGeneratedAmount = invoicesState.taxInvoices.fold(0.0, (sum, i) => sum + (i.totalAmount ?? 0.0));
 
     // Unified recent activity feed
     final recentActivity = _buildRecentActivity(
@@ -337,110 +332,111 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ),
 
-              // ──── 3. FINANCIAL OVERVIEW ────
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Financial Overview",
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF475569),
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      statsAsync.when(
-                        loading: () => const SizedBox(
-                          height: 146,
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                        error: (err, stack) => SizedBox(
-                          height: 146,
-                          child: Center(child: Text('Error loading stats: $err')),
-                        ),
-                        data: (stats) => SizedBox(
-                          height: 146,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
-                            children: [
-                              SizedBox(
-                                width: 180,
-                                child: _buildFinancialCard(
-                                  title: "Revenue Generated",
-                                  subtitle: "Total Sales",
-                                  amount: "₹${_formatCurrency(stats.revenueGenerated)}",
-                                  icon: Icons.account_balance_wallet_outlined,
-                                  accentColor: const Color(0xFF16A34A),
-                                  bgColor: const Color(0xFFF0FDF4),
-                                  borderColor: const Color(0xFFDCFCE7),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              SizedBox(
-                                width: 180,
-                                child: _buildFinancialCard(
-                                  title: "Payment Received",
-                                  subtitle: "Collected Balance",
-                                  amount: "₹${_formatCurrency(stats.paymentReceived)}",
-                                  icon: Icons.check_circle_outline,
-                                  accentColor: const Color(0xFF2563EB),
-                                  bgColor: const Color(0xFFEFF6FF),
-                                  borderColor: const Color(0xFFDBEAFE),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              SizedBox(
-                                width: 180,
-                                child: _buildFinancialCard(
-                                  title: "Outstanding Amount",
-                                  subtitle: "Receivables",
-                                  amount: "₹${_formatCurrency(stats.outstandingAmount)}",
-                                  icon: Icons.warning_amber_rounded,
-                                  accentColor: const Color(0xFFDC2626),
-                                  bgColor: const Color(0xFFFEF2F2),
-                                  borderColor: const Color(0xFFFEE2E2),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              SizedBox(
-                                width: 180,
-                                child: _buildFinancialCard(
-                                  title: "Bills Pending",
-                                  subtitle: "Unconverted Estimates",
-                                  amount: "₹${_formatCurrency(stats.estimateAmountPending)}",
-                                  icon: Icons.hourglass_top_rounded,
-                                  accentColor: const Color(0xFFD97706),
-                                  bgColor: const Color(0xFFFFFBEB),
-                                  borderColor: const Color(0xFFFEF3C7),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              SizedBox(
-                                width: 180,
-                                child: _buildFinancialCard(
-                                  title: "Purchase Bills",
-                                  subtitle: "Supplier Bills",
-                                  amount: "₹${_formatCurrency(stats.purchaseBills)}",
-                                  icon: Icons.shopping_bag_outlined,
-                                  accentColor: const Color(0xFF7C3AED),
-                                  bgColor: const Color(0xFFF5F3FF),
-                                  borderColor: const Color(0xFFEDE9FE),
-                                ),
-                              ),
-                            ],
+              // ──── 3. FINANCIAL OVERVIEW (Admin Only) ────
+              if (!authState.isReporter)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Financial Overview",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF475569),
+                            letterSpacing: 0.2,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 10),
+                        statsAsync.when(
+                          loading: () => const SizedBox(
+                            height: 146,
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                          error: (err, stack) => SizedBox(
+                            height: 146,
+                            child: Center(child: Text('Error loading stats: $err')),
+                          ),
+                          data: (stats) => SizedBox(
+                            height: 146,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              physics: const BouncingScrollPhysics(),
+                              children: [
+                                SizedBox(
+                                  width: 180,
+                                  child: _buildFinancialCard(
+                                    title: "Revenue Generated",
+                                    subtitle: "Total Sales",
+                                    amount: "₹${_formatCurrency(stats.revenueGenerated)}",
+                                    icon: Icons.account_balance_wallet_outlined,
+                                    accentColor: const Color(0xFF16A34A),
+                                    bgColor: const Color(0xFFF0FDF4),
+                                    borderColor: const Color(0xFFDCFCE7),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                SizedBox(
+                                  width: 180,
+                                  child: _buildFinancialCard(
+                                    title: "Payment Received",
+                                    subtitle: "Collected Balance",
+                                    amount: "₹${_formatCurrency(stats.paymentReceived)}",
+                                    icon: Icons.check_circle_outline,
+                                    accentColor: const Color(0xFF2563EB),
+                                    bgColor: const Color(0xFFEFF6FF),
+                                    borderColor: const Color(0xFFDBEAFE),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                SizedBox(
+                                  width: 180,
+                                  child: _buildFinancialCard(
+                                    title: "Outstanding Amount",
+                                    subtitle: "Receivables",
+                                    amount: "₹${_formatCurrency(stats.outstandingAmount)}",
+                                    icon: Icons.warning_amber_rounded,
+                                    accentColor: const Color(0xFFDC2626),
+                                    bgColor: const Color(0xFFFEF2F2),
+                                    borderColor: const Color(0xFFFEE2E2),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                SizedBox(
+                                  width: 180,
+                                  child: _buildFinancialCard(
+                                    title: "Bills Pending",
+                                    subtitle: "Unconverted Estimates",
+                                    amount: "₹${_formatCurrency(stats.estimateAmountPending)}",
+                                    icon: Icons.hourglass_top_rounded,
+                                    accentColor: const Color(0xFFFFFBEB),
+                                    bgColor: const Color(0xFFFFFBEB),
+                                    borderColor: const Color(0xFFFEF3C7),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                SizedBox(
+                                  width: 180,
+                                  child: _buildFinancialCard(
+                                    title: "Purchase Bills",
+                                    subtitle: "Supplier Bills",
+                                    amount: "₹${_formatCurrency(stats.purchaseBills)}",
+                                    icon: Icons.shopping_bag_outlined,
+                                    accentColor: const Color(0xFF7C3AED),
+                                    bgColor: const Color(0xFFF5F3FF),
+                                    borderColor: const Color(0xFFEDE9FE),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
               // ──── 4. QUICK ACTIONS ────
               SliverToBoxAdapter(
@@ -474,41 +470,49 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             onTap: () => context.push('/create-report'),
                           ),
                           _buildQuickActionButton(
-                            label: "Create Agreement",
-                            icon: Icons.handshake_outlined,
-                            color: const Color(0xFF059669),
-                            onTap: () => context.push('/create-agreement'),
-                          ),
-                          _buildQuickActionButton(
-                            label: "Create Estimate",
-                            icon: Icons.post_add_rounded,
+                            label: "View Service Reports",
+                            icon: Icons.assignment_outlined,
                             color: const Color(0xFFD97706),
-                            onTap: () => context.push('/create-estimate'),
+                            onTap: () => context.push('/reports'),
                           ),
-                          _buildQuickActionButton(
-                            label: "Create Tax Invoice",
-                            icon: Icons.receipt_rounded,
-                            color: const Color(0xFF7C3AED),
-                            onTap: () => context.push('/create-tax-invoice'),
-                          ),
-                          _buildQuickActionButton(
-                            label: "Create Cash Invoice",
-                            icon: Icons.subtitles_outlined,
-                            color: const Color(0xFF0284C7),
-                            onTap: () => context.push('/create-billing-invoice'),
-                          ),
-                          _buildQuickActionButton(
-                            label: "Delivery Challans",
-                            icon: Icons.local_shipping_outlined,
-                            color: const Color(0xFF059669),
-                            onTap: () => context.push('/delivery-challans'),
-                          ),
-                          _buildQuickActionButton(
-                            label: "Purchase Bills",
-                            icon: Icons.shopping_bag_outlined,
-                            color: const Color(0xFF7C3AED),
-                            onTap: () => context.push('/purchase-bills'),
-                          ),
+                          if (!authState.isReporter) ...[
+                            _buildQuickActionButton(
+                              label: "Create Agreement",
+                              icon: Icons.handshake_outlined,
+                              color: const Color(0xFF059669),
+                              onTap: () => context.push('/create-agreement'),
+                            ),
+                            _buildQuickActionButton(
+                              label: "Create Estimate",
+                              icon: Icons.post_add_rounded,
+                              color: const Color(0xFFD97706),
+                              onTap: () => context.push('/create-estimate'),
+                            ),
+                            _buildQuickActionButton(
+                              label: "Create Tax Invoice",
+                              icon: Icons.receipt_rounded,
+                              color: const Color(0xFF7C3AED),
+                              onTap: () => context.push('/create-tax-invoice'),
+                            ),
+                            _buildQuickActionButton(
+                              label: "Create Cash Invoice",
+                              icon: Icons.subtitles_outlined,
+                              color: const Color(0xFF0284C7),
+                              onTap: () => context.push('/create-billing-invoice'),
+                            ),
+                            _buildQuickActionButton(
+                              label: "Delivery Challans",
+                              icon: Icons.local_shipping_outlined,
+                              color: const Color(0xFF059669),
+                              onTap: () => context.push('/delivery-challans'),
+                            ),
+                            _buildQuickActionButton(
+                              label: "Purchase Bills",
+                              icon: Icons.shopping_bag_outlined,
+                              color: const Color(0xFF7C3AED),
+                              onTap: () => context.push('/purchase-bills'),
+                            ),
+                          ],
                         ],
                       ),
                     ],

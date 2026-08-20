@@ -11,6 +11,7 @@ class DocumentCard extends StatelessWidget {
   final DocumentType documentType;
   final String? statusText;
   final String? amount;
+  final String? createdByText;
   final bool isPending;
   final VoidCallback onTap;
 
@@ -23,6 +24,7 @@ class DocumentCard extends StatelessWidget {
     required this.onTap,
     this.statusText,
     this.amount,
+    this.createdByText,
     this.isPending = false,
   });
 
@@ -130,6 +132,26 @@ class DocumentCard extends StatelessWidget {
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (createdByText != null && createdByText!.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            const Icon(Icons.person_outline, size: 12, color: AppColors.primary),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Created by: $createdByText',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.primary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: 5),
 
                       // Bottom row: date + status or amount

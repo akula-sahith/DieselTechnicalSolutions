@@ -17,9 +17,15 @@ import { errorHandler } from './middleware/error.middleware.js';
 import { notFoundHandler } from './middleware/notFound.middleware.js';
 import appVersionRoutes from "./routes/appVersion.routes.js";
 
+import authRoutes from './routes/auth.routes.js';
+import { seedDefaultUsers } from './controllers/auth.controller.js';
+
 dotenv.config();
 
 const app = express();
+
+// Seed default admin/reporter credentials on server boot
+seedDefaultUsers();
 
 app.use(cors());
 app.use(helmet());
@@ -39,6 +45,7 @@ app.post("/api/ping", (req, res) => {
   });
 });
 
+app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/agreements', agreementRoutes);
 app.use('/api/estimates', estimateRoutes);

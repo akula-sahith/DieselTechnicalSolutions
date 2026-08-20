@@ -60,13 +60,16 @@ class ReportsState {
 
 final reportsProvider = StateNotifierProvider<ReportsNotifier, ReportsState>((ref) {
   final repo = ref.watch(reportRepositoryProvider);
-  return ReportsNotifier(repo);
+  final auth = ref.watch(authProvider);
+  return ReportsNotifier(repo, auth.role, auth.email ?? '');
 });
 
 class ReportsNotifier extends StateNotifier<ReportsState> {
   final ReportRepository _repository;
+  final String _role;
+  final String _userEmail;
 
-  ReportsNotifier(this._repository) : super(ReportsState.initial()) {
+  ReportsNotifier(this._repository, this._role, this._userEmail) : super(ReportsState.initial()) {
     fetchDrafts();
     fetchReports();
   }
@@ -78,6 +81,8 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
         page: 1,
         limit: 100,
         status: 'draft',
+        role: _role,
+        userEmail: _userEmail,
       );
       state = state.copyWith(drafts: response.reports);
     } catch (e) {
@@ -99,6 +104,10 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
     } catch (e) {
       rethrow;
     }
+  }
+
+  void loadReports() {
+    fetchReports(refresh: true);
   }
 
   // Fetch reports from API with optional search query and pagination
@@ -124,6 +133,8 @@ class ReportsNotifier extends StateNotifier<ReportsState> {
       final response = await _repository.getReports(
         page: nextPage,
         search: targetSearch,
+        role: _role,
+        userEmail: _userEmail,
       );
 
       final newList = refresh 

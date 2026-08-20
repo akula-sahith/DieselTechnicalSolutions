@@ -80,6 +80,7 @@ export const createEstimate = async (req, res) => {
     const discount = {
       discountType: estimatePayload.discountType || 'none',
       discountValue: Number(estimatePayload.discountValue || 0),
+      taxMode: estimatePayload.taxMode || 'tax',
     };
     const totals = calculateEstimateTotals(items, discount);
     const sequence = await generateNextSequence(Estimate, 'estimateNumber');
@@ -273,6 +274,7 @@ export const updateEstimate = async (req, res) => {
     const discount = {
       discountType: estimatePayload.discountType !== undefined ? estimatePayload.discountType : estimate.discountType,
       discountValue: estimatePayload.discountValue !== undefined ? Number(estimatePayload.discountValue) : estimate.discountValue,
+      taxMode: estimatePayload.taxMode !== undefined ? estimatePayload.taxMode : estimate.taxMode,
     };
     const totals = calculateEstimateTotals(items, discount);
 

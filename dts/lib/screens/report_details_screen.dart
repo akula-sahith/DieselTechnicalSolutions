@@ -394,6 +394,16 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen> with 
           ),
 
           // Customer Details
+          if (report.createdBy != null && report.createdBy!.email.isNotEmpty)
+            _buildInfoGroup(
+              title: 'REPORT CREATOR',
+              icon: Icons.person_outline,
+              items: [
+                _buildInfoRow('Reporter Name', report.createdBy!.name.isNotEmpty ? report.createdBy!.name : 'N/A'),
+                _buildInfoRow('Reporter Email', report.createdBy!.email),
+              ],
+            ),
+
           _buildInfoGroup(
             title: 'CUSTOMER DETAILS',
             icon: Icons.business,

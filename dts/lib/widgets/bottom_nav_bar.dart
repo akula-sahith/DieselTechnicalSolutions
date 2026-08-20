@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/constants/app_colors.dart';
 import '../providers/auth_provider.dart';
+import 'manage_reporters_dialog.dart';
 
 class CustomBottomNavBar extends ConsumerWidget {
   final int currentIndex;
@@ -20,10 +21,10 @@ class CustomBottomNavBar extends ConsumerWidget {
         context.go('/dashboard');
         break;
       case 1:
-        _showViewSheet(context);
+        _showViewSheet(context, ref);
         break;
       case 2:
-        // Center FAB — handled separately
+        // Center FAB
         break;
       case 3:
         _showProfileSheet(context, ref);
@@ -34,7 +35,9 @@ class CustomBottomNavBar extends ConsumerWidget {
     }
   }
 
-  void _showViewSheet(BuildContext context) {
+  void _showViewSheet(BuildContext context, WidgetRef ref) {
+    final authState = ref.read(authProvider);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -69,97 +72,99 @@ class CustomBottomNavBar extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Select a category to view',
-                    style: TextStyle(
+                  Text(
+                    authState.isReporter
+                        ? 'View eFSR Reports created by you'
+                        : 'Select a category to view',
+                    style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 20),
 
+                  // Service Reports Option
                   _CreateOption(
                     icon: Icons.description_outlined,
                     iconColor: AppColors.reportOrange,
                     title: 'Service Reports',
-                    subtitle: 'View all field service reports',
+                    subtitle: authState.isReporter
+                        ? 'View reports created by you'
+                        : 'View all field service reports',
                     onTap: () {
                       Navigator.pop(context);
                       context.push('/reports');
                     },
                   ),
-                  const SizedBox(height: 12),
 
-                  _CreateOption(
-                    icon: Icons.handshake_outlined,
-                    iconColor: AppColors.agreementGreen,
-                    title: 'AMC Proposals',
-                    subtitle: 'View all agreements & quotations',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/agreements');
-                    },
-                  ),
-                  const SizedBox(height: 12),
-
-                  _CreateOption(
-                    icon: Icons.request_quote_outlined,
-                    iconColor: AppColors.quotationBlue,
-                    title: 'Estimates',
-                    subtitle: 'View all cost estimates',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/estimates');
-                    },
-                  ),
-                  const SizedBox(height: 12),
-
-                  _CreateOption(
-                    icon: Icons.receipt_outlined,
-                    iconColor: AppColors.primary,
-                    title: 'Tax Invoices',
-                    subtitle: 'View all tax invoices',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/tax-invoices');
-                    },
-                  ),
-                  const SizedBox(height: 12),
-
-                  _CreateOption(
-                    icon: Icons.subtitles_outlined,
-                    iconColor: const Color(0xFF0284C7),
-                    title: 'Cash Invoices',
-                    subtitle: 'View all cash invoices (Without GST)',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/billing-invoices');
-                    },
-                  ),
-                  const SizedBox(height: 12),
-
-                  _CreateOption(
-                    icon: Icons.local_shipping_outlined,
-                    iconColor: const Color(0xFF059669),
-                    title: 'Delivery Challans',
-                    subtitle: 'View all delivery challan documents',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/delivery-challans');
-                    },
-                  ),
-                  const SizedBox(height: 12),
-
-                  _CreateOption(
-                    icon: Icons.shopping_bag_outlined,
-                    iconColor: const Color(0xFF7C3AED),
-                    title: 'Purchase Bills',
-                    subtitle: 'View supplier scanned bills',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/purchase-bills');
-                    },
-                  ),
+                  if (!authState.isReporter) ...[
+                    const SizedBox(height: 12),
+                    _CreateOption(
+                      icon: Icons.handshake_outlined,
+                      iconColor: AppColors.agreementGreen,
+                      title: 'AMC Proposals',
+                      subtitle: 'View all agreements & quotations',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.push('/agreements');
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _CreateOption(
+                      icon: Icons.request_quote_outlined,
+                      iconColor: AppColors.quotationBlue,
+                      title: 'Estimates',
+                      subtitle: 'View all cost estimates',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.push('/estimates');
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _CreateOption(
+                      icon: Icons.receipt_outlined,
+                      iconColor: AppColors.primary,
+                      title: 'Tax Invoices',
+                      subtitle: 'View all tax invoices',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.push('/tax-invoices');
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _CreateOption(
+                      icon: Icons.subtitles_outlined,
+                      iconColor: const Color(0xFF0284C7),
+                      title: 'Cash Invoices',
+                      subtitle: 'View all cash invoices (Without GST)',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.push('/billing-invoices');
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _CreateOption(
+                      icon: Icons.local_shipping_outlined,
+                      iconColor: const Color(0xFF059669),
+                      title: 'Delivery Challans',
+                      subtitle: 'View all delivery challan documents',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.push('/delivery-challans');
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _CreateOption(
+                      icon: Icons.shopping_bag_outlined,
+                      iconColor: const Color(0xFF7C3AED),
+                      title: 'Purchase Bills',
+                      subtitle: 'View supplier scanned bills',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.push('/purchase-bills');
+                      },
+                    ),
+                  ],
                   const SizedBox(height: 8),
                 ],
               ),
@@ -170,7 +175,14 @@ class CustomBottomNavBar extends ConsumerWidget {
     );
   }
 
-  void _showCreateSheet(BuildContext context) {
+  void _showCreateSheet(BuildContext context, WidgetRef ref) {
+    final authState = ref.read(authProvider);
+
+    if (authState.isReporter) {
+      context.push('/create-report');
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -187,7 +199,6 @@ class CustomBottomNavBar extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Drag handle
                   Container(
                     width: 40,
                     height: 4,
@@ -215,7 +226,6 @@ class CustomBottomNavBar extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Service Report Option
                   _CreateOption(
                     icon: Icons.description_outlined,
                     iconColor: AppColors.reportOrange,
@@ -228,7 +238,6 @@ class CustomBottomNavBar extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // AMC Proposal Option
                   _CreateOption(
                     icon: Icons.handshake_outlined,
                     iconColor: AppColors.agreementGreen,
@@ -241,7 +250,6 @@ class CustomBottomNavBar extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // Estimate Option
                   _CreateOption(
                     icon: Icons.request_quote_outlined,
                     iconColor: AppColors.quotationBlue,
@@ -254,7 +262,6 @@ class CustomBottomNavBar extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // Tax Invoice Option
                   _CreateOption(
                     icon: Icons.receipt_outlined,
                     iconColor: AppColors.primary,
@@ -267,7 +274,6 @@ class CustomBottomNavBar extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // Cash Invoice Option
                   _CreateOption(
                     icon: Icons.subtitles_outlined,
                     iconColor: const Color(0xFF0284C7),
@@ -280,7 +286,6 @@ class CustomBottomNavBar extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // Delivery Challan Option
                   _CreateOption(
                     icon: Icons.local_shipping_outlined,
                     iconColor: const Color(0xFF059669),
@@ -332,7 +337,7 @@ class CustomBottomNavBar extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  authState.userName ?? 'Technician',
+                  authState.userName ?? 'User',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -340,15 +345,49 @@ class CustomBottomNavBar extends ConsumerWidget {
                   ),
                 ),
                 Text(
-                  authState.email ?? 'siva@dts.com',
+                  authState.email ?? '',
                   style: const TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: (authState.isAdmin ? AppColors.primary : AppColors.reportOrange).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    authState.role.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: authState.isAdmin ? AppColors.primary : AppColors.reportOrange,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
                 const Divider(color: AppColors.border),
-                const SizedBox(height: 12),
+
+                if (authState.isAdmin) ...[
+                  ListTile(
+                    leading: const Icon(Icons.admin_panel_settings_outlined, color: AppColors.primary),
+                    title: const Text(
+                      'Manage Reporter Credentials',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showDialog(
+                        context: context,
+                        builder: (context) => const ManageReportersDialog(),
+                      );
+                    },
+                  ),
+                  const Divider(color: AppColors.border),
+                ],
+
                 ListTile(
                   leading: const Icon(Icons.exit_to_app, color: AppColors.error),
                   title: const Text(
@@ -374,6 +413,8 @@ class CustomBottomNavBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+
     return Container(
       height: 80,
       decoration: BoxDecoration(
@@ -410,12 +451,20 @@ class CustomBottomNavBar extends ConsumerWidget {
               ),
               // Spacer for center FAB
               const SizedBox(width: 48),
-              _buildNavItem(
-                icon: Icons.people_rounded,
-                label: 'Customers',
-                isActive: currentIndex == 4,
-                onTap: () => _handleNavigation(context, 4, ref),
-              ),
+              if (!authState.isReporter)
+                _buildNavItem(
+                  icon: Icons.people_rounded,
+                  label: 'Customers',
+                  isActive: currentIndex == 4,
+                  onTap: () => _handleNavigation(context, 4, ref),
+                )
+              else
+                _buildNavItem(
+                  icon: Icons.description_rounded,
+                  label: 'My Reports',
+                  isActive: currentIndex == 1,
+                  onTap: () => context.push('/reports'),
+                ),
               _buildNavItem(
                 icon: Icons.person_rounded,
                 label: 'Profile',
@@ -430,7 +479,7 @@ class CustomBottomNavBar extends ConsumerWidget {
             top: -24,
             left: MediaQuery.of(context).size.width / 2 - 28,
             child: GestureDetector(
-              onTap: () => _showCreateSheet(context),
+              onTap: () => _showCreateSheet(context, ref),
               child: Container(
                 width: 56,
                 height: 56,
@@ -497,7 +546,6 @@ class CustomBottomNavBar extends ConsumerWidget {
   }
 }
 
-/// A single option tile in the "Create" bottom sheet
 class _CreateOption extends StatelessWidget {
   final IconData icon;
   final Color iconColor;

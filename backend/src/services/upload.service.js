@@ -20,7 +20,7 @@ const uploadToCloudinary = async (file, folder) => {
     const stream = cloudinary.uploader.upload_stream(
       {
         folder,
-        resource_type: 'image',
+        resource_type: 'auto',
       },
       (error, result) => {
         if (error) {

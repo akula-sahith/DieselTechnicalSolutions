@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../core/constants/app_colors.dart';
 import '../models/estimate_model.dart';
 import '../providers/estimate_wizard_provider.dart';
-import '../providers/estimates_provider.dart';
 import '../widgets/stepper/stepper_progress_bar.dart';
 import '../widgets/stepper/step_navigation.dart';
 import '../widgets/stepper/step_container.dart';
@@ -290,9 +289,20 @@ class _CreateEstimateScreenState extends ConsumerState<CreateEstimateScreen> {
                 child: ListTile(
                   title: Text(item.itemName, style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text('Qty: ${item.quantity} | Rate: ₹${item.pricePerUnit} | GST: ${item.gstPercentage}%'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: AppColors.error),
-                    onPressed: () => notifier.removeItem(index),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: AppColors.primary),
+                        tooltip: 'Edit Item',
+                        onPressed: () => _showAddItemDialog(notifier, editIndex: index, initialItem: item),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: AppColors.error),
+                        tooltip: 'Delete Item',
+                        onPressed: () => notifier.removeItem(index),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -380,17 +390,25 @@ class _CreateEstimateScreenState extends ConsumerState<CreateEstimateScreen> {
     );
   }
 
-  void _showAddItemDialog(EstimateWizardNotifier notifier) {
-    _itemNameCtrl.clear();
-    _hsnSacCtrl.clear();
-    _itemQtyCtrl.text = '1';
-    _itemPriceCtrl.clear();
-    _gstPctCtrl.text = '18';
+  void _showAddItemDialog(EstimateWizardNotifier notifier, {int? editIndex, EstimateItem? initialItem}) {
+    if (initialItem != null) {
+      _itemNameCtrl.text = initialItem.itemName;
+      _hsnSacCtrl.text = initialItem.hsnSac ?? '';
+      _itemQtyCtrl.text = initialItem.quantity.toString();
+      _itemPriceCtrl.text = initialItem.pricePerUnit.toString();
+      _gstPctCtrl.text = initialItem.gstPercentage.toString();
+    } else {
+      _itemNameCtrl.clear();
+      _hsnSacCtrl.clear();
+      _itemQtyCtrl.text = '1';
+      _itemPriceCtrl.clear();
+      _gstPctCtrl.text = '18';
+    }
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add Item', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+        title: Text(initialItem != null ? 'Edit Item' : 'Add Item', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -426,24 +444,31 @@ class _CreateEstimateScreenState extends ConsumerState<CreateEstimateScreen> {
               final name = _itemNameCtrl.text.trim();
               final qty = double.tryParse(_itemQtyCtrl.text) ?? 0.0;
               final price = double.tryParse(_itemPriceCtrl.text) ?? 0.0;
-              final gst = double.tryParse(_gstPctCtrl.text) ?? 18.0;
+              final gst = double.tryParse(_gstPctCtrl.text) ?? 0.0;
 
               if (name.isEmpty || qty <= 0 || price <= 0) {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid input'), backgroundColor: AppColors.error));
                 return;
               }
 
-              notifier.addItem(EstimateItem(
+              final itemToSave = EstimateItem(
                 itemName: name,
                 hsnSac: _hsnSacCtrl.text.isNotEmpty ? _hsnSacCtrl.text : null,
                 quantity: qty,
                 pricePerUnit: price,
                 gstPercentage: gst,
                 taxApplicable: gst > 0,
-              ));
+              );
+
+              if (editIndex != null) {
+                notifier.updateItem(editIndex, itemToSave);
+              } else {
+                notifier.addItem(itemToSave);
+              }
+
               Navigator.pop(context);
             },
-            child: const Text('Add'),
+            child: Text(initialItem != null ? 'Save' : 'Add'),
           ),
         ],
       ),

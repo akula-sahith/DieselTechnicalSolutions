@@ -36,6 +36,8 @@ class ReportRepository {
     int limit = 10,
     String search = '',
     String status = '',
+    String role = '',
+    String userEmail = '',
   }) async {
     try {
       final queryParameters = <String, dynamic>{
@@ -45,6 +47,12 @@ class ReportRepository {
       };
       if (status.isNotEmpty) {
         queryParameters['status'] = status;
+      }
+      if (role.isNotEmpty) {
+        queryParameters['role'] = role;
+      }
+      if (userEmail.isNotEmpty) {
+        queryParameters['userEmail'] = userEmail;
       }
 
       final response = await _apiService.get(

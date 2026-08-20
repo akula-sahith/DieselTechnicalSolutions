@@ -193,6 +193,14 @@ class EstimateWizardNotifier extends StateNotifier<EstimateWizardState> {
     state = state.copyWith(items: [...state.items, item]);
   }
   
+  void updateItem(int index, EstimateItem item) {
+    if (index >= 0 && index < state.items.length) {
+      final newItems = List<EstimateItem>.from(state.items);
+      newItems[index] = item;
+      state = state.copyWith(items: newItems);
+    }
+  }
+
   void removeItem(int index) {
     final newItems = List<EstimateItem>.from(state.items)..removeAt(index);
     state = state.copyWith(items: newItems);

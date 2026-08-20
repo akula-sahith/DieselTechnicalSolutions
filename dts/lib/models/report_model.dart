@@ -210,6 +210,35 @@ class Authorization {
   }
 }
 
+class ReportCreatedBy {
+  final String userId;
+  final String name;
+  final String email;
+
+  ReportCreatedBy({
+    required this.userId,
+    required this.name,
+    required this.email,
+  });
+
+  factory ReportCreatedBy.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return ReportCreatedBy(userId: '', name: '', email: '');
+    return ReportCreatedBy(
+      userId: json['userId'] ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'userId': userId,
+      'name': name,
+      'email': email,
+    };
+  }
+}
+
 class ReportModel {
   final String? id;
   final String status;
@@ -219,6 +248,7 @@ class ReportModel {
   final List<PartsUsedItem> partsUsed;
   final RemarksAndActionPlan remarksAndActionPlan;
   final Authorization authorization;
+  final ReportCreatedBy? createdBy;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -231,6 +261,7 @@ class ReportModel {
     required this.partsUsed,
     required this.remarksAndActionPlan,
     required this.authorization,
+    this.createdBy,
     this.createdAt,
     this.updatedAt,
   });
@@ -265,6 +296,8 @@ class ReportModel {
         ? partsRaw.map((e) => PartsUsedItem.fromJson(e as Map<String, dynamic>)).toList()
         : <PartsUsedItem>[];
 
+    final createdByJson = json['createdBy'] as Map<String, dynamic>?;
+
     return ReportModel(
       id: json['_id'] ?? json['id'],
       status: json['status'] ?? 'submitted',
@@ -274,6 +307,7 @@ class ReportModel {
       partsUsed: parts,
       remarksAndActionPlan: RemarksAndActionPlan.fromJson(remarksData),
       authorization: Authorization.fromJson(authData),
+      createdBy: createdByJson != null ? ReportCreatedBy.fromJson(createdByJson) : null,
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'].toString()) : null,
     );
@@ -290,6 +324,9 @@ class ReportModel {
       map.addAll(authorization.toJson());
       map['serviceChecklist'] = serviceChecklist.map((e) => e.toJson()).toList();
       map['partsUsed'] = partsUsed.map((e) => e.toJson()).toList();
+      if (createdBy != null) {
+        map['createdBy'] = createdBy!.toJson();
+      }
       return map;
     } else {
       return {
@@ -301,6 +338,7 @@ class ReportModel {
         'partsUsed': partsUsed.map((e) => e.toJson()).toList(),
         'remarksAndActionPlan': remarksAndActionPlan.toJson(),
         'authorization': authorization.toJson(),
+        'createdBy': createdBy?.toJson(),
         'createdAt': createdAt?.toIso8601String(),
         'updatedAt': updatedAt?.toIso8601String(),
       };

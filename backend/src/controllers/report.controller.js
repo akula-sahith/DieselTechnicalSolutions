@@ -50,8 +50,15 @@ export const createReport = async (req, res) => {
 
     const technicianSignatureUrl = "https://res.cloudinary.com/dy5gs2egc/image/upload/v1782710059/efsr/signatures/i1ijhzyhgkmeig7v7cad.png";
 
+    const createdBy = {
+      userId: reportData.createdBy?.userId || req.headers['x-user-id'] || '',
+      name: reportData.createdBy?.name || req.headers['x-user-name'] || reportData.authorization?.technicianName || '',
+      email: (reportData.createdBy?.email || req.headers['x-user-email'] || '').trim().toLowerCase(),
+    };
+
     const reportDocument = {
       status,
+      createdBy,
       serviceAndCustomer: {
         jobRef:
           reportData.serviceAndCustomer?.jobRef ?? reportData.jobRef,
@@ -175,16 +182,23 @@ export const getReports = async (req, res) => {
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 10));
     const skip = (page - 1) * limit;
-    const search = req.query.search || '';
-    const status = req.query.status || '';
+    const role = (req.query.role || req.headers['x-user-role'] || '').toLowerCase();
+    const userEmail = (req.query.userEmail || req.headers['x-user-email'] || '').trim().toLowerCase();
 
     const query = status ? { status } : {};
+
+    // For reporters, strictly filter reports created by their email
+    if (role === 'reporter' && userEmail) {
+      query['createdBy.email'] = userEmail;
+    }
 
     if (search) {
       query.$or = [
         { 'serviceAndCustomer.jobRef': { $regex: search, $options: 'i' } },
         { 'serviceAndCustomer.customerName': { $regex: search, $options: 'i' } },
         { 'serviceAndCustomer.contactNumber': { $regex: search, $options: 'i' } },
+        { 'createdBy.name': { $regex: search, $options: 'i' } },
+        { 'createdBy.email': { $regex: search, $options: 'i' } },
       ];
     }
 

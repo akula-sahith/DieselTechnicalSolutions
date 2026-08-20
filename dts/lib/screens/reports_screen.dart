@@ -170,12 +170,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         final formattedDate = DateFormat('dd MMM yyyy, hh:mm a')
             .format(report.serviceAndCustomer.dateTime);
 
+        final String? creatorInfo = (report.createdBy?.email != null && report.createdBy!.email.isNotEmpty)
+            ? '${report.createdBy?.name} (${report.createdBy?.email})'
+            : report.authorization.technicianName;
+
         return DocumentCard(
           documentNumber: report.serviceAndCustomer.jobRef,
           customerName: report.serviceAndCustomer.customerName,
           formattedDate: formattedDate,
           documentType: DocumentType.report,
           statusText: isDraft ? 'Pending' : 'Completed',
+          createdByText: creatorInfo,
           isPending: isDraft,
           onTap: () {
             final id = report.id!;

@@ -4,7 +4,10 @@ export const calculateEstimateItems = (items = []) => {
     const pricePerUnit = Number(item.pricePerUnit || 0);
     const baseAmount = Number((quantity * pricePerUnit).toFixed(2));
 
-    if (!item.taxApplicable) {
+    const isTaxApplicable = item.taxApplicable !== false && item.taxApplicable !== 'false' && item.taxApplicable !== 0;
+    const gstPercentage = isTaxApplicable ? (item.gstPercentage !== undefined && item.gstPercentage !== null ? Number(item.gstPercentage) : 18) : 0;
+
+    if (!isTaxApplicable || gstPercentage <= 0) {
       return {
         ...item,
         quantity,
@@ -17,7 +20,6 @@ export const calculateEstimateItems = (items = []) => {
       };
     }
 
-    const gstPercentage = Number(item.gstPercentage || 18);
     const gstAmount = Number((baseAmount * gstPercentage) / 100).toFixed(2);
     const sgst = Number((gstAmount / 2).toFixed(2));
     const cgst = Number((gstAmount / 2).toFixed(2));
@@ -38,6 +40,7 @@ export const calculateEstimateItems = (items = []) => {
 export const calculateEstimateTotals = (items = [], discount = {}) => {
   const discountType = discount.discountType || 'none';
   const discountValue = Number(discount.discountValue || 0);
+  const isNoTaxMode = discount.taxMode === 'no-tax';
 
   // 1. Calculate raw subtotals for each item
   const rawItems = items.map(item => {
@@ -72,9 +75,13 @@ export const calculateEstimateTotals = (items = [], discount = {}) => {
     const itemDiscount = Number((item.itemSubtotal * discountRatio).toFixed(2));
     const itemTaxable = Number((item.itemSubtotal - itemDiscount).toFixed(2));
 
-    if (!item.taxApplicable) {
+    const isTaxApplicable = !isNoTaxMode && item.taxApplicable !== false && item.taxApplicable !== 'false' && item.taxApplicable !== 0;
+    const gstPercentage = isTaxApplicable ? (item.gstPercentage !== undefined && item.gstPercentage !== null ? Number(item.gstPercentage) : 18) : 0;
+
+    if (!isTaxApplicable || gstPercentage <= 0) {
       return {
         ...item,
+        taxApplicable: false,
         gstPercentage: 0,
         sgst: 0,
         cgst: 0,
@@ -82,7 +89,6 @@ export const calculateEstimateTotals = (items = [], discount = {}) => {
       };
     }
 
-    const gstPercentage = Number(item.gstPercentage || 18);
     const gstAmount = Number((itemTaxable * gstPercentage) / 100).toFixed(2);
     const sgst = Number((gstAmount / 2).toFixed(2));
     const cgst = Number((gstAmount / 2).toFixed(2));

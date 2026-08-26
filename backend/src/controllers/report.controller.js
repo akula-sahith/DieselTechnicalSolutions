@@ -182,24 +182,41 @@ export const getReports = async (req, res) => {
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 10));
     const skip = (page - 1) * limit;
+    const { status, search } = req.query;
     const role = (req.query.role || req.headers['x-user-role'] || '').toLowerCase();
     const userEmail = (req.query.userEmail || req.headers['x-user-email'] || '').trim().toLowerCase();
 
-    const query = status ? { status } : {};
+    const query = {};
+
+    if (status) {
+      query.status = status;
+    }
 
     // For reporters, strictly filter reports created by their email
     if (role === 'reporter' && userEmail) {
-      query['createdBy.email'] = userEmail;
+      const emailRegex = new RegExp(`^${userEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i');
+      query['createdBy.email'] = emailRegex;
     }
 
-    if (search) {
-      query.$or = [
-        { 'serviceAndCustomer.jobRef': { $regex: search, $options: 'i' } },
-        { 'serviceAndCustomer.customerName': { $regex: search, $options: 'i' } },
-        { 'serviceAndCustomer.contactNumber': { $regex: search, $options: 'i' } },
-        { 'createdBy.name': { $regex: search, $options: 'i' } },
-        { 'createdBy.email': { $regex: search, $options: 'i' } },
+    if (search && search.trim() !== '') {
+      const searchRegex = { $regex: search.trim(), $options: 'i' };
+      const searchOr = [
+        { 'serviceAndCustomer.jobRef': searchRegex },
+        { 'serviceAndCustomer.customerName': searchRegex },
+        { 'serviceAndCustomer.contactNumber': searchRegex },
+        { 'createdBy.name': searchRegex },
+        { 'createdBy.email': searchRegex },
       ];
+
+      if (query['createdBy.email']) {
+        query.$and = [
+          { 'createdBy.email': query['createdBy.email'] },
+          { $or: searchOr },
+        ];
+        delete query['createdBy.email'];
+      } else {
+        query.$or = searchOr;
+      }
     }
 
     const [reports, total] = await Promise.all([

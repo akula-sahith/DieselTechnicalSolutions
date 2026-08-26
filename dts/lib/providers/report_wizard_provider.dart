@@ -205,6 +205,7 @@ class ReportWizardState {
     required String signatureUrl,
     required String photoUrl,
     String? status,
+    ReportCreatedBy? createdBy,
   }) {
     return ReportModel(
       id: id,
@@ -241,6 +242,7 @@ class ReportWizardState {
         technicianDate: technicianDate,
         customerDate: customerDate,
       ),
+      createdBy: createdBy,
     );
   }
 }
@@ -250,15 +252,16 @@ final reportWizardProvider = StateNotifierProvider.autoDispose<ReportWizardNotif
   final auth = ref.watch(authProvider);
   final reports = ref.read(reportsProvider.notifier);
   final defaultTechName = auth.userName ?? 'Siva';
-  return ReportWizardNotifier(repo, reports, defaultTechName);
+  return ReportWizardNotifier(repo, reports, defaultTechName, auth);
 });
 
 class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
   final ReportRepository _repository;
   final ReportsNotifier _reportsNotifier;
   final String _defaultTechName;
+  final AuthState _auth;
 
-  ReportWizardNotifier(this._repository, this._reportsNotifier, this._defaultTechName)
+  ReportWizardNotifier(this._repository, this._reportsNotifier, this._defaultTechName, this._auth)
       : super(ReportWizardState.initial(_defaultTechName));
 
   void reset() {
@@ -370,6 +373,11 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
         signatureUrl: kDefaultTechnicianSignatureUrl,
         photoUrl: state.customerPhotoFile?.path ?? state.submittedReport?.authorization.customerPhotoUrl ?? '',
         status: 'draft',
+        createdBy: ReportCreatedBy(
+          userId: _auth.userId ?? '',
+          name: _auth.userName ?? _defaultTechName,
+          email: _auth.email ?? '',
+        ),
       );
 
       ReportModel result;
@@ -440,6 +448,11 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
         signatureUrl: kDefaultTechnicianSignatureUrl,
         photoUrl: state.customerPhotoFile?.path ?? state.submittedReport?.authorization.customerPhotoUrl ?? '',
         status: 'submitted',
+        createdBy: ReportCreatedBy(
+          userId: _auth.userId ?? '',
+          name: _auth.userName ?? _defaultTechName,
+          email: _auth.email ?? '',
+        ),
       );
 
       ReportModel result;

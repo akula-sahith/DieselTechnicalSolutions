@@ -219,42 +219,44 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               color: const Color(0xFF2563EB),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildSummaryMiniCard(
-                              label: "Agreements",
-                              value: todayAgreements.toString(),
-                              icon: Icons.handshake_outlined,
-                              color: const Color(0xFF059669),
+                          if (!authState.isReporter) ...[
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildSummaryMiniCard(
+                                label: "Agreements",
+                                value: todayAgreements.toString(),
+                                icon: Icons.handshake_outlined,
+                                color: const Color(0xFF059669),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildSummaryMiniCard(
-                              label: "Estimates",
-                              value: todayEstimates.toString(),
-                              icon: Icons.request_quote_outlined,
-                              color: const Color(0xFFD97706),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildSummaryMiniCard(
+                                label: "Estimates",
+                                value: todayEstimates.toString(),
+                                icon: Icons.request_quote_outlined,
+                                color: const Color(0xFFD97706),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildSummaryMiniCard(
-                              label: "Invoices",
-                              value: todayInvoices.toString(),
-                              icon: Icons.receipt_long_outlined,
-                              color: const Color(0xFF7C3AED),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildSummaryMiniCard(
+                                label: "Invoices",
+                                value: todayInvoices.toString(),
+                                icon: Icons.receipt_long_outlined,
+                                color: const Color(0xFF7C3AED),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildSummaryMiniCard(
-                              label: "Customers",
-                              value: todayCustomers.toString(),
-                              icon: Icons.people_outline_rounded,
-                              color: const Color(0xFF0891B2),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildSummaryMiniCard(
+                                label: "Customers",
+                                value: todayCustomers.toString(),
+                                icon: Icons.people_outline_rounded,
+                                color: const Color(0xFF0891B2),
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ],
@@ -283,48 +285,69 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         children: [
                           Expanded(
                             child: _buildSummaryMiniCard(
-                              label: "Reports",
+                              label: "Total Reports",
                               value: totalReports.toString(),
                               icon: Icons.assignment_outlined,
                               color: const Color(0xFF2563EB),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildSummaryMiniCard(
-                              label: "Agreements",
-                              value: totalAgreements.toString(),
-                              icon: Icons.handshake_outlined,
-                              color: const Color(0xFF059669),
+                          if (authState.isReporter) ...[
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildSummaryMiniCard(
+                                label: "Completed",
+                                value: reportsNotifier.completedReportsCount.toString(),
+                                icon: Icons.check_circle_outline,
+                                color: const Color(0xFF059669),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildSummaryMiniCard(
-                              label: "Estimates",
-                              value: totalEstimates.toString(),
-                              icon: Icons.request_quote_outlined,
-                              color: const Color(0xFFD97706),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildSummaryMiniCard(
+                                label: "Pending Drafts",
+                                value: reportsNotifier.pendingReportsCount.toString(),
+                                icon: Icons.pending_actions_outlined,
+                                color: const Color(0xFFD97706),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildSummaryMiniCard(
-                              label: "Invoices",
-                              value: totalInvoices.toString(),
-                              icon: Icons.receipt_long_outlined,
-                              color: const Color(0xFF7C3AED),
+                          ] else ...[
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildSummaryMiniCard(
+                                label: "Agreements",
+                                value: totalAgreements.toString(),
+                                icon: Icons.handshake_outlined,
+                                color: const Color(0xFF059669),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildSummaryMiniCard(
-                              label: "Customers",
-                              value: totalCustomers.toString(),
-                              icon: Icons.people_outline_rounded,
-                              color: const Color(0xFF0891B2),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildSummaryMiniCard(
+                                label: "Estimates",
+                                value: totalEstimates.toString(),
+                                icon: Icons.request_quote_outlined,
+                                color: const Color(0xFFD97706),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildSummaryMiniCard(
+                                label: "Invoices",
+                                value: totalInvoices.toString(),
+                                icon: Icons.receipt_long_outlined,
+                                color: const Color(0xFF7C3AED),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildSummaryMiniCard(
+                                label: "Customers",
+                                value: totalCustomers.toString(),
+                                icon: Icons.people_outline_rounded,
+                                color: const Color(0xFF0891B2),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ],
@@ -738,7 +761,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: 18),
@@ -776,6 +799,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     EstimatesState estimatesState,
     TaxInvoicesState invoicesState,
   ) {
+    final authState = ref.watch(authProvider);
     final List<_ActivityItem> items = [];
 
     // Reports & Drafts
@@ -794,6 +818,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ));
       }
+    }
+
+    for (final draft in reportsState.drafts) {
+      if (draft.id != null) {
+        items.add(_ActivityItem(
+          date: draft.createdAt ?? draft.serviceAndCustomer.dateTime,
+          widget: DocumentCard(
+            documentNumber: draft.serviceAndCustomer.jobRef,
+            customerName: draft.serviceAndCustomer.customerName,
+            formattedDate: DateFormat('dd MMM yyyy, hh:mm a').format(draft.createdAt ?? draft.serviceAndCustomer.dateTime),
+            documentType: DocumentType.report,
+            statusText: 'Pending Draft',
+            isPending: true,
+            onTap: () => context.push('/report-details/${draft.id}?draft=true'),
+          ),
+        ));
+      }
+    }
+
+    // For reporters, strictly return only Service Reports & Drafts
+    if (authState.isReporter) {
+      items.sort((a, b) => b.date.compareTo(a.date));
+      return items.take(10).map((item) => item.widget).toList();
     }
 
     // Agreements & Drafts

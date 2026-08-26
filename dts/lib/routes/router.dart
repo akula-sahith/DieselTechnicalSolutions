@@ -233,6 +233,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/dashboard';
       }
 
+      // Role-based protection: Reporters are strictly restricted to Service Reports only
+      if (isLoggedIn && authState.isReporter) {
+        final loc = state.matchedLocation;
+        final isAllowedForReporter = loc == '/dashboard' ||
+            loc == '/reports' ||
+            loc == '/create-report' ||
+            loc == '/drafts' ||
+            loc.startsWith('/report-details/') ||
+            loc.startsWith('/report-success/');
+
+        if (!isAllowedForReporter) {
+          return '/dashboard';
+        }
+      }
+
       return null;
     },
   );

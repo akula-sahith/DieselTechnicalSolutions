@@ -94,6 +94,7 @@ class ReportRepository {
     required ReportModel report,
     required String signatureUrl,
     File? photoFile,
+    File? signatureFile,
   }) async {
     try {
       final Map<String, dynamic> fields = {
@@ -105,6 +106,13 @@ class ReportRepository {
         fields['customerPhoto'] = await MultipartFile.fromFile(
           photoFile.path,
           filename: 'customer.png',
+        );
+      }
+
+      if (signatureFile != null) {
+        fields['technicianSignature'] = await MultipartFile.fromFile(
+          signatureFile.path,
+          filename: 'technician_signature.png',
         );
       }
 
@@ -127,6 +135,7 @@ class ReportRepository {
     required ReportModel report,
     required String signatureUrl,
     File? photoFile,
+    File? signatureFile,
   }) async {
     try {
       final Map<String, dynamic> fields = {
@@ -138,6 +147,13 @@ class ReportRepository {
         fields['customerPhoto'] = await MultipartFile.fromFile(
           photoFile.path,
           filename: 'customer.png',
+        );
+      }
+
+      if (signatureFile != null) {
+        fields['technicianSignature'] = await MultipartFile.fromFile(
+          signatureFile.path,
+          filename: 'technician_signature.png',
         );
       }
 

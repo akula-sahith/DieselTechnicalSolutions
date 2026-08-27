@@ -48,7 +48,17 @@ export const createReport = async (req, res) => {
       customerPhotoUrl = reportData.authorization.customerPhotoUrl;
     }
 
-    const technicianSignatureUrl = "https://res.cloudinary.com/dy5gs2egc/image/upload/v1782710059/efsr/signatures/i1ijhzyhgkmeig7v7cad.png";
+    const technicianSignatureFile = req.files?.technicianSignature?.[0];
+    let technicianSignatureUrl = '';
+    if (technicianSignatureFile) {
+      technicianSignatureUrl = await uploadToCloudinary(technicianSignatureFile, "efsr/signatures");
+    } else if (reportData.authorization?.technicianSignatureUrl && reportData.authorization.technicianSignatureUrl.trim() !== '') {
+      technicianSignatureUrl = reportData.authorization.technicianSignatureUrl;
+    } else if (reportData.technicianSignatureUrl && reportData.technicianSignatureUrl.trim() !== '') {
+      technicianSignatureUrl = reportData.technicianSignatureUrl;
+    } else {
+      technicianSignatureUrl = "https://res.cloudinary.com/dy5gs2egc/image/upload/v1782710059/efsr/signatures/i1ijhzyhgkmeig7v7cad.png";
+    }
 
     const createdBy = {
       userId: reportData.createdBy?.userId || req.headers['x-user-id'] || '',
@@ -292,7 +302,14 @@ export const updateReport = async (req, res) => {
       customerPhotoUrl = await uploadToCloudinary(customerPhotoFile, "efsr/customers");
     }
 
-    const technicianSignatureUrl = "https://res.cloudinary.com/dy5gs2egc/image/upload/v1782710059/efsr/signatures/i1ijhzyhgkmeig7v7cad.png";
+    const technicianSignatureFile = req.files?.technicianSignature?.[0];
+    const currentSignatureUrl = reportData.authorization?.technicianSignatureUrl ?? reportData.technicianSignatureUrl ?? report.authorization?.technicianSignatureUrl;
+    let technicianSignatureUrl = currentSignatureUrl || '';
+    if (technicianSignatureFile) {
+      technicianSignatureUrl = await uploadToCloudinary(technicianSignatureFile, "efsr/signatures");
+    } else if (!technicianSignatureUrl || technicianSignatureUrl.trim() === '') {
+      technicianSignatureUrl = "https://res.cloudinary.com/dy5gs2egc/image/upload/v1782710059/efsr/signatures/i1ijhzyhgkmeig7v7cad.png";
+    }
 
     const reportDocument = {
       status,

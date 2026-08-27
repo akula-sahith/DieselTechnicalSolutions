@@ -370,7 +370,7 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
     state = state.copyWith(isSubmitting: true, error: null);
     try {
       final reportPayload = state.toReportModel(
-        signatureUrl: kDefaultTechnicianSignatureUrl,
+        signatureUrl: state.submittedReport?.authorization.technicianSignatureUrl ?? kDefaultTechnicianSignatureUrl,
         photoUrl: state.customerPhotoFile?.path ?? state.submittedReport?.authorization.customerPhotoUrl ?? '',
         status: 'draft',
         createdBy: ReportCreatedBy(
@@ -385,14 +385,16 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
         result = await _repository.updateReport(
           id: state.id!,
           report: reportPayload,
-          signatureUrl: kDefaultTechnicianSignatureUrl,
+          signatureUrl: state.submittedReport?.authorization.technicianSignatureUrl ?? kDefaultTechnicianSignatureUrl,
           photoFile: state.customerPhotoFile,
+          signatureFile: state.technicianSignatureFile,
         );
       } else {
         result = await _repository.createReport(
           report: reportPayload,
           signatureUrl: kDefaultTechnicianSignatureUrl,
           photoFile: state.customerPhotoFile,
+          signatureFile: state.technicianSignatureFile,
         );
       }
 
@@ -424,6 +426,20 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
           return false;
         }
         return true;
+      case 5:
+        if (state.technicianName.trim().isEmpty) {
+          state = state.copyWith(error: 'Technician Name is required.');
+          return false;
+        }
+        if (!_auth.isAdmin) {
+          final hasSignature = state.technicianSignatureFile != null ||
+              (state.submittedReport?.authorization.technicianSignatureUrl.isNotEmpty ?? false);
+          if (!hasSignature) {
+            state = state.copyWith(error: 'Technician Signature is required. Please sign on the whiteboard.');
+            return false;
+          }
+        }
+        return true;
       default:
         return true;
     }
@@ -433,6 +449,26 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
   Future<bool> submitReport() async {
     state = state.copyWith(isSubmitting: true, error: null);
     try {
+      if (state.technicianName.trim().isEmpty) {
+        state = state.copyWith(
+          isSubmitting: false,
+          error: 'Technician Name is required.',
+        );
+        return false;
+      }
+
+      if (!_auth.isAdmin) {
+        final hasSignature = state.technicianSignatureFile != null ||
+            (state.submittedReport?.authorization.technicianSignatureUrl.isNotEmpty ?? false);
+        if (!hasSignature) {
+          state = state.copyWith(
+            isSubmitting: false,
+            error: 'Technician Signature is required. Please sign on the whiteboard.',
+          );
+          return false;
+        }
+      }
+
       final hasPhoto = state.customerPhotoFile != null || 
           (state.submittedReport?.authorization.customerPhotoUrl.isNotEmpty ?? false);
           
@@ -445,7 +481,7 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
       }
 
       final reportPayload = state.toReportModel(
-        signatureUrl: kDefaultTechnicianSignatureUrl,
+        signatureUrl: state.submittedReport?.authorization.technicianSignatureUrl ?? kDefaultTechnicianSignatureUrl,
         photoUrl: state.customerPhotoFile?.path ?? state.submittedReport?.authorization.customerPhotoUrl ?? '',
         status: 'submitted',
         createdBy: ReportCreatedBy(
@@ -460,14 +496,16 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
         result = await _repository.updateReport(
           id: state.id!,
           report: reportPayload,
-          signatureUrl: kDefaultTechnicianSignatureUrl,
+          signatureUrl: state.submittedReport?.authorization.technicianSignatureUrl ?? kDefaultTechnicianSignatureUrl,
           photoFile: state.customerPhotoFile,
+          signatureFile: state.technicianSignatureFile,
         );
       } else {
         result = await _repository.createReport(
           report: reportPayload,
           signatureUrl: kDefaultTechnicianSignatureUrl,
           photoFile: state.customerPhotoFile!,
+          signatureFile: state.technicianSignatureFile,
         );
       }
 

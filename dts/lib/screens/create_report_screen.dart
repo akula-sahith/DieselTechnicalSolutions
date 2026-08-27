@@ -13,6 +13,8 @@ import '../widgets/stepper/stepper_progress_bar.dart';
 import '../widgets/stepper/step_navigation.dart';
 import '../widgets/stepper/step_container.dart';
 import '../widgets/stepper/step_header.dart';
+import '../widgets/signature_pad.dart';
+import '../providers/auth_provider.dart';
 
 class CreateReportScreen extends ConsumerStatefulWidget {
   final String? draftId;
@@ -63,7 +65,7 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
           );
           ref.read(reportWizardProvider.notifier).loadFromReport(draft);
         } catch (e) {
-          print("Failed to load draft: $e");
+          debugPrint("Failed to load draft: $e");
         }
       } else {
         ref.read(reportWizardProvider.notifier).reset();
@@ -228,13 +230,13 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
         actions: [
           TextButton(
             onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final router = GoRouter.of(context);
               await notifier.saveAsDraft();
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Report saved as local draft!'), backgroundColor: AppColors.success),
-                );
-                context.pop();
-              }
+              messenger.showSnackBar(
+                const SnackBar(content: Text('Report saved as local draft!'), backgroundColor: AppColors.success),
+              );
+              router.pop();
             },
             child: const Text('Save Draft', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
@@ -815,6 +817,9 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
   }
 
   Widget _buildAuthorizationStep(ReportWizardState state, ReportWizardNotifier notifier) {
+    final auth = ref.watch(authProvider);
+    final isAdmin = auth.isAdmin;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -833,49 +838,64 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
         const SizedBox(height: 16),
 
         // Signature Title
-        const Text(
-          'Technician Signature',
-          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              isAdmin ? 'Technician Signature' : 'Technician Signature (Whiteboard) *',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14),
+            ),
+            if (isAdmin)
+              const Text(
+                'Default photo enabled for Admin',
+                style: TextStyle(fontSize: 11, color: AppColors.textLight, fontStyle: FontStyle.italic),
+              ),
+          ],
         ),
         const SizedBox(height: 8),
 
-        // Default Signature Image from Cloudinary
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.border, width: 1.5),
-            borderRadius: BorderRadius.circular(12),
-            color: Colors.white,
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              kDefaultTechnicianSignatureUrl,
-              fit: BoxFit.contain,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return SizedBox(
-                  height: 120,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                          : null,
-                    ),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return const SizedBox(
-                  height: 120,
-                  child: Center(
-                    child: Text('Failed to load signature', style: TextStyle(color: AppColors.textLight)),
-                  ),
-                );
-              },
+        if (isAdmin)
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.border, width: 1.5),
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.white,
             ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: state.technicianSignatureFile != null
+                  ? Image.file(state.technicianSignatureFile!, height: 140, fit: BoxFit.contain)
+                  : Image.network(
+                      kDefaultTechnicianSignatureUrl,
+                      height: 140,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const SizedBox(
+                          height: 120,
+                          child: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return const SizedBox(
+                          height: 120,
+                          child: Center(
+                            child: Text('Failed to load signature', style: TextStyle(color: AppColors.textLight)),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          )
+        else
+          SignaturePad(
+            placeholderText: 'Sign here on whiteboard with finger / mouse *',
+            onSignatureChanged: (file) {
+              notifier.updateTechnicianSignature(file);
+            },
           ),
-        ),
         const SizedBox(height: 20),
 
         // Customer Rep Name
@@ -929,7 +949,7 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.camera_alt_outlined, size: 48, color: AppColors.textLight.withOpacity(0.8)),
+                      Icon(Icons.camera_alt_outlined, size: 48, color: AppColors.textLight.withValues(alpha: 0.8)),
                       const SizedBox(height: 12),
                       ElevatedButton(
                         onPressed: _captureCustomerPhoto,

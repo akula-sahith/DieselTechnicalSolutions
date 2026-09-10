@@ -330,30 +330,32 @@ class _ProfitCalculatorDialogState extends State<ProfitCalculatorDialog> {
                               // Item Type Toggle (Product / Material vs Service Charge)
                               Row(
                                 children: [
-                                  const Text('Item Type: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                                  const SizedBox(width: 8),
-                                  SegmentedButton<String>(
-                                    segments: const [
-                                      ButtonSegment(
-                                        value: 'product',
-                                        label: Text('Product/Part', style: TextStyle(fontSize: 11)),
-                                        icon: Icon(Icons.inventory_2_outlined, size: 14),
+                                  const Text('Type: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: SegmentedButton<String>(
+                                      segments: const [
+                                        ButtonSegment(
+                                          value: 'product',
+                                          label: Text('Product/Part', style: TextStyle(fontSize: 10)),
+                                          icon: Icon(Icons.inventory_2_outlined, size: 12),
+                                        ),
+                                        ButtonSegment(
+                                          value: 'service',
+                                          label: Text('Service Charge', style: TextStyle(fontSize: 10)),
+                                          icon: Icon(Icons.build_outlined, size: 12),
+                                        ),
+                                      ],
+                                      selected: {item.itemType},
+                                      onSelectionChanged: (Set<String> newSelection) {
+                                        setState(() {
+                                          item.itemType = newSelection.first;
+                                        });
+                                      },
+                                      style: const ButtonStyle(
+                                        visualDensity: VisualDensity.compact,
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       ),
-                                      ButtonSegment(
-                                        value: 'service',
-                                        label: Text('Service Charge', style: TextStyle(fontSize: 11)),
-                                        icon: Icon(Icons.build_outlined, size: 14),
-                                      ),
-                                    ],
-                                    selected: {item.itemType},
-                                    onSelectionChanged: (Set<String> newSelection) {
-                                      setState(() {
-                                        item.itemType = newSelection.first;
-                                      });
-                                    },
-                                    style: const ButtonStyle(
-                                      visualDensity: VisualDensity.compact,
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                     ),
                                   ),
                                 ],
@@ -369,34 +371,43 @@ class _ProfitCalculatorDialogState extends State<ProfitCalculatorDialog> {
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(color: Colors.blue.withOpacity(0.2)),
                                   ),
-                                  child: Row(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text('Service Work Done By: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                      const SizedBox(width: 8),
-                                      ChoiceChip(
-                                        label: const Text('Self (Direct Profit)', style: TextStyle(fontSize: 11)),
-                                        selected: isSelf,
-                                        selectedColor: AppColors.success.withOpacity(0.2),
-                                        onSelected: (val) {
-                                          if (val) {
-                                            setState(() {
-                                              item.serviceProvider = 'self';
-                                            });
-                                          }
-                                        },
-                                      ),
-                                      const SizedBox(width: 8),
-                                      ChoiceChip(
-                                        label: const Text('Other Vendor', style: TextStyle(fontSize: 11)),
-                                        selected: !isSelf,
-                                        selectedColor: AppColors.warning.withOpacity(0.2),
-                                        onSelected: (val) {
-                                          if (val) {
-                                            setState(() {
-                                              item.serviceProvider = 'other';
-                                            });
-                                          }
-                                        },
+                                      const Text('Service Work Done By:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: ChoiceChip(
+                                              label: const Center(child: Text('Self (Direct Profit)', style: TextStyle(fontSize: 10))),
+                                              selected: isSelf,
+                                              selectedColor: AppColors.success.withOpacity(0.2),
+                                              onSelected: (val) {
+                                                if (val) {
+                                                  setState(() {
+                                                    item.serviceProvider = 'self';
+                                                  });
+                                                }
+                                              },
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: ChoiceChip(
+                                              label: const Center(child: Text('Other Vendor', style: TextStyle(fontSize: 10))),
+                                              selected: !isSelf,
+                                              selectedColor: AppColors.warning.withOpacity(0.2),
+                                              onSelected: (val) {
+                                                if (val) {
+                                                  setState(() {
+                                                    item.serviceProvider = 'other';
+                                                  });
+                                                }
+                                              },
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
@@ -407,7 +418,7 @@ class _ProfitCalculatorDialogState extends State<ProfitCalculatorDialog> {
                               // Cost Input
                               if (isService && isSelf) ...[
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                   decoration: BoxDecoration(
                                     color: AppColors.success.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(6),
@@ -422,7 +433,7 @@ class _ProfitCalculatorDialogState extends State<ProfitCalculatorDialog> {
                                           style: const TextStyle(
                                             color: AppColors.success,
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 11.5,
+                                            fontSize: 11,
                                           ),
                                         ),
                                       ),
@@ -433,38 +444,44 @@ class _ProfitCalculatorDialogState extends State<ProfitCalculatorDialog> {
                                 Row(
                                   children: [
                                     Expanded(
+                                      flex: 3,
                                       child: TextFormField(
                                         controller: item.costController,
                                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                         decoration: InputDecoration(
                                           labelText: isService
-                                              ? 'Vendor / Other Cost (₹)'
-                                              : 'Unit Purchase Cost (₹)',
+                                              ? 'Vendor Cost (₹)'
+                                              : 'Unit Cost (₹)',
                                           hintText: '0.00',
                                           isDense: true,
-                                          prefixIcon: const Icon(Icons.currency_rupee, size: 16),
-                                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                          prefixIcon: const Icon(Icons.currency_rupee, size: 14),
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                                         ),
                                         onChanged: (_) => setState(() {}),
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          'Cost: ${currencyFmt.format(item.calculatedCost)}',
-                                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                                        ),
-                                        Text(
-                                          'Profit: ${currencyFmt.format(item.calculatedProfit)}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: item.calculatedProfit >= 0 ? AppColors.success : AppColors.error,
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            'Cost: ${currencyFmt.format(item.calculatedCost)}',
+                                            style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                        ),
-                                      ],
+                                          Text(
+                                            'Profit: ${currencyFmt.format(item.calculatedProfit)}',
+                                            style: TextStyle(
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.bold,
+                                              color: item.calculatedProfit >= 0 ? AppColors.success : AppColors.error,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 ),

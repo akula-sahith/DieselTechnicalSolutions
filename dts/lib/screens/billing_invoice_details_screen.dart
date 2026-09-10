@@ -588,10 +588,14 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Cash Invoice (Without GST)',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+                      Expanded(
+                        child: Text(
+                          'Cash Invoice (Without GST)',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(

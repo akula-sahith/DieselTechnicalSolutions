@@ -36,6 +36,7 @@ class TaxInvoiceRepository {
     String search = '',
     String dateFrom = '',
     String dateTo = '',
+    String paymentStatus = '',
     bool all = false,
   }) async {
     try {
@@ -52,6 +53,9 @@ class TaxInvoiceRepository {
       }
       if (dateTo.isNotEmpty) {
         queryParams['dateTo'] = dateTo;
+      }
+      if (paymentStatus.isNotEmpty) {
+        queryParams['paymentStatus'] = paymentStatus;
       }
 
       final response = await _apiService.get(

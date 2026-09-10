@@ -52,6 +52,164 @@ class _PurchaseBillsScreenState extends ConsumerState<PurchaseBillsScreen> {
     }
   }
 
+  void _showReportOptionsSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  'Generate Merged Purchase Bills Report',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_today_outlined, color: AppColors.primary),
+                title: const Text('Last 3 Months'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _generateDateReport(DateTime.now().subtract(const Duration(days: 90)), DateTime.now(), 'Last_3_Months');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_today_outlined, color: AppColors.primary),
+                title: const Text('Last 6 Months'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _generateDateReport(DateTime.now().subtract(const Duration(days: 180)), DateTime.now(), 'Last_6_Months');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_today_outlined, color: AppColors.primary),
+                title: const Text('Last 1 Year'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _generateDateReport(DateTime.now().subtract(const Duration(days: 365)), DateTime.now(), 'Last_1_Year');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.date_range_outlined, color: AppColors.primary),
+                title: const Text('Customized Date Range'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final picked = await showDateRangePicker(
+                    context: context,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now(),
+                  );
+                  if (picked != null) {
+                    _generateDateReport(
+                      picked.start,
+                      picked.end,
+                      'Custom_${DateFormat('dd-MM-yyyy').format(picked.start)}_to_${DateFormat('dd-MM-yyyy').format(picked.end)}',
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _generateDateReport(DateTime from, DateTime to, String label) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Fetching purchase bills...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final repo = ref.read(purchaseBillRepositoryProvider);
+      final dateFromStr = DateFormat('yyyy-MM-dd').format(from);
+      final dateToStr = DateFormat('yyyy-MM-dd').format(to);
+
+      final response = await repo.getPurchaseBills(
+        dateFrom: dateFromStr,
+        dateTo: dateToStr,
+        all: true,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context); // Dismiss loading
+
+      if (response.purchaseBills.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No purchase bills found for: ${label.replaceAll('_', ' ')}'),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+        return;
+      }
+
+      final pdfMerger = ref.read(pdfMergerServiceProvider);
+      final pdfBytes = await pdfMerger.mergePurchaseBillsToPdf(response.purchaseBills);
+
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Report: ${label.replaceAll('_', ' ')}'),
+          content: Text('Found ${response.purchaseBills.length} purchase bill(s). Choose an action:'),
+          actions: [
+            TextButton.icon(
+              icon: const Icon(Icons.share_outlined),
+              label: const Text('Share PDF'),
+              onPressed: () async {
+                Navigator.pop(context);
+                await pdfMerger.shareMergedPdf(
+                  pdfBytes,
+                  'PurchaseBills_Report_$label',
+                );
+              },
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.print_outlined),
+              label: const Text('Print/Save'),
+              onPressed: () async {
+                Navigator.pop(context);
+                await pdfMerger.printOrSaveMergedPdf(
+                  pdfBytes,
+                  'PurchaseBills_Report_$label',
+                );
+              },
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error generating report: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
+
   void _toggleSelectionMode() {
     setState(() {
       _isSelectionMode = !_isSelectionMode;
@@ -576,8 +734,13 @@ class _PurchaseBillsScreenState extends ConsumerState<PurchaseBillsScreen> {
         title: Text(_isSelectionMode ? '${_selectedBillIds.length} Selected' : 'Purchase Bills'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.summarize_outlined),
+            tooltip: 'Generate Merged PDF Report',
+            onPressed: _showReportOptionsSheet,
+          ),
+          IconButton(
             icon: Icon(_isSelectionMode ? Icons.close : Icons.library_add_check),
-            tooltip: _isSelectionMode ? 'Cancel Multi-Select' : 'Merge Bills to PDF',
+            tooltip: _isSelectionMode ? 'Cancel Multi-Select' : 'Select Bills to Merge',
             onPressed: _toggleSelectionMode,
           ),
           if (_isSelectionMode)

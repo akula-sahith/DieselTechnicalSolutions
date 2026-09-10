@@ -36,6 +36,9 @@ class PurchaseBillRepository {
     int limit = 10,
     String search = '',
     String status = '',
+    String dateFrom = '',
+    String dateTo = '',
+    bool all = false,
   }) async {
     try {
       final queryParams = <String, dynamic>{
@@ -43,8 +46,17 @@ class PurchaseBillRepository {
         'limit': limit,
         'search': search,
       };
+      if (all) {
+        queryParams['all'] = 'true';
+      }
       if (status.isNotEmpty) {
         queryParams['status'] = status;
+      }
+      if (dateFrom.isNotEmpty) {
+        queryParams['dateFrom'] = dateFrom;
+      }
+      if (dateTo.isNotEmpty) {
+        queryParams['dateTo'] = dateTo;
       }
 
       final response = await _apiService.get(

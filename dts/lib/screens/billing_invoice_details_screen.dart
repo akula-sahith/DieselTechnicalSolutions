@@ -10,6 +10,7 @@ import '../repositories/billing_invoice_repository.dart';
 import '../providers/billing_invoices_provider.dart';
 import '../providers/dashboard_stats_provider.dart';
 import '../services/pdf_service.dart';
+import '../widgets/profit_calculator_dialog.dart';
 import 'pdf_viewer_screen.dart';
 
 class BillingInvoiceDetailsScreen extends ConsumerStatefulWidget {
@@ -163,6 +164,81 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
     }
   }
 
+  void _openProfitCalculator() {
+    if (_invoice == null) return;
+    final rawItemsList = _invoice!.items.map((e) => {
+      'itemName': e.itemName,
+      'quantity': e.quantity,
+      'pricePerUnit': e.pricePerUnit,
+      'amount': e.amount ?? (e.quantity * e.pricePerUnit),
+    }).toList();
+
+    showDialog(
+      context: context,
+      builder: (context) => ProfitCalculatorDialog(
+        invoiceTitle: _invoice!.invoiceNumber ?? 'Cash Invoice',
+        rawItems: rawItemsList,
+        invoiceTotalAmount: _invoice!.totalAmount ?? 0.0,
+        initialProfitDetails: _invoice!.profitDetails,
+        onSave: (profitDetails) async {
+          final updated = BillingInvoiceModel(
+            id: _invoice!.id,
+            invoiceNumber: _invoice!.invoiceNumber,
+            invoiceDate: _invoice!.invoiceDate,
+            billTo: _invoice!.billTo,
+            placeOfSupply: _invoice!.placeOfSupply,
+            transportationDetails: _invoice!.transportationDetails,
+            items: _invoice!.items,
+            termsAndConditions: _invoice!.termsAndConditions,
+            totalAmount: _invoice!.totalAmount,
+            receivedAmount: _invoice!.receivedAmount,
+            amountInWords: _invoice!.amountInWords,
+            linkedEstimateId: _invoice!.linkedEstimateId,
+            technicianSignatureUrl: _invoice!.technicianSignatureUrl,
+            customerSignatureUrl: _invoice!.customerSignatureUrl,
+            createdAt: _invoice!.createdAt,
+            updatedAt: _invoice!.updatedAt,
+            discountType: _invoice!.discountType,
+            discountValue: _invoice!.discountValue,
+            discountAmount: _invoice!.discountAmount,
+            paymentStatus: _invoice!.paymentStatus,
+            outstandingAmount: _invoice!.outstandingAmount,
+            payments: _invoice!.payments,
+            subtotal: _invoice!.subtotal,
+            paymentData: _invoice!.paymentData,
+            companyBankDetails: _invoice!.companyBankDetails,
+            profitDetails: profitDetails,
+          );
+
+          setState(() => _invoice = updated);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Saving profit details...')),
+          );
+
+          try {
+            final repo = ref.read(billingInvoiceRepositoryProvider);
+            final saved = await repo.updateBillingInvoice(id: updated.id!, billingInvoice: updated);
+            if (mounted) {
+              setState(() => _invoice = saved);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Profit details saved! Net Profit: ₹${profitDetails.netProfit.toStringAsFixed(2)}'),
+                  backgroundColor: AppColors.success,
+                ),
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to save profit: $e'), backgroundColor: AppColors.error),
+              );
+            }
+          }
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -219,6 +295,7 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert_rounded),
             onSelected: (value) {
+              if (value == 'profit') _openProfitCalculator();
               if (value == 'download') _downloadPdf();
               if (value == 'share') _sharePdf();
               if (value == 'edit') {
@@ -227,6 +304,17 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
               if (value == 'delete') _deleteInvoice();
             },
             itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'profit',
+                child: Row(
+                  children: [
+                    Icon(Icons.analytics_outlined, color: AppColors.primary),
+                    SizedBox(width: 8),
+                    Text('Calculate Profit', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
               const PopupMenuItem(
                 value: 'edit',
                 child: Row(
@@ -526,6 +614,45 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
                   _buildDetailRow('Date', DateFormat('dd-MM-yyyy').format(invoice.invoiceDate)),
                   _buildDetailRow('Place of Supply', invoice.placeOfSupply ?? '36-Telangana'),
                   _buildDetailRow('Amount in Words', invoice.amountInWords ?? 'Rupees Only'),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Profit Analysis Card
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.analytics_rounded, color: AppColors.primary, size: 20),
+                          SizedBox(width: 8),
+                          Text('Profit Analysis', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                        ],
+                      ),
+                      TextButton.icon(
+                        onPressed: _openProfitCalculator,
+                        icon: const Icon(Icons.calculate_outlined, size: 18),
+                        label: Text(invoice.profitDetails != null ? 'Recalculate' : 'Calculate Profit'),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 16),
+                  if (invoice.profitDetails == null)
+                    const Text('Click "Calculate Profit" to itemize costs & service charges (self/other) and calculate net profit margin.', style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic))
+                  else ...[
+                    _buildDetailRow('Net Profit', '₹${invoice.profitDetails!.netProfit.toStringAsFixed(2)}', isBold: true, valueColor: invoice.profitDetails!.netProfit >= 0 ? AppColors.success : AppColors.error),
+                    _buildDetailRow('Total Cost', '₹${invoice.profitDetails!.totalCost.toStringAsFixed(2)}'),
+                    _buildDetailRow('Profit Margin', '${invoice.profitDetails!.profitMargin.toStringAsFixed(1)}%', valueColor: invoice.profitDetails!.netProfit >= 0 ? AppColors.success : AppColors.error),
+                  ],
                 ],
               ),
             ),

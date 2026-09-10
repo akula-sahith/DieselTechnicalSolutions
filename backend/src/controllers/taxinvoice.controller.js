@@ -149,8 +149,17 @@ export const getTaxInvoices = async (req, res) => {
     const invoiceNumber = req.query.invoiceNumber || '';
     const dateFrom = req.query.dateFrom || '';
     const dateTo = req.query.dateTo || '';
+    const paymentStatus = req.query.paymentStatus || req.query.status || '';
 
     const query = {};
+
+    if (paymentStatus) {
+      if (paymentStatus.includes(',')) {
+        query.paymentStatus = { $in: paymentStatus.split(',') };
+      } else {
+        query.paymentStatus = paymentStatus;
+      }
+    }
 
     if (search) {
       query.$or = [
@@ -293,6 +302,10 @@ export const updateTaxInvoice = async (req, res) => {
       termsAndConditions: invoicePayload.termsAndConditions || taxInvoice.termsAndConditions,
       authorizedSignatureUrl: invoicePayload.authorizedSignatureUrl || taxInvoice.authorizedSignatureUrl,
     };
+
+    if (invoicePayload.profitDetails) {
+      updatePayload.profitDetails = invoicePayload.profitDetails;
+    }
 
     const updatedInvoice = await TaxInvoice.findByIdAndUpdate(req.params.id, updatePayload, {
       new: true,

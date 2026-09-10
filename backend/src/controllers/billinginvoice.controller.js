@@ -135,16 +135,26 @@ export const createBillingInvoice = async (req, res) => {
 
 export const getBillingInvoices = async (req, res) => {
   try {
+    const all = req.query.all === 'true';
     const page = Math.max(1, Number(req.query.page) || 1);
-    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 10));
-    const skip = (page - 1) * limit;
+    const limit = all ? 10000 : Math.min(50, Math.max(1, Number(req.query.limit) || 10));
+    const skip = all ? 0 : (page - 1) * limit;
     const search = req.query.search || '';
     const customerName = req.query.customerName || '';
     const invoiceNumber = req.query.invoiceNumber || '';
     const dateFrom = req.query.dateFrom || '';
     const dateTo = req.query.dateTo || '';
+    const paymentStatus = req.query.paymentStatus || req.query.status || '';
 
     const query = {};
+
+    if (paymentStatus) {
+      if (paymentStatus.includes(',')) {
+        query.paymentStatus = { $in: paymentStatus.split(',') };
+      } else {
+        query.paymentStatus = paymentStatus;
+      }
+    }
 
     if (search) {
       query.$or = [
@@ -309,6 +319,10 @@ export const updateBillingInvoice = async (req, res) => {
       termsAndConditions: invoicePayload.termsAndConditions || billingInvoice.termsAndConditions,
       authorizedSignatureUrl: invoicePayload.authorizedSignatureUrl || billingInvoice.authorizedSignatureUrl,
     };
+
+    if (invoicePayload.profitDetails) {
+      updatePayload.profitDetails = invoicePayload.profitDetails;
+    }
 
     console.log("updateBillingInvoice payload receivedAmount:", invoicePayload.receivedAmount);
     console.log("updateBillingInvoice document receivedAmount:", updatePayload.receivedAmount);

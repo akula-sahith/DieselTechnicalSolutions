@@ -196,6 +196,22 @@ const billingInvoiceSchema = new mongoose.Schema(
       ref: 'Estimate',
       index: true,
     },
+    profitDetails: {
+      netProfit: { type: Number, default: 0 },
+      totalCost: { type: Number, default: 0 },
+      profitMargin: { type: Number, default: 0 },
+      calculatedAt: { type: Date },
+      items: [
+        {
+          itemName: String,
+          itemType: { type: String, enum: ['product', 'service'], default: 'product' },
+          serviceProvider: { type: String, enum: ['self', 'other'], default: 'self' },
+          costPrice: { type: Number, default: 0 },
+          sellingPrice: { type: Number, default: 0 },
+          profit: { type: Number, default: 0 },
+        },
+      ],
+    },
   },
   {
     timestamps: true,

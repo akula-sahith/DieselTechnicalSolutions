@@ -45,18 +45,41 @@ export const createPurchaseBill = async (req, res) => {
 
 export const getPurchaseBills = async (req, res) => {
   try {
+    const all = req.query.all === 'true';
     const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.max(1, parseInt(req.query.limit) || 10);
-    const skip = (page - 1) * limit;
+    const limit = all ? 10000 : Math.max(1, parseInt(req.query.limit) || 10);
+    const skip = all ? 0 : (page - 1) * limit;
+    const dateFrom = req.query.dateFrom || '';
+    const dateTo = req.query.dateTo || '';
 
     const query = {};
 
     if (req.query.search) {
-      query.$text = { $search: req.query.search };
+      query.$or = [
+        { vendorName: { $regex: req.query.search, $options: 'i' } },
+        { billNumber: { $regex: req.query.search, $options: 'i' } },
+        { remarks: { $regex: req.query.search, $options: 'i' } },
+      ];
     }
 
     if (req.query.status) {
-      query.status = req.query.status;
+      if (req.query.status.includes(',')) {
+        query.status = { $in: req.query.status.split(',') };
+      } else {
+        query.status = req.query.status;
+      }
+    }
+
+    if (dateFrom || dateTo) {
+      query.billDate = {};
+      if (dateFrom) {
+        query.billDate.$gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        const endDate = new Date(dateTo);
+        endDate.setDate(endDate.getDate() + 1);
+        query.billDate.$lt = endDate;
+      }
     }
 
     const total = await PurchaseBill.countDocuments(query);

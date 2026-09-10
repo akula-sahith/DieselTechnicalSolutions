@@ -33,6 +33,7 @@ import '../models/delivery_challan_model.dart';
 import '../screens/delivery_challans_screen.dart';
 import '../screens/create_delivery_challan_screen.dart';
 import '../screens/delivery_challan_details_screen.dart';
+import '../screens/unpaid_bills_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -176,6 +177,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/purchase-bills',
         builder: (context, state) => const PurchaseBillsScreen(),
+      ),
+      GoRoute(
+        path: '/unpaid-bills',
+        builder: (context, state) => const UnpaidBillsScreen(),
       ),
       GoRoute(
         path: '/delivery-challans',

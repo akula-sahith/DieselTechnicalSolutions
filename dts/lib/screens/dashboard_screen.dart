@@ -424,6 +424,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     accentColor: const Color(0xFFDC2626),
                                     bgColor: const Color(0xFFFEF2F2),
                                     borderColor: const Color(0xFFFEE2E2),
+                                    onTap: () => context.push('/unpaid-bills'),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -450,6 +451,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     accentColor: const Color(0xFF7C3AED),
                                     bgColor: const Color(0xFFF5F3FF),
                                     borderColor: const Color(0xFFEDE9FE),
+                                    onTap: () => context.push('/purchase-bills'),
                                   ),
                                 ),
                               ],
@@ -534,6 +536,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               icon: Icons.shopping_bag_outlined,
                               color: const Color(0xFF7C3AED),
                               onTap: () => context.push('/purchase-bills'),
+                            ),
+                            _buildQuickActionButton(
+                              label: "Unpaid Bills",
+                              icon: Icons.pending_actions_outlined,
+                              color: const Color(0xFFDC2626),
+                              onTap: () => context.push('/unpaid-bills'),
                             ),
                           ],
                         ],
@@ -662,21 +670,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required Color accentColor,
     required Color bgColor,
     required Color borderColor,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x06000000),
-            blurRadius: 6,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x06000000),
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -727,7 +739,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 
   /// Helper widget for Quick Action Grid Item

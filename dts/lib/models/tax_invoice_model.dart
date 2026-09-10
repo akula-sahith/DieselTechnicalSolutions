@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'estimate_model.dart'; // To reuse EstimateCustomerDetails and EstimateItem
+import 'profit_details_model.dart';
 
 class TransportationDetails {
   final String? vehicleNumber;
@@ -149,6 +150,7 @@ class TaxInvoiceModel {
   // Extra payment data returned by the backend endpoint alongside the document
   final EstimatePaymentData? paymentData;
   final BankDetails? companyBankDetails; // The company config returned by backend
+  final ProfitDetails? profitDetails;
 
   TaxInvoiceModel({
     this.id,
@@ -179,6 +181,7 @@ class TaxInvoiceModel {
     this.payments = const [],
     this.paymentData,
     this.companyBankDetails,
+    this.profitDetails,
   });
 
   factory TaxInvoiceModel.fromJson(Map<String, dynamic> json) {
@@ -203,6 +206,11 @@ class TaxInvoiceModel {
     final paymentsList = paymentsRaw != null
         ? paymentsRaw.map((e) => InvoicePaymentHistory.fromJson(e as Map<String, dynamic>)).toList()
         : <InvoicePaymentHistory>[];
+
+    ProfitDetails? profitDetailsObj;
+    if (docJson['profitDetails'] != null) {
+      profitDetailsObj = ProfitDetails.fromJson(docJson['profitDetails']);
+    }
 
     final rawStatus = (docJson['paymentStatus'] ?? docJson['paymentDetails']?['status'] ?? 'unpaid').toString();
     final cleanStatus = rawStatus.replaceAll('_', ' ').toLowerCase();
@@ -259,6 +267,7 @@ class TaxInvoiceModel {
       payments: paymentsList,
       paymentData: paymentData,
       companyBankDetails: companyBankDetailsObj,
+      profitDetails: profitDetailsObj,
     );
   }
 
@@ -270,6 +279,7 @@ class TaxInvoiceModel {
       'discountType': discountType,
       'discountValue': discountValue,
       'receivedAmount': receivedAmount,
+      if (profitDetails != null) 'profitDetails': profitDetails!.toJson(),
     };
 
     if (id != null) map['id'] = id;

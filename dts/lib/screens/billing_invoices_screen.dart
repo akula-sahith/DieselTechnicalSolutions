@@ -4,6 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../core/constants/app_colors.dart';
 import '../providers/billing_invoices_provider.dart';
+import '../repositories/billing_invoice_repository.dart';
+import '../services/pdf_service.dart';
+import '../widgets/bottom_nav_bar.dart';
+import '../widgets/common/document_card.dart';
 
 class BillingInvoicesScreen extends ConsumerStatefulWidget {
   const BillingInvoicesScreen({super.key});
@@ -16,9 +20,207 @@ class _BillingInvoicesScreenState extends ConsumerState<BillingInvoicesScreen> {
   final _searchCtrl = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(billingInvoicesProvider.notifier).refresh();
+    });
+  }
+
+  @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _showReportOptionsSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  'Generate Merged Cash Invoice Report',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_today_outlined, color: AppColors.primary),
+                title: const Text('Last 3 Months'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _generateReport(DateTime.now().subtract(const Duration(days: 90)), DateTime.now(), 'Last_3_Months');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_today_outlined, color: AppColors.primary),
+                title: const Text('Last 6 Months'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _generateReport(DateTime.now().subtract(const Duration(days: 180)), DateTime.now(), 'Last_6_Months');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_today_outlined, color: AppColors.primary),
+                title: const Text('Last 1 Year'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _generateReport(DateTime.now().subtract(const Duration(days: 365)), DateTime.now(), 'Last_1_Year');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.date_range_outlined, color: AppColors.primary),
+                title: const Text('Customized Date Range'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final picked = await showDateRangePicker(
+                    context: context,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now(),
+                  );
+                  if (picked != null) {
+                    _generateReport(
+                      picked.start,
+                      picked.end,
+                      'Custom_${DateFormat('dd-MM-yyyy').format(picked.start)}_to_${DateFormat('dd-MM-yyyy').format(picked.end)}',
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _generateReport(DateTime from, DateTime to, String label) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Fetching cash invoices...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final repo = ref.read(billingInvoiceRepositoryProvider);
+      final dateFromStr = DateFormat('yyyy-MM-dd').format(from);
+      final dateToStr = DateFormat('yyyy-MM-dd').format(to);
+
+      final response = await repo.getBillingInvoices(
+        dateFrom: dateFromStr,
+        dateTo: dateToStr,
+        all: true,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context); // Dismiss loading
+
+      if (response.billingInvoices.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No cash invoices found for: ${label.replaceAll('_', ' ')}'),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+        return;
+      }
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Report: ${label.replaceAll('_', ' ')}'),
+          content: Text('Found ${response.billingInvoices.length} cash invoice(s). Choose an action:'),
+          actions: [
+            TextButton.icon(
+              icon: const Icon(Icons.share_outlined),
+              label: const Text('Share PDF'),
+              onPressed: () async {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Generating PDF to share...'), duration: Duration(seconds: 1)),
+                );
+                try {
+                  final pdfService = ref.read(pdfServiceProvider);
+                  await pdfService.shareMergedBillingInvoicesPdf(
+                    response.billingInvoices,
+                    'CashInvoices_Report_$label',
+                  );
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to share PDF: $e'), backgroundColor: AppColors.error),
+                    );
+                  }
+                }
+              },
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.print_outlined),
+              label: const Text('Print/Save'),
+              onPressed: () async {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Generating PDF...'), duration: Duration(seconds: 1)),
+                );
+                try {
+                  final pdfService = ref.read(pdfServiceProvider);
+                  await pdfService.printOrSaveMergedBillingInvoicesPdf(
+                    response.billingInvoices,
+                    'CashInvoices_Report_$label',
+                  );
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to generate PDF: $e'), backgroundColor: AppColors.error),
+                    );
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error generating report: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase().replaceAll('_', ' ')) {
+      case 'paid':
+        return AppColors.success;
+      case 'partially paid':
+        return AppColors.warning;
+      case 'unpaid':
+      default:
+        return AppColors.error;
+    }
   }
 
   @override
@@ -32,6 +234,11 @@ class _BillingInvoicesScreenState extends ConsumerState<BillingInvoicesScreen> {
         title: const Text('Cash Invoices'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.summarize_outlined),
+            onPressed: _showReportOptionsSheet,
+            tooltip: 'Generate Merged PDF Report',
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => notifier.refresh(),
           ),
@@ -40,8 +247,10 @@ class _BillingInvoicesScreenState extends ConsumerState<BillingInvoicesScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/create-billing-invoice'),
         icon: const Icon(Icons.add),
-        label: const Text('Create Cash Invoice'),
+        backgroundColor: AppColors.primary,
+        label: const Text('Create Cash Invoice', style: TextStyle(color: Colors.white)),
       ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: -1),
       body: Column(
         children: [
           Padding(
@@ -71,7 +280,7 @@ class _BillingInvoicesScreenState extends ConsumerState<BillingInvoicesScreen> {
             ),
           ),
           Expanded(
-            child: state.isLoading
+            child: state.isLoading && state.billingInvoices.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : state.error != null
                     ? Center(
@@ -92,44 +301,26 @@ class _BillingInvoicesScreenState extends ConsumerState<BillingInvoicesScreen> {
                         : RefreshIndicator(
                             onRefresh: () => notifier.refresh(),
                             child: ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 80),
                               itemCount: state.billingInvoices.length,
                               itemBuilder: (context, index) {
                                 final invoice = state.billingInvoices[index];
-                                return Card(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  child: ListTile(
-                                    contentPadding: const EdgeInsets.all(16),
-                                    title: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          invoice.invoiceNumber ?? 'BILL-XXXX',
-                                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
-                                        ),
-                                        Text(
-                                          '₹${invoice.totalAmount?.toStringAsFixed(2) ?? '0.00'}',
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                        ),
-                                      ],
-                                    ),
-                                    subtitle: Padding(
-                                      padding: const EdgeInsets.only(top: 8),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(invoice.billTo.customerName, style: const TextStyle(fontWeight: FontWeight.w500)),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            DateFormat('dd-MM-yyyy').format(invoice.invoiceDate),
-                                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    onTap: () => context.push('/billing-invoice-details/${invoice.id}', extra: invoice),
-                                  ),
+                                final rawStatus = invoice.paymentStatus.replaceAll('_', ' ').toLowerCase();
+                                final statusText = rawStatus == 'paid'
+                                    ? 'Paid'
+                                    : (rawStatus == 'partially paid' ? 'Partially Paid' : 'Unpaid');
+
+                                final statusColor = _getStatusColor(rawStatus);
+
+                                return DocumentCard(
+                                  documentNumber: invoice.invoiceNumber ?? 'BILL-XXXX',
+                                  customerName: invoice.billTo.customerName,
+                                  formattedDate: DateFormat('dd MMM yyyy').format(invoice.invoiceDate),
+                                  documentType: DocumentType.agreement,
+                                  statusText: statusText,
+                                  isPending: statusText == 'Unpaid',
+                                  amount: '₹${(invoice.totalAmount ?? 0).toStringAsFixed(2)}',
+                                  onTap: () => context.push('/billing-invoice-details/${invoice.id}', extra: invoice),
                                 );
                               },
                             ),

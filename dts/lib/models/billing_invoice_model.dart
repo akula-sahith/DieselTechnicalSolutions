@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'estimate_model.dart';
 import 'tax_invoice_model.dart';
+import 'profit_details_model.dart';
 
 class BillingItem {
   final String itemName;
@@ -65,6 +66,7 @@ class BillingInvoiceModel {
   
   final EstimatePaymentData? paymentData;
   final BankDetails? companyBankDetails;
+  final ProfitDetails? profitDetails;
 
   BillingInvoiceModel({
     this.id,
@@ -92,6 +94,7 @@ class BillingInvoiceModel {
     this.subtotal,
     this.paymentData,
     this.companyBankDetails,
+    this.profitDetails,
   });
 
   factory BillingInvoiceModel.fromJson(Map<String, dynamic> json) {
@@ -116,6 +119,11 @@ class BillingInvoiceModel {
     final paymentsList = paymentsRaw != null
         ? paymentsRaw.map((e) => InvoicePaymentHistory.fromJson(e as Map<String, dynamic>)).toList()
         : <InvoicePaymentHistory>[];
+
+    ProfitDetails? profitDetailsObj;
+    if (docJson['profitDetails'] != null) {
+      profitDetailsObj = ProfitDetails.fromJson(docJson['profitDetails']);
+    }
 
     return BillingInvoiceModel(
       id: docJson['_id'] ?? docJson['id'],
@@ -153,6 +161,7 @@ class BillingInvoiceModel {
       subtotal: (docJson['subtotal'] as num?)?.toDouble(),
       paymentData: paymentData,
       companyBankDetails: companyBankDetailsObj,
+      profitDetails: profitDetailsObj,
     );
   }
 
@@ -164,6 +173,7 @@ class BillingInvoiceModel {
       'receivedAmount': receivedAmount,
       'discountType': discountType,
       'discountValue': discountValue,
+      if (profitDetails != null) 'profitDetails': profitDetails!.toJson(),
     };
 
     if (id != null) map['id'] = id;

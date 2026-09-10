@@ -36,6 +36,8 @@ class BillingInvoiceRepository {
     String search = '',
     String dateFrom = '',
     String dateTo = '',
+    String paymentStatus = '',
+    bool all = false,
   }) async {
     try {
       final queryParams = <String, dynamic>{
@@ -43,11 +45,17 @@ class BillingInvoiceRepository {
         'limit': limit,
         'search': search,
       };
+      if (all) {
+        queryParams['all'] = 'true';
+      }
       if (dateFrom.isNotEmpty) {
         queryParams['dateFrom'] = dateFrom;
       }
       if (dateTo.isNotEmpty) {
         queryParams['dateTo'] = dateTo;
+      }
+      if (paymentStatus.isNotEmpty) {
+        queryParams['paymentStatus'] = paymentStatus;
       }
 
       final response = await _apiService.get(

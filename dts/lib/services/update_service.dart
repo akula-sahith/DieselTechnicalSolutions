@@ -8,17 +8,23 @@ class UpdateService {
 
   UpdateService(this._versionService);
 
-  Future<AppVersion?> checkForUpdate() async {
+  Future<PlatformVersion?> checkForUpdate() async {
     try {
-      final serverVersion = await _versionService.getLatestVersion();
+      final serverAppVersion = await _versionService.getLatestVersion();
+      final platformVersion = serverAppVersion.getForCurrentPlatform();
 
       final packageInfo = await PackageInfo.fromPlatform();
 
       final installedBuild = int.tryParse(packageInfo.buildNumber) ?? 0;
       final installedVersion = packageInfo.version;
 
-      if (_isUpdateAvailable(serverVersion.latestVersion, serverVersion.buildNumber, installedVersion, installedBuild)) {
-        return serverVersion;
+      if (_isUpdateAvailable(
+        platformVersion.version,
+        platformVersion.buildNumber,
+        installedVersion,
+        installedBuild,
+      )) {
+        return platformVersion;
       }
 
       return null;

@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/app_version.dart';
 import '../widgets/update_dialog.dart';
 import '../services/apk_download_service.dart';
@@ -47,7 +50,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
     final startTime = DateTime.now();
 
     final UpdateService updateService = ref.read(updateServiceProvider);
-    final AppVersion? update = await updateService.checkForUpdate();
+    final PlatformVersion? update = await updateService.checkForUpdate();
 
     if (!mounted) return;
 
@@ -59,59 +62,69 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
 
       if (!mounted) return;
 
-      if (shouldUpdate) {
-        _downloadProgress.value = 0.0;
+      if (shouldUpdate && update.downloadUrl != null && update.downloadUrl!.isNotEmpty) {
+        if (!kIsWeb && Platform.isWindows) {
+          try {
+            final uri = Uri.parse(update.downloadUrl!);
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } catch (e) {
+            print("Windows update URL launch failed: $e");
+          }
+        } else {
+          // Mobile / Android update flow
+          _downloadProgress.value = 0.0;
 
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => DownloadProgressDialog(
-            progress: _downloadProgress,
-          ),
-        );
-
-        final ApkDownloadService downloadService = ref.read(apkDownloadServiceProvider);
-        
-        try {
-          final filePath = await downloadService.downloadApk(
-            apkUrl: update.apkUrl,
-            onProgress: (progress) {
-              if (mounted) {
-                _downloadProgress.value = progress;
-              }
-            },
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => DownloadProgressDialog(
+              progress: _downloadProgress,
+            ),
           );
 
-          if (mounted) {
-            Navigator.of(context, rootNavigator: true).pop();
-          }
-
-          await downloadService.installApk(filePath);
-          return;
-        } catch (e) {
-          print("Update download or install failed: $e");
-          if (mounted) {
-            Navigator.of(context, rootNavigator: true).pop();
-            await showDialog(
-              context: context,
-              builder: (errContext) => AlertDialog(
-                title: const Text("Update Failed"),
-                content: Text(
-                  update.forceUpdate
-                      ? "The required update could not be downloaded or installed. Please check your internet connection and try again."
-                      : "The update could not be downloaded or installed. Continuing to the application.",
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(errContext),
-                    child: const Text("OK"),
-                  ),
-                ],
-              ),
+          final ApkDownloadService downloadService = ref.read(apkDownloadServiceProvider);
+          
+          try {
+            final filePath = await downloadService.downloadApk(
+              apkUrl: update.downloadUrl!,
+              onProgress: (progress) {
+                if (mounted) {
+                  _downloadProgress.value = progress;
+                }
+              },
             );
 
-            if (update.forceUpdate) {
-              return;
+            if (mounted) {
+              Navigator.of(context, rootNavigator: true).pop();
+            }
+
+            await downloadService.installApk(filePath);
+            return;
+          } catch (e) {
+            print("Update download or install failed: $e");
+            if (mounted) {
+              Navigator.of(context, rootNavigator: true).pop();
+              await showDialog(
+                context: context,
+                builder: (errContext) => AlertDialog(
+                  title: const Text("Update Failed"),
+                  content: Text(
+                    update.forceUpdate
+                        ? "The required update could not be downloaded or installed. Please check your internet connection and try again."
+                        : "The update could not be downloaded or installed. Continuing to the application.",
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(errContext),
+                      child: const Text("OK"),
+                    ),
+                  ],
+                ),
+              );
+
+              if (update.forceUpdate) {
+                return;
+              }
             }
           }
         }

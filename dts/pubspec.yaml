@@ -16,7 +16,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.2.1+18
+version: 1.2.2+19
 
 environment:
   sdk: ^3.8.1
@@ -61,6 +61,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.14.3
+  msix: ^3.16.8
 
 # App Icon Configuration
 flutter_launcher_icons:
@@ -73,6 +74,15 @@ flutter_launcher_icons:
   image_path: "assets/images/logo.png"
   adaptive_icon_background: "#0B2545"
   adaptive_icon_foreground: "assets/images/logo.png"
+
+# Windows MSIX Package Configuration
+msix_config:
+  display_name: Diesel Technical Solutions
+  publisher_display_name: Diesel Technical Solutions
+  identity_name: com.dieseltechnicalsolutions.dts
+  msix_version: 1.2.2.0
+  logo_path: assets/images/logo.png
+  capabilities: internetClient
 
 
 # For information on the generic Dart part of this file, see the

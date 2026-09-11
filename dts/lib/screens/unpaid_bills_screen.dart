@@ -10,6 +10,7 @@ import '../repositories/tax_invoice_repository.dart';
 import '../repositories/billing_invoice_repository.dart';
 import '../repositories/purchase_bill_repository.dart';
 import '../widgets/bottom_nav_bar.dart';
+import '../widgets/common/adaptive_layout.dart';
 
 class UnpaidBillsScreen extends ConsumerStatefulWidget {
   const UnpaidBillsScreen({super.key});
@@ -89,8 +90,10 @@ class _UnpaidBillsScreenState extends ConsumerState<UnpaidBillsScreen> with Sing
   Widget build(BuildContext context) {
     final currencyFmt = NumberFormat.currency(symbol: '₹', decimalDigits: 2, locale: 'en_IN');
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveLayout(
+      currentRoute: '/unpaid-bills',
+      child: Scaffold(
+        backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Unpaid Bills & Receivables'),
         actions: [
@@ -230,6 +233,7 @@ class _UnpaidBillsScreenState extends ConsumerState<UnpaidBillsScreen> with Sing
                     ],
                   ),
                 ),
+      ),
     );
   }
 

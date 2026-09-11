@@ -9,6 +9,8 @@ import '../widgets/bottom_nav_bar.dart';
 import '../widgets/common/document_card.dart';
 import '../widgets/common/search_bar_widget.dart';
 import '../widgets/common/empty_state_widget.dart';
+import '../widgets/common/adaptive_layout.dart';
+import '../widgets/common/desktop_table_widget.dart';
 
 class ReportsScreen extends ConsumerStatefulWidget {
   const ReportsScreen({super.key});
@@ -72,49 +74,52 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
     final allItems = [...filteredDrafts, ...reportsState.reports];
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Service Reports'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list_rounded),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Filter feature coming soon.')),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Search Bar
-          SearchBarWidget(
-            controller: _searchController,
-            hintText: 'Search by Job Ref, Customer, Site...',
-            onChanged: _onSearchChanged,
-            onClear: () => ref.read(reportsProvider.notifier).search(''),
-          ),
-
-          // Main list area
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await reportsNotifier.refresh();
+    return AdaptiveLayout(
+      currentRoute: '/reports',
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: const Text('Service Reports'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.filter_list_rounded),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Filter feature coming soon.')),
+                );
               },
-              child: _buildListContent(reportsState, allItems),
             ),
-          ),
-        ],
+          ],
+        ),
+        body: Column(
+          children: [
+            // Search Bar
+            SearchBarWidget(
+              controller: _searchController,
+              hintText: 'Search by Job Ref, Customer, Site...',
+              onChanged: _onSearchChanged,
+              onClear: () => ref.read(reportsProvider.notifier).search(''),
+            ),
+
+            // Main list area
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await reportsNotifier.refresh();
+                },
+                child: _buildListContent(reportsState, allItems),
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          heroTag: 'create_report_fab',
+          onPressed: () => context.push('/create-report'),
+          backgroundColor: AppColors.reportOrange,
+          child: const Icon(Icons.add_rounded, color: Colors.white),
+        ),
+        bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'create_report_fab',
-        onPressed: () => context.push('/create-report'),
-        backgroundColor: AppColors.reportOrange,
-        child: const Icon(Icons.add_rounded, color: Colors.white),
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
     );
   }
 
@@ -148,6 +153,83 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             subtitle: 'Try a different search or create\nyour first service report.',
             actionLabel: 'Create Report',
             onAction: () => context.push('/create-report'),
+          ),
+        ],
+      );
+    }
+
+    if (AdaptiveLayout.isDesktop(context)) {
+      final rows = items.map((report) {
+        final isDraft = report.id == null || report.id!.isEmpty;
+        final formattedDate = DateFormat('dd MMM yyyy, hh:mm a')
+            .format(report.serviceAndCustomer.dateTime);
+        final String creatorInfo = (report.createdBy?.email != null && report.createdBy!.email.isNotEmpty)
+            ? '${report.createdBy?.name} (${report.createdBy?.email})'
+            : (report.authorization.technicianName ?? '-');
+
+        final id = report.id ?? '';
+
+        return DesktopTableRow(
+          onTap: () => context.push('/report-details/$id?draft=$isDraft'),
+          cells: [
+            Text(
+              report.serviceAndCustomer.jobRef,
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+            ),
+            Text(
+              report.serviceAndCustomer.customerName,
+              style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+            ),
+            Text(
+              formattedDate,
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: (isDraft ? AppColors.warning : AppColors.success).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                isDraft ? 'Pending Draft' : 'Completed',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: isDraft ? AppColors.warning : AppColors.success,
+                ),
+              ),
+            ),
+            Text(
+              creatorInfo,
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              overflow: TextOverflow.ellipsis,
+            ),
+            OutlinedButton(
+              onPressed: () => context.push('/report-details/$id?draft=$isDraft'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text('View', style: TextStyle(fontSize: 12)),
+            ),
+          ],
+        );
+      }).toList();
+
+      return ListView(
+        controller: _scrollController,
+        children: [
+          DesktopTableWidget(
+            columns: const [
+              DesktopTableColumn(label: 'Job Ref', flex: 2),
+              DesktopTableColumn(label: 'Customer', flex: 3),
+              DesktopTableColumn(label: 'Date & Time', flex: 2),
+              DesktopTableColumn(label: 'Status', flex: 2),
+              DesktopTableColumn(label: 'Technician', flex: 2),
+              DesktopTableColumn(label: 'Action', flex: 1),
+            ],
+            rows: rows,
           ),
         ],
       );

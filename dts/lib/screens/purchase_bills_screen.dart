@@ -10,6 +10,7 @@ import '../providers/purchase_bills_provider.dart';
 import '../repositories/purchase_bill_repository.dart';
 import '../providers/dashboard_stats_provider.dart';
 import '../services/pdf_merger_service.dart';
+import '../widgets/common/adaptive_layout.dart';
 
 class PurchaseBillsScreen extends ConsumerStatefulWidget {
   const PurchaseBillsScreen({super.key});
@@ -728,8 +729,10 @@ class _PurchaseBillsScreenState extends ConsumerState<PurchaseBillsScreen> {
     final state = ref.watch(purchaseBillsProvider);
     final notifier = ref.read(purchaseBillsProvider.notifier);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveLayout(
+      currentRoute: '/purchase-bills',
+      child: Scaffold(
+        backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(_isSelectionMode ? '${_selectedBillIds.length} Selected' : 'Purchase Bills'),
         actions: [
@@ -998,6 +1001,7 @@ class _PurchaseBillsScreenState extends ConsumerState<PurchaseBillsScreen> {
               backgroundColor: AppColors.primary,
               child: const Icon(Icons.add, color: Colors.white),
             ),
+      ),
     );
   }
 }

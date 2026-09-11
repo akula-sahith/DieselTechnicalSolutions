@@ -10,6 +10,8 @@ import '../widgets/common/search_bar_widget.dart';
 import '../widgets/common/empty_state_widget.dart';
 import '../services/pdf_service.dart';
 import '../repositories/tax_invoice_repository.dart';
+import '../widgets/common/adaptive_layout.dart';
+import '../widgets/common/desktop_table_widget.dart';
 
 class TaxInvoicesScreen extends ConsumerStatefulWidget {
   const TaxInvoicesScreen({super.key});
@@ -229,54 +231,57 @@ class _TaxInvoicesScreenState extends ConsumerState<TaxInvoicesScreen> {
     final invoicesState = ref.watch(taxInvoicesProvider);
     final invoicesNotifier = ref.read(taxInvoicesProvider.notifier);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Tax Invoices'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.summarize_outlined),
-            onPressed: _showReportOptionsSheet,
-            tooltip: 'Generate PDF Report',
-          ),
-          IconButton(
-            icon: const Icon(Icons.filter_list_rounded),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Filter feature coming soon.')),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Container(
-            color: AppColors.background,
-            child: SearchBarWidget(
-              controller: _searchController,
-              hintText: 'Search invoices...',
-              onChanged: (val) => invoicesNotifier.search(val),
-              onClear: () => invoicesNotifier.search(''),
+    return AdaptiveLayout(
+      currentRoute: '/tax-invoices',
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: const Text('Tax Invoices'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.summarize_outlined),
+              onPressed: _showReportOptionsSheet,
+              tooltip: 'Generate PDF Report',
             ),
-          ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await invoicesNotifier.refresh();
+            IconButton(
+              icon: const Icon(Icons.filter_list_rounded),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Filter feature coming soon.')),
+                );
               },
-              child: _buildListContent(invoicesState),
             ),
-          ),
-        ],
+          ],
+        ),
+        body: Column(
+          children: [
+            Container(
+              color: AppColors.background,
+              child: SearchBarWidget(
+                controller: _searchController,
+                hintText: 'Search invoices...',
+                onChanged: (val) => invoicesNotifier.search(val),
+                onClear: () => invoicesNotifier.search(''),
+              ),
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await invoicesNotifier.refresh();
+                },
+                child: _buildListContent(invoicesState),
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          heroTag: 'create_invoice_fab',
+          onPressed: () => context.push('/create-tax-invoice'),
+          backgroundColor: AppColors.primary,
+          child: const Icon(Icons.add_rounded, color: Colors.white),
+        ),
+        bottomNavigationBar: const CustomBottomNavBar(currentIndex: -1),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'create_invoice_fab',
-        onPressed: () => context.push('/create-tax-invoice'),
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add_rounded, color: Colors.white),
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: -1),
     );
   }
 
@@ -315,6 +320,85 @@ class _TaxInvoicesScreenState extends ConsumerState<TaxInvoicesScreen> {
       );
     }
 
+    if (AdaptiveLayout.isDesktop(context)) {
+      final rows = state.taxInvoices.map((invoice) {
+        final formattedDate = DateFormat('dd MMM yyyy').format(invoice.invoiceDate);
+        final paymentStatus = invoice.paymentDetails?.status ??
+            (invoice.paymentStatus.replaceAll('_', ' ').toLowerCase() == 'paid'
+                ? 'Paid'
+                : (invoice.paymentStatus.replaceAll('_', ' ').toLowerCase() == 'partially paid'
+                    ? 'Partially Paid'
+                    : 'Unpaid'));
+        final id = invoice.id ?? '';
+
+        final isPaid = paymentStatus == 'Paid';
+        final isPartial = paymentStatus == 'Partially Paid';
+
+        return DesktopTableRow(
+          onTap: () => context.push('/tax-invoice-details/$id', extra: invoice),
+          cells: [
+            Text(
+              invoice.invoiceNumber ?? 'Pending',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+            ),
+            Text(
+              invoice.billTo.customerName,
+              style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+            ),
+            Text(
+              formattedDate,
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            Text(
+              '₹${(invoice.totalAmount ?? 0).toStringAsFixed(2)}',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: (isPaid ? AppColors.success : (isPartial ? AppColors.warning : AppColors.error)).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                paymentStatus,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: isPaid ? AppColors.success : (isPartial ? AppColors.warning : AppColors.error),
+                ),
+              ),
+            ),
+            OutlinedButton(
+              onPressed: () => context.push('/tax-invoice-details/$id', extra: invoice),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text('View', style: TextStyle(fontSize: 12)),
+            ),
+          ],
+        );
+      }).toList();
+
+      return ListView(
+        controller: _scrollController,
+        children: [
+          DesktopTableWidget(
+            columns: const [
+              DesktopTableColumn(label: 'Invoice #', flex: 2),
+              DesktopTableColumn(label: 'Customer', flex: 3),
+              DesktopTableColumn(label: 'Date', flex: 2),
+              DesktopTableColumn(label: 'Amount', flex: 2),
+              DesktopTableColumn(label: 'Payment Status', flex: 2),
+              DesktopTableColumn(label: 'Action', flex: 1),
+            ],
+            rows: rows,
+          ),
+        ],
+      );
+    }
+
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.only(top: 4, bottom: 80),
@@ -340,7 +424,7 @@ class _TaxInvoicesScreenState extends ConsumerState<TaxInvoicesScreen> {
           documentNumber: invoice.invoiceNumber ?? 'Pending',
           customerName: invoice.billTo.customerName,
           formattedDate: formattedDate,
-          documentType: DocumentType.agreement, // Reuse agreement style for invoice
+          documentType: DocumentType.agreement,
           statusText: paymentStatus,
           isPending: paymentStatus == 'Unpaid',
           amount: '₹${(invoice.totalAmount ?? 0).toStringAsFixed(2)}',

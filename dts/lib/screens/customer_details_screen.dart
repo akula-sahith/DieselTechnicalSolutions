@@ -7,6 +7,7 @@ import '../models/customer_model.dart';
 import '../repositories/customer_repository.dart';
 import '../widgets/common/section_header.dart';
 import '../widgets/common/document_card.dart';
+import '../widgets/common/adaptive_layout.dart';
 
 class CustomerDetailsScreen extends ConsumerStatefulWidget {
   final String customerId;
@@ -93,8 +94,10 @@ class _CustomerDetailsScreenState extends ConsumerState<CustomerDetailsScreen> w
 
     final customer = _customer!;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveLayout(
+      currentRoute: '/customers',
+      child: Scaffold(
+        backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,6 +154,7 @@ class _CustomerDetailsScreenState extends ConsumerState<CustomerDetailsScreen> w
           _buildInvoicesTab(customer),
         ],
       ),
+    ),
     );
   }
 

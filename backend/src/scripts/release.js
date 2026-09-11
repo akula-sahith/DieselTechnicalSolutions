@@ -31,7 +31,10 @@ const run = async () => {
       await ask("Build Number (e.g. 2): ")
     );
 
-    const apkUrl = await ask("APK URL: ");
+    const apkUrl = await ask("Android APK URL: ");
+
+    const windowsDownloadUrlInput = await ask("Windows Installer URL (optional, press ENTER to skip): ");
+    const windowsDownloadUrl = windowsDownloadUrlInput.trim() ? windowsDownloadUrlInput.trim() : null;
 
     const forceUpdate =
       (
@@ -54,21 +57,23 @@ const run = async () => {
 
     let version = await AppVersion.findOne();
 
-    if (!version) {
-      version = await AppVersion.create({
-        latestVersion,
-        buildNumber,
-        apkUrl,
-        forceUpdate,
-        releaseNotes,
-      });
-    } else {
-      version.latestVersion = latestVersion;
-      version.buildNumber = buildNumber;
-      version.apkUrl = apkUrl;
-      version.forceUpdate = forceUpdate;
-      version.releaseNotes = releaseNotes;
+    const payload = {
+      latestVersion,
+      buildNumber,
+      apkUrl,
+      forceUpdate,
+      releaseNotes,
+      windowsVersion: latestVersion,
+      windowsBuildNumber: buildNumber,
+      windowsDownloadUrl,
+      windowsForceUpdate: forceUpdate,
+      windowsReleaseNotes: releaseNotes,
+    };
 
+    if (!version) {
+      version = await AppVersion.create(payload);
+    } else {
+      Object.assign(version, payload);
       await version.save();
     }
 

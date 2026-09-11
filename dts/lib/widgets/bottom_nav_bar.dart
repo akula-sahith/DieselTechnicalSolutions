@@ -413,6 +413,10 @@ class CustomBottomNavBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (MediaQuery.of(context).size.width >= 800) {
+      return const SizedBox.shrink();
+    }
+
     final authState = ref.watch(authProvider);
 
     return Container(

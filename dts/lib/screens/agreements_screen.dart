@@ -8,6 +8,8 @@ import '../widgets/bottom_nav_bar.dart';
 import '../widgets/common/document_card.dart';
 import '../widgets/common/search_bar_widget.dart';
 import '../widgets/common/empty_state_widget.dart';
+import '../widgets/common/adaptive_layout.dart';
+import '../widgets/common/desktop_table_widget.dart';
 
 class AgreementsScreen extends ConsumerStatefulWidget {
   const AgreementsScreen({super.key});
@@ -52,69 +54,72 @@ class _AgreementsScreenState extends ConsumerState<AgreementsScreen> {
     final agreementsState = ref.watch(agreementsProvider);
     final agreementsNotifier = ref.read(agreementsProvider.notifier);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('AMC Proposals'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list_rounded),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Filter feature coming soon.')),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Search + Filter Area
-          Container(
-            color: AppColors.background,
-            child: Column(
-              children: [
-                SearchBarWidget(
-                  controller: _searchController,
-                  hintText: 'Search agreements & quotations...',
-                  onChanged: (val) => agreementsNotifier.search(val),
-                  onClear: () => agreementsNotifier.search(''),
-                ),
-                // Document Type Filter Chips
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Row(
-                    children: [
-                      _buildFilterChip('All', ''),
-                      const SizedBox(width: 8),
-                      _buildFilterChip('Agreements', 'Agreement'),
-                      const SizedBox(width: 8),
-                      _buildFilterChip('Quotations', 'Quotation'),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Main list area
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await agreementsNotifier.refresh();
+    return AdaptiveLayout(
+      currentRoute: '/agreements',
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: const Text('AMC Proposals'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.filter_list_rounded),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Filter feature coming soon.')),
+                );
               },
-              child: _buildListContent(agreementsState),
             ),
-          ),
-        ],
+          ],
+        ),
+        body: Column(
+          children: [
+            // Search + Filter Area
+            Container(
+              color: AppColors.background,
+              child: Column(
+                children: [
+                  SearchBarWidget(
+                    controller: _searchController,
+                    hintText: 'Search agreements & quotations...',
+                    onChanged: (val) => agreementsNotifier.search(val),
+                    onClear: () => agreementsNotifier.search(''),
+                  ),
+                  // Document Type Filter Chips
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Row(
+                      children: [
+                        _buildFilterChip('All', ''),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('Agreements', 'Agreement'),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('Quotations', 'Quotation'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Main list area
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await agreementsNotifier.refresh();
+                },
+                child: _buildListContent(agreementsState),
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          heroTag: 'create_agreement_fab',
+          onPressed: () => context.push('/create-agreement'),
+          backgroundColor: AppColors.agreementGreen,
+          child: const Icon(Icons.add_rounded, color: Colors.white),
+        ),
+        bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'create_agreement_fab',
-        onPressed: () => context.push('/create-agreement'),
-        backgroundColor: AppColors.agreementGreen,
-        child: const Icon(Icons.add_rounded, color: Colors.white),
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
     );
   }
 
@@ -190,6 +195,77 @@ class _AgreementsScreenState extends ConsumerState<AgreementsScreen> {
             subtitle: 'Create your first AMC agreement\nor quotation to get started.',
             actionLabel: 'Create Proposal',
             onAction: () => context.push('/create-agreement'),
+          ),
+        ],
+      );
+    }
+
+    if (AdaptiveLayout.isDesktop(context)) {
+      final rows = allItems.map((agreement) {
+        final isDraft = agreement.status == 'draft';
+        final formattedDate = DateFormat('dd MMM yyyy').format(agreement.date);
+        final id = agreement.id ?? '';
+
+        return DesktopTableRow(
+          onTap: () => context.push('/agreement-details/$id?draft=$isDraft'),
+          cells: [
+            Text(
+              agreement.offerNumber ?? 'Offer # Pending',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+            ),
+            Text(
+              agreement.customerName,
+              style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: (agreement.documentType == 'Agreement' ? AppColors.agreementGreen : AppColors.quotationBlue).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                agreement.documentType,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: agreement.documentType == 'Agreement' ? AppColors.agreementGreen : AppColors.quotationBlue,
+                ),
+              ),
+            ),
+            Text(
+              formattedDate,
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            Text(
+              '₹${agreement.grandTotal.toStringAsFixed(2)}',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            ),
+            OutlinedButton(
+              onPressed: () => context.push('/agreement-details/$id?draft=$isDraft'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text('View', style: TextStyle(fontSize: 12)),
+            ),
+          ],
+        );
+      }).toList();
+
+      return ListView(
+        controller: _scrollController,
+        children: [
+          DesktopTableWidget(
+            columns: const [
+              DesktopTableColumn(label: 'Offer #', flex: 2),
+              DesktopTableColumn(label: 'Customer', flex: 3),
+              DesktopTableColumn(label: 'Type', flex: 2),
+              DesktopTableColumn(label: 'Date', flex: 2),
+              DesktopTableColumn(label: 'Grand Total', flex: 2),
+              DesktopTableColumn(label: 'Action', flex: 1),
+            ],
+            rows: rows,
           ),
         ],
       );

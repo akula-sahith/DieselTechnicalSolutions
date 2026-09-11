@@ -8,6 +8,8 @@ import '../repositories/billing_invoice_repository.dart';
 import '../services/pdf_service.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/common/document_card.dart';
+import '../widgets/common/adaptive_layout.dart';
+import '../widgets/common/desktop_table_widget.dart';
 
 class BillingInvoicesScreen extends ConsumerStatefulWidget {
   const BillingInvoicesScreen({super.key});
@@ -228,105 +230,170 @@ class _BillingInvoicesScreenState extends ConsumerState<BillingInvoicesScreen> {
     final state = ref.watch(billingInvoicesProvider);
     final notifier = ref.read(billingInvoicesProvider.notifier);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Cash Invoices'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.summarize_outlined),
-            onPressed: _showReportOptionsSheet,
-            tooltip: 'Generate Merged PDF Report',
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => notifier.refresh(),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/create-billing-invoice'),
-        icon: const Icon(Icons.add),
-        backgroundColor: AppColors.primary,
-        label: const Text('Create Cash Invoice', style: TextStyle(color: Colors.white)),
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: -1),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: 'Search Cash Invoices...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchCtrl.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchCtrl.clear();
-                          notifier.loadBillingInvoices(search: '');
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-              ),
-              onSubmitted: (val) => notifier.loadBillingInvoices(search: val),
+    return AdaptiveLayout(
+      currentRoute: '/billing-invoices',
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: const Text('Cash Invoices'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.summarize_outlined),
+              onPressed: _showReportOptionsSheet,
+              tooltip: 'Generate Merged PDF Report',
             ),
-          ),
-          Expanded(
-            child: state.isLoading && state.billingInvoices.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : state.error != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(state.error!),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () => notifier.refresh(),
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ),
-                      )
-                    : state.billingInvoices.isEmpty
-                        ? const Center(child: Text('No Cash Invoices found.'))
-                        : RefreshIndicator(
-                            onRefresh: () => notifier.refresh(),
-                            child: ListView.builder(
-                              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 80),
-                              itemCount: state.billingInvoices.length,
-                              itemBuilder: (context, index) {
-                                final invoice = state.billingInvoices[index];
-                                final rawStatus = invoice.paymentStatus.replaceAll('_', ' ').toLowerCase();
-                                final statusText = rawStatus == 'paid'
-                                    ? 'Paid'
-                                    : (rawStatus == 'partially paid' ? 'Partially Paid' : 'Unpaid');
-
-                                final statusColor = _getStatusColor(rawStatus);
-
-                                return DocumentCard(
-                                  documentNumber: invoice.invoiceNumber ?? 'BILL-XXXX',
-                                  customerName: invoice.billTo.customerName,
-                                  formattedDate: DateFormat('dd MMM yyyy').format(invoice.invoiceDate),
-                                  documentType: DocumentType.agreement,
-                                  statusText: statusText,
-                                  isPending: statusText == 'Unpaid',
-                                  amount: '₹${(invoice.totalAmount ?? 0).toStringAsFixed(2)}',
-                                  onTap: () => context.push('/billing-invoice-details/${invoice.id}', extra: invoice),
-                                );
-                              },
-                            ),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () => notifier.refresh(),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => context.push('/create-billing-invoice'),
+          icon: const Icon(Icons.add),
+          backgroundColor: AppColors.primary,
+          label: const Text('Create Cash Invoice', style: TextStyle(color: Colors.white)),
+        ),
+        bottomNavigationBar: const CustomBottomNavBar(currentIndex: -1),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                controller: _searchCtrl,
+                decoration: InputDecoration(
+                  hintText: 'Search Cash Invoices...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchCtrl.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            notifier.loadBillingInvoices(search: '');
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                ),
+                onSubmitted: (val) => notifier.loadBillingInvoices(search: val),
+              ),
+            ),
+            Expanded(
+              child: state.isLoading && state.billingInvoices.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : state.error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(state.error!),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () => notifier.refresh(),
+                                child: const Text('Retry'),
+                              ),
+                            ],
                           ),
-          ),
-        ],
+                        )
+                      : state.billingInvoices.isEmpty
+                          ? const Center(child: Text('No Cash Invoices found.'))
+                          : RefreshIndicator(
+                              onRefresh: () => notifier.refresh(),
+                              child: AdaptiveLayout.isDesktop(context)
+                                  ? ListView(
+                                      children: [
+                                        DesktopTableWidget(
+                                          columns: const [
+                                            DesktopTableColumn(label: 'Bill #', flex: 2),
+                                            DesktopTableColumn(label: 'Customer', flex: 3),
+                                            DesktopTableColumn(label: 'Date', flex: 2),
+                                            DesktopTableColumn(label: 'Amount', flex: 2),
+                                            DesktopTableColumn(label: 'Payment Status', flex: 2),
+                                            DesktopTableColumn(label: 'Action', flex: 1),
+                                          ],
+                                          rows: state.billingInvoices.map((invoice) {
+                                            final rawStatus = invoice.paymentStatus.replaceAll('_', ' ').toLowerCase();
+                                            final statusText = rawStatus == 'paid'
+                                                ? 'Paid'
+                                                : (rawStatus == 'partially paid' ? 'Partially Paid' : 'Unpaid');
+                                            final statusColor = _getStatusColor(rawStatus);
+
+                                            return DesktopTableRow(
+                                              onTap: () => context.push('/billing-invoice-details/${invoice.id}', extra: invoice),
+                                              cells: [
+                                                Text(
+                                                  invoice.invoiceNumber ?? 'BILL-XXXX',
+                                                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                                                ),
+                                                Text(
+                                                  invoice.billTo.customerName,
+                                                  style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                                                ),
+                                                Text(
+                                                  DateFormat('dd MMM yyyy').format(invoice.invoiceDate),
+                                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                                ),
+                                                Text(
+                                                  '₹${(invoice.totalAmount ?? 0).toStringAsFixed(2)}',
+                                                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                                ),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                  decoration: BoxDecoration(
+                                                    color: statusColor.withOpacity(0.12),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  ),
+                                                  child: Text(
+                                                    statusText,
+                                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor),
+                                                  ),
+                                                ),
+                                                OutlinedButton(
+                                                  onPressed: () => context.push('/billing-invoice-details/${invoice.id}', extra: invoice),
+                                                  style: OutlinedButton.styleFrom(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                    minimumSize: Size.zero,
+                                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                  ),
+                                                  child: const Text('View', style: TextStyle(fontSize: 12)),
+                                                ),
+                                              ],
+                                            );
+                                          }).toList(),
+                                        ),
+                                      ],
+                                    )
+                                  : ListView.builder(
+                                      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 80),
+                                      itemCount: state.billingInvoices.length,
+                                      itemBuilder: (context, index) {
+                                        final invoice = state.billingInvoices[index];
+                                        final rawStatus = invoice.paymentStatus.replaceAll('_', ' ').toLowerCase();
+                                        final statusText = rawStatus == 'paid'
+                                            ? 'Paid'
+                                            : (rawStatus == 'partially paid' ? 'Partially Paid' : 'Unpaid');
+
+                                        return DocumentCard(
+                                          documentNumber: invoice.invoiceNumber ?? 'BILL-XXXX',
+                                          customerName: invoice.billTo.customerName,
+                                          formattedDate: DateFormat('dd MMM yyyy').format(invoice.invoiceDate),
+                                          documentType: DocumentType.agreement,
+                                          statusText: statusText,
+                                          isPending: statusText == 'Unpaid',
+                                          amount: '₹${(invoice.totalAmount ?? 0).toStringAsFixed(2)}',
+                                          onTap: () => context.push('/billing-invoice-details/${invoice.id}', extra: invoice),
+                                        );
+                                      },
+                                    ),
+                            ),
+            ),
+          ],
+        ),
       ),
     );
   }

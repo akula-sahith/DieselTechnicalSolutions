@@ -9,6 +9,7 @@ import '../services/pdf_service.dart';
 import '../providers/dashboard_stats_provider.dart';
 import '../providers/tax_invoices_provider.dart';
 import '../widgets/profit_calculator_dialog.dart';
+import '../widgets/common/adaptive_layout.dart';
 import 'pdf_viewer_screen.dart';
 
 class TaxInvoiceDetailsScreen extends ConsumerStatefulWidget {
@@ -275,8 +276,10 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
     final invoice = _invoice!;
     final payment = invoice.paymentDetails;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return AdaptiveLayout(
+      currentRoute: '/tax-invoices',
+      child: Scaffold(
+        backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -410,6 +413,7 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
           ),
         ],
       ),
+    ),
     );
   }
 

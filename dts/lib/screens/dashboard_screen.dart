@@ -13,6 +13,7 @@ import '../providers/dashboard_stats_provider.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/common/section_header.dart';
 import '../widgets/common/document_card.dart';
+import '../widgets/common/adaptive_layout.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -110,9 +111,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       invoicesState,
     );
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: RefreshIndicator(
+    final isDesktop = AdaptiveLayout.isDesktop(context);
+
+    return AdaptiveLayout(
+      currentRoute: '/dashboard',
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
             ref.read(dashboardStatsProvider.notifier).fetchStats(),
@@ -382,81 +387,87 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             height: 146,
                             child: Center(child: Text('Error loading stats: $err')),
                           ),
-                          data: (stats) => SizedBox(
-                            height: 146,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              physics: const BouncingScrollPhysics(),
-                              children: [
-                                SizedBox(
-                                  width: 180,
-                                  child: _buildFinancialCard(
-                                    title: "Revenue Generated",
-                                    subtitle: "Total Sales",
-                                    amount: "₹${_formatCurrency(stats.revenueGenerated)}",
-                                    icon: Icons.account_balance_wallet_outlined,
-                                    accentColor: const Color(0xFF16A34A),
-                                    bgColor: const Color(0xFFF0FDF4),
-                                    borderColor: const Color(0xFFDCFCE7),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                SizedBox(
-                                  width: 180,
-                                  child: _buildFinancialCard(
-                                    title: "Payment Received",
-                                    subtitle: "Collected Balance",
-                                    amount: "₹${_formatCurrency(stats.paymentReceived)}",
-                                    icon: Icons.check_circle_outline,
-                                    accentColor: const Color(0xFF2563EB),
-                                    bgColor: const Color(0xFFEFF6FF),
-                                    borderColor: const Color(0xFFDBEAFE),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                SizedBox(
-                                  width: 180,
-                                  child: _buildFinancialCard(
-                                    title: "Outstanding Amount",
-                                    subtitle: "Receivables",
-                                    amount: "₹${_formatCurrency(stats.outstandingAmount)}",
-                                    icon: Icons.warning_amber_rounded,
-                                    accentColor: const Color(0xFFDC2626),
-                                    bgColor: const Color(0xFFFEF2F2),
-                                    borderColor: const Color(0xFFFEE2E2),
-                                    onTap: () => context.push('/unpaid-bills'),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                SizedBox(
-                                  width: 180,
-                                  child: _buildFinancialCard(
-                                    title: "Bills Pending",
-                                    subtitle: "Unconverted Estimates",
-                                    amount: "₹${_formatCurrency(stats.estimateAmountPending)}",
-                                    icon: Icons.hourglass_top_rounded,
-                                    accentColor: const Color(0xFFFFFBEB),
-                                    bgColor: const Color(0xFFFFFBEB),
-                                    borderColor: const Color(0xFFFEF3C7),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                SizedBox(
-                                  width: 180,
-                                  child: _buildFinancialCard(
-                                    title: "Purchase Bills",
-                                    subtitle: "Supplier Bills",
-                                    amount: "₹${_formatCurrency(stats.purchaseBills)}",
-                                    icon: Icons.shopping_bag_outlined,
-                                    accentColor: const Color(0xFF7C3AED),
-                                    bgColor: const Color(0xFFF5F3FF),
-                                    borderColor: const Color(0xFFEDE9FE),
-                                    onTap: () => context.push('/purchase-bills'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          data: (stats) {
+                            final finCards = [
+                              _buildFinancialCard(
+                                title: "Revenue Generated",
+                                subtitle: "Total Sales",
+                                amount: "₹${_formatCurrency(stats.revenueGenerated)}",
+                                icon: Icons.account_balance_wallet_outlined,
+                                accentColor: const Color(0xFF16A34A),
+                                bgColor: const Color(0xFFF0FDF4),
+                                borderColor: const Color(0xFFDCFCE7),
+                              ),
+                              _buildFinancialCard(
+                                title: "Payment Received",
+                                subtitle: "Collected Balance",
+                                amount: "₹${_formatCurrency(stats.paymentReceived)}",
+                                icon: Icons.check_circle_outline,
+                                accentColor: const Color(0xFF2563EB),
+                                bgColor: const Color(0xFFEFF6FF),
+                                borderColor: const Color(0xFFDBEAFE),
+                              ),
+                              _buildFinancialCard(
+                                title: "Outstanding Amount",
+                                subtitle: "Receivables",
+                                amount: "₹${_formatCurrency(stats.outstandingAmount)}",
+                                icon: Icons.warning_amber_rounded,
+                                accentColor: const Color(0xFFDC2626),
+                                bgColor: const Color(0xFFFEF2F2),
+                                borderColor: const Color(0xFFFEE2E2),
+                                onTap: () => context.push('/unpaid-bills'),
+                              ),
+                              _buildFinancialCard(
+                                title: "Bills Pending",
+                                subtitle: "Unconverted Estimates",
+                                amount: "₹${_formatCurrency(stats.estimateAmountPending)}",
+                                icon: Icons.hourglass_top_rounded,
+                                accentColor: const Color(0xFFD97706),
+                                bgColor: const Color(0xFFFFFBEB),
+                                borderColor: const Color(0xFFFEF3C7),
+                              ),
+                              _buildFinancialCard(
+                                title: "Purchase Bills",
+                                subtitle: "Supplier Bills",
+                                amount: "₹${_formatCurrency(stats.purchaseBills)}",
+                                icon: Icons.shopping_bag_outlined,
+                                accentColor: const Color(0xFF7C3AED),
+                                bgColor: const Color(0xFFF5F3FF),
+                                borderColor: const Color(0xFFEDE9FE),
+                                onTap: () => context.push('/purchase-bills'),
+                              ),
+                            ];
+
+                            if (isDesktop) {
+                              return Row(
+                                children: finCards
+                                    .map((card) => Expanded(
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(right: 12),
+                                            child: card,
+                                          ),
+                                        ))
+                                    .toList(),
+                              );
+                            }
+
+                            return SizedBox(
+                              height: 146,
+                              child: ListView(
+                                scrollDirection: Axis.horizontal,
+                                physics: const BouncingScrollPhysics(),
+                                children: finCards
+                                    .map((card) => SizedBox(
+                                          width: 180,
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(right: 12),
+                                            child: card,
+                                          ),
+                                        ))
+                                    .toList(),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -483,8 +494,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       GridView.count(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        childAspectRatio: 2.1,
+                        crossAxisCount: isDesktop ? 4 : 2,
+                        childAspectRatio: isDesktop ? 2.8 : 2.1,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 10,
                         children: [
@@ -607,6 +618,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       ),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
+    ),
     );
   }
 

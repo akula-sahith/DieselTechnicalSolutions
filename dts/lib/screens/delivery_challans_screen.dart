@@ -8,6 +8,8 @@ import '../widgets/bottom_nav_bar.dart';
 import '../widgets/common/document_card.dart';
 import '../widgets/common/search_bar_widget.dart';
 import '../widgets/common/empty_state_widget.dart';
+import '../widgets/common/adaptive_layout.dart';
+import '../widgets/common/desktop_table_widget.dart';
 
 class DeliveryChallansScreen extends ConsumerStatefulWidget {
   const DeliveryChallansScreen({super.key});
@@ -54,39 +56,42 @@ class _DeliveryChallansScreenState
     final challansState = ref.watch(deliveryChallansProvider);
     final challansNotifier = ref.read(deliveryChallansProvider.notifier);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Delivery Challans'),
-      ),
-      body: Column(
-        children: [
-          Container(
-            color: AppColors.background,
-            child: SearchBarWidget(
-              controller: _searchController,
-              hintText: 'Search challans, customers, vehicles...',
-              onChanged: (val) => challansNotifier.search(val),
-              onClear: () => challansNotifier.search(''),
+    return AdaptiveLayout(
+      currentRoute: '/delivery-challans',
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: const Text('Delivery Challans'),
+        ),
+        body: Column(
+          children: [
+            Container(
+              color: AppColors.background,
+              child: SearchBarWidget(
+                controller: _searchController,
+                hintText: 'Search challans, customers, vehicles...',
+                onChanged: (val) => challansNotifier.search(val),
+                onClear: () => challansNotifier.search(''),
+              ),
             ),
-          ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await challansNotifier.refresh();
-              },
-              child: _buildListContent(challansState),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await challansNotifier.refresh();
+                },
+                child: _buildListContent(challansState),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          heroTag: 'create_challan_fab',
+          onPressed: () => context.push('/create-delivery-challan'),
+          backgroundColor: AppColors.primary,
+          child: const Icon(Icons.add_rounded, color: Colors.white),
+        ),
+        bottomNavigationBar: const CustomBottomNavBar(currentIndex: -1),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'create_challan_fab',
-        onPressed: () => context.push('/create-delivery-challan'),
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add_rounded, color: Colors.white),
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: -1),
     );
   }
 
@@ -121,6 +126,72 @@ class _DeliveryChallansScreenState
             subtitle: 'Create a delivery challan or convert from an estimate.',
             actionLabel: 'Create Challan',
             onAction: () => context.push('/create-delivery-challan'),
+          ),
+        ],
+      );
+    }
+
+    if (AdaptiveLayout.isDesktop(context)) {
+      final rows = state.deliveryChallans.map((challan) {
+        final formattedDate = DateFormat('dd MMM yyyy').format(challan.challanDate);
+        final id = challan.id ?? '';
+
+        return DesktopTableRow(
+          onTap: () => context.push('/delivery-challan-details/$id', extra: challan),
+          cells: [
+            Text(
+              'Challan No. ${challan.challanNumber ?? ''}',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+            ),
+            Text(
+              challan.deliveryChallanFor.customerName,
+              style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+            ),
+            Text(
+              formattedDate,
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            Text(
+              'Qty: ${challan.totalQuantity}',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                challan.status.toUpperCase(),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+              ),
+            ),
+            OutlinedButton(
+              onPressed: () => context.push('/delivery-challan-details/$id', extra: challan),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text('View', style: TextStyle(fontSize: 12)),
+            ),
+          ],
+        );
+      }).toList();
+
+      return ListView(
+        controller: _scrollController,
+        children: [
+          DesktopTableWidget(
+            columns: const [
+              DesktopTableColumn(label: 'Challan #', flex: 2),
+              DesktopTableColumn(label: 'Customer', flex: 3),
+              DesktopTableColumn(label: 'Date', flex: 2),
+              DesktopTableColumn(label: 'Total Qty', flex: 2),
+              DesktopTableColumn(label: 'Status', flex: 2),
+              DesktopTableColumn(label: 'Action', flex: 1),
+            ],
+            rows: rows,
           ),
         ],
       );

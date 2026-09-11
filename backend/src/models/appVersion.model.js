@@ -29,6 +29,34 @@ const appVersionSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+
+    // Windows Desktop platform metadata
+    windowsVersion: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    windowsBuildNumber: {
+      type: Number,
+      default: null,
+    },
+
+    windowsDownloadUrl: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    windowsForceUpdate: {
+      type: Boolean,
+      default: false,
+    },
+
+    windowsReleaseNotes: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,

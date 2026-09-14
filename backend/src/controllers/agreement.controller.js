@@ -26,14 +26,25 @@ const buildDescriptionItems = (items = []) => {
 };
 
 const generateOfferNumber = async () => {
-  const latestAgreement = await Agreement.findOne().sort({ createdAt: -1 }).select('offerNumber').lean();
+  const docs = await Agreement.find({}).select('offerNumber').lean();
 
-  if (!latestAgreement?.offerNumber) {
+  if (!docs || docs.length === 0) {
     return formatOfferNumber(1);
   }
 
-  const currentSequence = Number(latestAgreement.offerNumber.split('/').pop());
-  return formatOfferNumber(Number.isNaN(currentSequence) ? 1 : currentSequence + 1);
+  let maxSequence = 0;
+  for (const doc of docs) {
+    if (doc.offerNumber) {
+      const parts = String(doc.offerNumber).split('/');
+      const lastPart = parts[parts.length - 1];
+      const seq = Number(lastPart);
+      if (!Number.isNaN(seq) && seq > maxSequence) {
+        maxSequence = seq;
+      }
+    }
+  }
+
+  return formatOfferNumber(maxSequence + 1);
 };
 
 export const createAgreement = async (req, res) => {
@@ -312,3 +323,25 @@ export const deleteAgreement = async (req, res) => {
     return sendError(res, 'Failed to delete agreement.', { details: error.message }, 500);
   }
 };
+
+export const convertToAgreement = async (req, res) => {
+  try {
+    const agreement = await Agreement.findById(req.params.id);
+
+    if (!agreement) {
+      return sendError(res, 'AMC document not found.', {}, 404);
+    }
+
+    if (agreement.documentType === 'Agreement') {
+      return sendError(res, 'This document is already an Agreement.', {}, 400);
+    }
+
+    agreement.documentType = 'Agreement';
+    await agreement.save();
+
+    return sendSuccess(res, 'Quotation converted to Agreement successfully.', agreement);
+  } catch (error) {
+    return sendError(res, 'Failed to convert quotation to agreement.', { details: error.message }, 500);
+  }
+};
+

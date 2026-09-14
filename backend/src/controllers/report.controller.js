@@ -1,6 +1,7 @@
 import Report from '../models/report.model.js';
 import uploadToCloudinary from '../services/upload.service.js';
 import { sendSuccess, sendError } from '../utils/response.js';
+import { sendServiceReportCreatedEmail } from '../services/email.service.js';
 
 const buildChecklist = (items = []) => {
   return items.map((item) => ({
@@ -68,6 +69,7 @@ export const createReport = async (req, res) => {
 
     const reportDocument = {
       status,
+      reportType: reportData.reportType || 'General Visit',
       createdBy,
       serviceAndCustomer: {
         jobRef:
@@ -161,6 +163,11 @@ export const createReport = async (req, res) => {
     };
 
     const report = await Report.create(reportDocument);
+
+    // Send email notification via Resend
+    sendServiceReportCreatedEmail(report).catch((err) => {
+      console.error('[Service Report Email Trigger Error]', err);
+    });
 
     return sendSuccess(
       res,

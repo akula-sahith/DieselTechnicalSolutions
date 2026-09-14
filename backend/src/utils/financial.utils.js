@@ -186,15 +186,26 @@ export const calculateBillingTotals = (items = [], discount = {}) => {
 };
 
 export const generateNextSequence = async (Model, fieldName = 'estimateNumber') => {
-  const latest = await Model.findOne().sort({ createdAt: -1 }).select(fieldName).lean();
+  const docs = await Model.find({}).select(fieldName).lean();
 
-  if (!latest?.[fieldName]) {
+  if (!docs || docs.length === 0) {
     return 1;
   }
 
-  const lastNumber = latest[fieldName];
-  const sequence = Number(lastNumber.split('-').pop());
-  return Number.isNaN(sequence) ? 1 : sequence + 1;
+  let maxSequence = 0;
+  for (const doc of docs) {
+    const val = doc[fieldName];
+    if (val) {
+      const parts = String(val).split(/[-/]/);
+      const lastPart = parts[parts.length - 1];
+      const seq = Number(lastPart);
+      if (!Number.isNaN(seq) && seq > maxSequence) {
+        maxSequence = seq;
+      }
+    }
+  }
+
+  return maxSequence + 1;
 };
 
 export const calculatePaymentDetails = (totalAmount, amountReceived = 0) => {

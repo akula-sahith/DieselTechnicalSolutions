@@ -227,6 +227,7 @@ const taxInvoiceSchema = new mongoose.Schema(
     profitDetails: {
       netProfit: { type: Number, default: 0 },
       totalCost: { type: Number, default: 0 },
+      transportationFee: { type: Number, default: 0 },
       profitMargin: { type: Number, default: 0 },
       calculatedAt: { type: Date },
       items: [

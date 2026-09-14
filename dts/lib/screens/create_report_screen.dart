@@ -325,7 +325,9 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildSectionHeader('1. SERVICE & CUSTOMER DETAILS'),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
+        _buildReportTypeSelector(state, notifier),
+        const SizedBox(height: 16),
         TextFormField(
           controller: _jobRefCtrl,
           decoration: const InputDecoration(
@@ -374,6 +376,99 @@ class _CreateReportScreenState extends ConsumerState<CreateReportScreen> {
           onChanged: notifier.updateContactNumber,
         ),
       ],
+    );
+  }
+
+  Widget _buildReportTypeSelector(ReportWizardState state, ReportWizardNotifier notifier) {
+    final types = [
+      {'title': 'General Visit', 'icon': Icons.build_circle_outlined},
+      {'title': 'Annual Maintenance', 'icon': Icons.calendar_today_rounded},
+      {'title': 'Oil Service', 'icon': Icons.oil_barrel_outlined},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Service Report Type *',
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 8),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth > 600;
+            return isDesktop
+                ? Row(
+                    children: types.map((item) {
+                      final title = item['title'] as String;
+                      final icon = item['icon'] as IconData;
+                      final isSelected = state.reportType == title;
+                      return Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: _buildTypeCard(title, icon, isSelected, () => notifier.updateReportType(title)),
+                        ),
+                      );
+                    }).toList(),
+                  )
+                : Column(
+                    children: types.map((item) {
+                      final title = item['title'] as String;
+                      final icon = item['icon'] as IconData;
+                      final isSelected = state.reportType == title;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: _buildTypeCard(title, icon, isSelected, () => notifier.updateReportType(title)),
+                      );
+                    }).toList(),
+                  );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTypeCard(String title, IconData icon, bool isSelected, VoidCallback onTap) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : AppColors.border,
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              if (isSelected)
+                const Icon(Icons.check_circle_rounded, size: 18, color: AppColors.primary),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

@@ -162,6 +162,53 @@ class _AgreementDetailsScreenState extends ConsumerState<AgreementDetailsScreen>
     }
   }
 
+  void _convertToAgreement() async {
+    if (_agreement == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Convert to AMC Agreement'),
+        content: const Text('Are you sure you want to convert this AMC Quotation into an AMC Agreement?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.agreementGreen),
+            child: const Text('Convert'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Converting quotation to agreement...')),
+      );
+      try {
+        final repo = ref.read(agreementRepositoryProvider);
+        final updated = await repo.convertToAgreement(widget.agreementId);
+        ref.read(agreementsProvider.notifier).refresh();
+        if (mounted) {
+          setState(() {
+            _agreement = updated;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Converted to AMC Agreement successfully!'), backgroundColor: AppColors.success),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to convert: $e'), backgroundColor: AppColors.error),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -195,6 +242,7 @@ class _AgreementDetailsScreenState extends ConsumerState<AgreementDetailsScreen>
     }
 
     final agreement = _agreement!;
+    final isQuotation = agreement.documentType == 'Quotation';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -218,6 +266,7 @@ class _AgreementDetailsScreenState extends ConsumerState<AgreementDetailsScreen>
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert_rounded),
             onSelected: (value) {
+              if (value == 'convert') _convertToAgreement();
               if (value == 'download') _downloadPdf();
               if (value == 'share') _sharePdf();
               if (value == 'edit') {
@@ -226,6 +275,18 @@ class _AgreementDetailsScreenState extends ConsumerState<AgreementDetailsScreen>
               if (value == 'delete') _deleteAgreement();
             },
             itemBuilder: (context) => [
+              if (isQuotation)
+                const PopupMenuItem(
+                  value: 'convert',
+                  child: Row(
+                    children: [
+                      Icon(Icons.handshake_outlined, color: AppColors.agreementGreen),
+                      SizedBox(width: 8),
+                      Text('Convert to Agreement', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.agreementGreen)),
+                    ],
+                  ),
+                ),
+              if (isQuotation) const PopupMenuDivider(),
               const PopupMenuItem(
                 value: 'edit',
                 child: Row(
@@ -340,6 +401,19 @@ class _AgreementDetailsScreenState extends ConsumerState<AgreementDetailsScreen>
                   )
                 : Row(
                     children: [
+                      if (isQuotation) ...[
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _convertToAgreement,
+                            icon: const Icon(Icons.handshake_outlined),
+                            label: const Text('Convert to Agreement'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.agreementGreen,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: _sharePdf,
@@ -347,12 +421,12 @@ class _AgreementDetailsScreenState extends ConsumerState<AgreementDetailsScreen>
                           label: const Text('Share PDF'),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: _downloadPdf,
                           icon: const Icon(Icons.download_rounded),
-                          label: const Text('Download PDF'),
+                          label: const Text('Download'),
                         ),
                       ),
                     ],

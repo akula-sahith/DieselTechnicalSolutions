@@ -385,6 +385,9 @@ class _BillingInvoicesScreenState extends ConsumerState<BillingInvoicesScreen> {
                                           documentType: DocumentType.agreement,
                                           statusText: statusText,
                                           isPending: statusText == 'Unpaid',
+                                          profitText: invoice.profitDetails != null
+                                              ? 'Profit: ₹${invoice.profitDetails!.netProfit.toStringAsFixed(0)}'
+                                              : null,
                                           amount: '₹${(invoice.totalAmount ?? 0).toStringAsFixed(2)}',
                                           onTap: () => context.push('/billing-invoice-details/${invoice.id}', extra: invoice),
                                         );

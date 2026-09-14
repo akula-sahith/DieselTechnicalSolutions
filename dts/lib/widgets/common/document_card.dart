@@ -11,6 +11,7 @@ class DocumentCard extends StatelessWidget {
   final DocumentType documentType;
   final String? statusText;
   final String? amount;
+  final String? profitText;
   final String? createdByText;
   final bool isPending;
   final VoidCallback onTap;
@@ -24,6 +25,7 @@ class DocumentCard extends StatelessWidget {
     required this.onTap,
     this.statusText,
     this.amount,
+    this.profitText,
     this.createdByText,
     this.isPending = false,
   });
@@ -168,14 +170,35 @@ class DocumentCard extends StatelessWidget {
                             ),
                           ),
                           const Spacer(),
+                          if (profitText != null) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.success.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                profitText!,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.success,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                          ],
                           if (statusText != null) _buildStatusBadge(),
                           if (amount != null)
-                            Text(
-                              amount ?? '',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.accent,
+                            Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: Text(
+                                amount ?? '',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.accent,
+                                ),
                               ),
                             ),
                         ],

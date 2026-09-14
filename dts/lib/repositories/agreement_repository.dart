@@ -154,4 +154,14 @@ class AgreementRepository {
       rethrow;
     }
   }
+
+  Future<AgreementModel> convertToAgreement(String id) async {
+    try {
+      final response = await _apiService.post('${ApiConstants.agreements}/$id/convert');
+      final data = response.data['data'] as Map<String, dynamic>;
+      return AgreementModel.fromJson(data);
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

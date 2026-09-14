@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../core/constants/app_colors.dart';
 import '../models/billing_invoice_model.dart';
-import '../models/tax_invoice_model.dart';
 import '../repositories/billing_invoice_repository.dart';
 import '../providers/billing_invoices_provider.dart';
 import '../providers/dashboard_stats_provider.dart';
@@ -218,6 +217,7 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
           try {
             final repo = ref.read(billingInvoiceRepositoryProvider);
             final saved = await repo.updateBillingInvoice(id: updated.id!, billingInvoice: updated);
+            ref.read(billingInvoicesProvider.notifier).refresh();
             if (mounted) {
               setState(() => _invoice = saved);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -655,6 +655,8 @@ class _BillingInvoiceDetailsScreenState extends ConsumerState<BillingInvoiceDeta
                   else ...[
                     _buildDetailRow('Net Profit', '₹${invoice.profitDetails!.netProfit.toStringAsFixed(2)}', isBold: true, valueColor: invoice.profitDetails!.netProfit >= 0 ? AppColors.success : AppColors.error),
                     _buildDetailRow('Total Cost', '₹${invoice.profitDetails!.totalCost.toStringAsFixed(2)}'),
+                    if (invoice.profitDetails!.transportationFee > 0)
+                      _buildDetailRow('Transportation Fee', '₹${invoice.profitDetails!.transportationFee.toStringAsFixed(2)}'),
                     _buildDetailRow('Profit Margin', '${invoice.profitDetails!.profitMargin.toStringAsFixed(1)}%', valueColor: invoice.profitDetails!.netProfit >= 0 ? AppColors.success : AppColors.error),
                   ],
                 ],

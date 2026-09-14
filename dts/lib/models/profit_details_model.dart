@@ -41,6 +41,7 @@ class ProfitItemDetails {
 class ProfitDetails {
   final double netProfit;
   final double totalCost;
+  final double transportationFee;
   final double profitMargin;
   final DateTime? calculatedAt;
   final List<ProfitItemDetails> items;
@@ -48,6 +49,7 @@ class ProfitDetails {
   ProfitDetails({
     required this.netProfit,
     required this.totalCost,
+    this.transportationFee = 0.0,
     required this.profitMargin,
     this.calculatedAt,
     required this.items,
@@ -62,6 +64,7 @@ class ProfitDetails {
     return ProfitDetails(
       netProfit: (json['netProfit'] as num?)?.toDouble() ?? 0.0,
       totalCost: (json['totalCost'] as num?)?.toDouble() ?? 0.0,
+      transportationFee: (json['transportationFee'] as num?)?.toDouble() ?? 0.0,
       profitMargin: (json['profitMargin'] as num?)?.toDouble() ?? 0.0,
       calculatedAt: json['calculatedAt'] != null
           ? DateTime.tryParse(json['calculatedAt'].toString())
@@ -74,6 +77,7 @@ class ProfitDetails {
     return {
       'netProfit': netProfit,
       'totalCost': totalCost,
+      'transportationFee': transportationFee,
       'profitMargin': profitMargin,
       'calculatedAt': calculatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
       'items': items.map((e) => e.toJson()).toList(),

@@ -427,6 +427,9 @@ class _TaxInvoicesScreenState extends ConsumerState<TaxInvoicesScreen> {
           documentType: DocumentType.agreement,
           statusText: paymentStatus,
           isPending: paymentStatus == 'Unpaid',
+          profitText: invoice.profitDetails != null
+              ? 'Profit: ₹${invoice.profitDetails!.netProfit.toStringAsFixed(0)}'
+              : null,
           amount: '₹${(invoice.totalAmount ?? 0).toStringAsFixed(2)}',
           onTap: () {
             context.push('/tax-invoice-details/${invoice.id}', extra: invoice);

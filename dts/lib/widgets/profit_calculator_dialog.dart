@@ -61,11 +61,16 @@ class ProfitCalculatorDialog extends StatefulWidget {
 
 class _ProfitCalculatorDialogState extends State<ProfitCalculatorDialog> {
   late List<ProfitCalculatorItemData> _itemDataList;
+  late TextEditingController _transportationFeeController;
 
   @override
   void initState() {
     super.initState();
     _itemDataList = [];
+    final initialTransport = widget.initialProfitDetails?.transportationFee ?? 0.0;
+    _transportationFeeController = TextEditingController(
+      text: initialTransport > 0 ? initialTransport.toStringAsFixed(2) : '',
+    );
 
     final initialItemsMap = <String, ProfitItemDetails>{};
     if (widget.initialProfitDetails != null) {
@@ -118,6 +123,7 @@ class _ProfitCalculatorDialogState extends State<ProfitCalculatorDialog> {
 
   @override
   void dispose() {
+    _transportationFeeController.dispose();
     for (final item in _itemDataList) {
       item.costController.dispose();
     }
@@ -134,8 +140,12 @@ class _ProfitCalculatorDialogState extends State<ProfitCalculatorDialog> {
     return _itemDataList.fold<double>(0.0, (sum, i) => sum + i.calculatedCost);
   }
 
+  double get _transportationFee {
+    return double.tryParse(_transportationFeeController.text.trim()) ?? 0.0;
+  }
+
   double get _netProfit {
-    return _totalRevenue - _totalCost;
+    return _totalRevenue - _totalCost - _transportationFee;
   }
 
   double get _profitMargin {
@@ -262,14 +272,48 @@ class _ProfitCalculatorDialogState extends State<ProfitCalculatorDialog> {
                         style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                       ),
                       Text(
-                        'Total Cost: ${currencyFmt.format(_totalCost)}',
+                        'Item Cost: ${currencyFmt.format(_totalCost)}',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                       ),
                     ],
                   ),
+                  if (_transportationFee > 0) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Transportation Fee:',
+                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                        Text(
+                          '- ${currencyFmt.format(_transportationFee)}',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.error),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
+
+            // Transportation Fees Input Field
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: TextFormField(
+                controller: _transportationFeeController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Transportation Fees / Logistics Cost (₹)',
+                  hintText: '0.00 (e.g. 500)',
+                  isDense: true,
+                  prefixIcon: Icon(Icons.local_shipping_outlined, size: 18),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+            const SizedBox(height: 8),
 
             // Item Details Breakdown List
             Flexible(
@@ -526,6 +570,7 @@ class _ProfitCalculatorDialogState extends State<ProfitCalculatorDialog> {
                         final profitDetails = ProfitDetails(
                           netProfit: _netProfit,
                           totalCost: _totalCost,
+                          transportationFee: _transportationFee,
                           profitMargin: _profitMargin,
                           calculatedAt: DateTime.now(),
                           items: profitItems,

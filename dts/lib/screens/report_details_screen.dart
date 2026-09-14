@@ -377,7 +377,27 @@ class _ReportDetailsScreenState extends ConsumerState<ReportDetailsScreen> with 
                         report.serviceAndCustomer.jobRef,
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
                       ),
-                      _buildStatusBadge(widget.isLocalDraft),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              report.reportType,
+                              style: const TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _buildStatusBadge(widget.isLocalDraft),
+                        ],
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),

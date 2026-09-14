@@ -399,6 +399,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 borderColor: const Color(0xFFDCFCE7),
                               ),
                               _buildFinancialCard(
+                                title: "Total Net Profit",
+                                subtitle: "Net Earnings",
+                                amount: "₹${_formatCurrency(stats.totalProfit)}",
+                                icon: Icons.trending_up_rounded,
+                                accentColor: const Color(0xFF059669),
+                                bgColor: const Color(0xFFECFDF5),
+                                borderColor: const Color(0xFFA7F3D0),
+                              ),
+                              _buildFinancialCard(
                                 title: "Payment Received",
                                 subtitle: "Collected Balance",
                                 amount: "₹${_formatCurrency(stats.paymentReceived)}",
@@ -438,34 +447,46 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               ),
                             ];
 
-                            if (isDesktop) {
-                              return Row(
-                                children: finCards
-                                    .map((card) => Expanded(
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(right: 12),
-                                            child: card,
-                                          ),
-                                        ))
-                                    .toList(),
+                             if (isDesktop) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: finCards
+                                        .map((card) => Expanded(
+                                              child: Padding(
+                                                padding: const EdgeInsets.only(right: 12),
+                                                child: card,
+                                              ),
+                                            ))
+                                        .toList(),
+                                  ),
+                                  _buildWeeklyAnalyticsSection(stats.weeklyAnalytics, isDesktop),
+                                ],
                               );
                             }
 
-                            return SizedBox(
-                              height: 146,
-                              child: ListView(
-                                scrollDirection: Axis.horizontal,
-                                physics: const BouncingScrollPhysics(),
-                                children: finCards
-                                    .map((card) => SizedBox(
-                                          width: 180,
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(right: 12),
-                                            child: card,
-                                          ),
-                                        ))
-                                    .toList(),
-                              ),
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  height: 146,
+                                  child: ListView(
+                                    scrollDirection: Axis.horizontal,
+                                    physics: const BouncingScrollPhysics(),
+                                    children: finCards
+                                        .map((card) => SizedBox(
+                                              width: 180,
+                                              child: Padding(
+                                                padding: const EdgeInsets.only(right: 12),
+                                                child: card,
+                                              ),
+                                            ))
+                                        .toList(),
+                                  ),
+                                ),
+                                _buildWeeklyAnalyticsSection(stats.weeklyAnalytics, isDesktop),
+                              ],
                             );
                           },
                         ),
@@ -947,6 +968,122 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     items.sort((a, b) => b.date.compareTo(a.date));
 
     return items.take(10).map((item) => item.widget).toList();
+  }
+
+  Widget _buildWeeklyAnalyticsSection(List<WeeklyAnalyticItem> analytics, bool isDesktop) {
+    if (analytics.isEmpty) return const SizedBox.shrink();
+
+    final cards = analytics.map((item) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x05000000),
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  item.weekLabel,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '${item.reportsCount} Reports',
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Revenue:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                Text('₹${_formatCurrency(item.revenue)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Net Profit:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                Text('₹${_formatCurrency(item.profit)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Invoices:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                Text('${item.invoicesCount}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+              ],
+            ),
+          ],
+        ),
+      );
+    }).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 14),
+        const Text(
+          "Week-Wise Analytics",
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF475569),
+            letterSpacing: 0.2,
+          ),
+        ),
+        const SizedBox(height: 10),
+        isDesktop
+            ? Row(
+                children: cards
+                    .map((c) => Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: c,
+                          ),
+                        ))
+                    .toList(),
+              )
+            : SizedBox(
+                height: 116,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  children: cards
+                      .map((c) => SizedBox(
+                            width: 170,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: c,
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ),
+      ],
+    );
   }
 }
 

@@ -220,6 +220,7 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
           try {
             final repo = ref.read(taxInvoiceRepositoryProvider);
             final saved = await repo.updateTaxInvoice(id: updated.id!, taxInvoice: updated);
+            ref.read(taxInvoicesProvider.notifier).refresh();
             if (mounted) {
               setState(() => _invoice = saved);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -274,7 +275,6 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
     }
 
     final invoice = _invoice!;
-    final payment = invoice.paymentDetails;
 
     return AdaptiveLayout(
       currentRoute: '/tax-invoices',
@@ -638,6 +638,8 @@ class _TaxInvoiceDetailsScreenState extends ConsumerState<TaxInvoiceDetailsScree
                   else ...[
                     _buildDetailRow('Net Profit', '₹${invoice.profitDetails!.netProfit.toStringAsFixed(2)}', isBold: true, valueColor: invoice.profitDetails!.netProfit >= 0 ? AppColors.success : AppColors.error),
                     _buildDetailRow('Total Cost', '₹${invoice.profitDetails!.totalCost.toStringAsFixed(2)}'),
+                    if (invoice.profitDetails!.transportationFee > 0)
+                      _buildDetailRow('Transportation Fee', '₹${invoice.profitDetails!.transportationFee.toStringAsFixed(2)}'),
                     _buildDetailRow('Profit Margin', '${invoice.profitDetails!.profitMargin.toStringAsFixed(1)}%', valueColor: invoice.profitDetails!.netProfit >= 0 ? AppColors.success : AppColors.error),
                   ],
                 ],

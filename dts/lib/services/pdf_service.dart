@@ -401,14 +401,14 @@ pw.Expanded(
                   ),
                   pw.TableRow(
                     children: [
+                      _buildFormCell('Service Report Type:', report.reportType),
                       _buildFormCell('Customer Name:', report.serviceAndCustomer.customerName),
-                      _buildFormCell('Site ID / Location:', report.serviceAndCustomer.siteLocation),
                     ],
                   ),
                   pw.TableRow(
                     children: [
-                      _buildFormCell('Contact Person:', report.serviceAndCustomer.contactPerson),
-                      _buildFormCell('Contact Number:', report.serviceAndCustomer.contactNumber),
+                      _buildFormCell('Site ID / Location:', report.serviceAndCustomer.siteLocation),
+                      _buildFormCell('Contact Person:', '${report.serviceAndCustomer.contactPerson} (${report.serviceAndCustomer.contactNumber})'),
                     ],
                   ),
                 ],
@@ -686,9 +686,9 @@ pw.Expanded(
                                 pw.SizedBox(width: 4),
                                 if (customerPhoto != null)
                                   pw.Container(
-                                    height: 35,
-                                    width: 70,
-                                    child: pw.Image(customerPhoto, fit: pw.BoxFit.cover),
+                                    height: 45,
+                                    width: 80,
+                                    child: pw.Image(customerPhoto, fit: pw.BoxFit.contain),
                                   )
                                 else
                                   pw.Text('', style: const pw.TextStyle(fontSize: 8.5)),
@@ -2589,21 +2589,6 @@ pw.Expanded(
 
     // Individual Cash Invoices attached after summary
     for (final invoice in invoices) {
-      pw.ImageProvider? technicianSignatureImage;
-      if (invoice.technicianSignatureUrl != null && invoice.technicianSignatureUrl!.isNotEmpty) {
-        final resolvedUrl = _resolveUrl(invoice.technicianSignatureUrl!);
-        if (resolvedUrl.startsWith('http')) {
-          technicianSignatureImage = await _loadNetworkImage(resolvedUrl);
-        } else {
-          final file = File(resolvedUrl);
-          if (await file.exists()) {
-            try {
-              technicianSignatureImage = pw.MemoryImage(await file.readAsBytes());
-            } catch (_) {}
-          }
-        }
-      }
-
       final tableHeaders = ['#', 'Item Name', 'HSN/ SAC', 'Quantity', 'Price/ Unit', 'Amount'];
       
       final itemsRows = <pw.TableRow>[];
@@ -2653,7 +2638,7 @@ pw.Expanded(
                             pw.Text('Billed To:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
                             pw.Text(invoice.billTo.customerName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9.5)),
                             pw.Text(invoice.billTo.address, style: const pw.TextStyle(fontSize: 8.5)),
-                            if (invoice.billTo.contactNumber != null)
+                            if (invoice.billTo.contactNumber.isNotEmpty)
                               pw.Text('Contact: ${invoice.billTo.contactNumber}', style: const pw.TextStyle(fontSize: 8.5)),
                           ],
                         ),

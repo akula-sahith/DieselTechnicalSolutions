@@ -14,6 +14,7 @@ class ReportWizardState {
   final String status; // 'draft' or 'submitted'
   
   // Step 1
+  final String reportType;
   final String jobRef;
   final DateTime dateTime;
   final String customerName;
@@ -58,6 +59,7 @@ class ReportWizardState {
     required this.currentStep,
     this.id,
     required this.status,
+    this.reportType = 'General Visit',
     required this.jobRef,
     required this.dateTime,
     required this.customerName,
@@ -91,6 +93,7 @@ class ReportWizardState {
     int? currentStep,
     String? id,
     String? status,
+    String? reportType,
     String? jobRef,
     DateTime? dateTime,
     String? customerName,
@@ -123,6 +126,7 @@ class ReportWizardState {
       currentStep: currentStep ?? this.currentStep,
       id: id ?? this.id,
       status: status ?? this.status,
+      reportType: reportType ?? this.reportType,
       jobRef: jobRef ?? this.jobRef,
       dateTime: dateTime ?? this.dateTime,
       customerName: customerName ?? this.customerName,
@@ -173,6 +177,7 @@ class ReportWizardState {
       currentStep: 0,
       id: null,
       status: 'draft',
+      reportType: 'General Visit',
       jobRef: defaultJobRef,
       dateTime: now,
       customerName: '',
@@ -210,6 +215,7 @@ class ReportWizardState {
     return ReportModel(
       id: id,
       status: status ?? this.status,
+      reportType: reportType,
       serviceAndCustomer: ServiceAndCustomer(
         jobRef: jobRef,
         dateTime: dateTime,
@@ -273,6 +279,7 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
       currentStep: 0,
       id: report.id,
       status: report.status,
+      reportType: report.reportType,
       jobRef: report.serviceAndCustomer.jobRef,
       dateTime: report.serviceAndCustomer.dateTime,
       customerName: report.serviceAndCustomer.customerName,
@@ -314,6 +321,7 @@ class ReportWizardNotifier extends StateNotifier<ReportWizardState> {
   }
 
   // Step 1 setters
+  void updateReportType(String value) => state = state.copyWith(reportType: value);
   void updateJobRef(String value) => state = state.copyWith(jobRef: value);
   void updateDateTime(DateTime value) => state = state.copyWith(dateTime: value);
   void updateCustomerName(String value) => state = state.copyWith(customerName: value);

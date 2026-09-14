@@ -146,6 +146,16 @@ const reportSchema = new mongoose.Schema(
       default: 'submitted',
       index: true,
     },
+    reportType: {
+      type: String,
+      enum: ['General Visit', 'Annual Maintenance', 'Oil Service'],
+      default: 'General Visit',
+      index: true,
+    },
+    emailRemindersSent: {
+      twentyDay: { type: Boolean, default: false },
+      tenDay: { type: Boolean, default: false },
+    },
     createdBy: {
       userId: { type: String, trim: true, default: '' },
       name: { type: String, trim: true, default: '' },

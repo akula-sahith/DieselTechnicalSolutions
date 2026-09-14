@@ -242,6 +242,7 @@ class ReportCreatedBy {
 class ReportModel {
   final String? id;
   final String status;
+  final String reportType; // 'General Visit', 'Annual Maintenance', 'Oil Service'
   final ServiceAndCustomer serviceAndCustomer;
   final EquipmentAndEngine equipmentAndEngine;
   final List<ServiceChecklistItem> serviceChecklist;
@@ -255,6 +256,7 @@ class ReportModel {
   ReportModel({
     this.id,
     this.status = 'submitted',
+    this.reportType = 'General Visit',
     required this.serviceAndCustomer,
     required this.equipmentAndEngine,
     required this.serviceChecklist,
@@ -301,6 +303,7 @@ class ReportModel {
     return ReportModel(
       id: json['_id'] ?? json['id'],
       status: json['status'] ?? 'submitted',
+      reportType: json['reportType'] ?? 'General Visit',
       serviceAndCustomer: ServiceAndCustomer.fromJson(customerData),
       equipmentAndEngine: EquipmentAndEngine.fromJson(equipmentData),
       serviceChecklist: checklist,
@@ -318,6 +321,7 @@ class ReportModel {
     if (flat) {
       final map = <String, dynamic>{};
       map['status'] = status;
+      map['reportType'] = reportType;
       map.addAll(serviceAndCustomer.toJson());
       map.addAll(equipmentAndEngine.toJson());
       map.addAll(remarksAndActionPlan.toJson());

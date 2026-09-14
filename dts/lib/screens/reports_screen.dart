@@ -180,6 +180,21 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               report.serviceAndCustomer.customerName,
               style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
             ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                report.reportType,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
             Text(
               formattedDate,
               style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
@@ -187,7 +202,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: (isDraft ? AppColors.warning : AppColors.success).withOpacity(0.12),
+                color: (isDraft ? AppColors.warning : AppColors.success).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -224,6 +239,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             columns: const [
               DesktopTableColumn(label: 'Job Ref', flex: 2),
               DesktopTableColumn(label: 'Customer', flex: 3),
+              DesktopTableColumn(label: 'Type', flex: 2),
               DesktopTableColumn(label: 'Date & Time', flex: 2),
               DesktopTableColumn(label: 'Status', flex: 2),
               DesktopTableColumn(label: 'Technician', flex: 2),
@@ -261,7 +277,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           customerName: report.serviceAndCustomer.customerName,
           formattedDate: formattedDate,
           documentType: DocumentType.report,
-          statusText: isDraft ? 'Pending' : 'Completed',
+          statusText: '${report.reportType} • ${isDraft ? "Pending" : "Completed"}',
           createdByText: creatorInfo,
           isPending: isDraft,
           onTap: () {

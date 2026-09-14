@@ -1,6 +1,10 @@
 import { Resend } from 'resend';
 
-const recipientEmail = 'akulasahith268@gmail.com';
+const recipientEmails = [
+  'akulasahith268@gmail.com',
+  '238w1a1215@vrsec.ac.in',
+  'dieseltechnicalsolutions@zohomail.in',
+];
 const apiKey = process.env.RESEND_API_KEY || '';
 
 let resendClient = null;
@@ -64,13 +68,13 @@ export const sendServiceReportCreatedEmail = async (report) => {
     if (resendClient) {
       await resendClient.emails.send({
         from: 'Diesel Technical Solutions <onboarding@resend.dev>',
-        to: [recipientEmail],
+        to: recipientEmails,
         subject: `[eFSR Created] ${jobRef || 'Report'} - ${reportType} (${customerName || 'Customer'})`,
         html: htmlContent,
       });
-      console.log(`[Resend Email] Service report creation email sent to ${recipientEmail} for ${jobRef}`);
+      console.log(`[Resend Email] Service report creation email sent to ${recipientEmails.join(', ')} for ${jobRef}`);
     } else {
-      console.log(`[Resend Email Simulation] (No RESEND_API_KEY set) Email would be sent to ${recipientEmail} for jobRef ${jobRef}`);
+      console.log(`[Resend Email Simulation] (No RESEND_API_KEY set) Email would be sent to ${recipientEmails.join(', ')} for jobRef ${jobRef}`);
     }
   } catch (error) {
     console.error(`[Resend Email Error] Failed to send creation email for ${jobRef}:`, error.message);
@@ -125,13 +129,13 @@ export const sendOilServiceReminderEmail = async (report, daysRemaining) => {
     if (resendClient) {
       await resendClient.emails.send({
         from: 'Diesel Technical Solutions <onboarding@resend.dev>',
-        to: [recipientEmail],
+        to: recipientEmails,
         subject,
         html: htmlContent,
       });
-      console.log(`[Resend Reminder] ${daysRemaining}-day Oil Service reminder sent to ${recipientEmail} for ${jobRef}`);
+      console.log(`[Resend Reminder] ${daysRemaining}-day Oil Service reminder sent to ${recipientEmails.join(', ')} for ${jobRef}`);
     } else {
-      console.log(`[Resend Reminder Simulation] (No RESEND_API_KEY set) ${daysRemaining}-day reminder sent to ${recipientEmail} for ${jobRef}`);
+      console.log(`[Resend Reminder Simulation] (No RESEND_API_KEY set) ${daysRemaining}-day reminder sent to ${recipientEmails.join(', ')} for ${jobRef}`);
     }
   } catch (error) {
     console.error(`[Resend Reminder Error] Failed to send ${daysRemaining}-day reminder for ${jobRef}:`, error.message);

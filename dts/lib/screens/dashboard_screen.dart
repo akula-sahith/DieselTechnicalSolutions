@@ -773,82 +773,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildMonthlyAnalyticsSection(List<MonthlyAnalyticItem> monthlyAnalytics, bool isDesktop) {
     if (monthlyAnalytics.isEmpty) return const SizedBox.shrink();
 
-    final cards = monthlyAnalytics.map((item) {
-      return InkWell(
-        onTap: () {
-          context.push('/financial-analysis?year=${item.year}&month=${item.month}');
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x05000000),
-                blurRadius: 4,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      item.monthName,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0FDF4),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '${item.totalTransactions} Docs',
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Revenue:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                  Text('₹${_formatCurrency(item.revenue)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Net Profit:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                  Text('₹${_formatCurrency(item.profit)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Invoices:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                  Text('${item.taxInvoicesCount + item.cashInvoicesCount}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                ],
-              ),
-            ],
-          ),
-        ),
-      );
-    }).toList();
+    final currentMonthItem = monthlyAnalytics.first;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -857,9 +782,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              "Month-Wise Financial Analysis",
-              style: TextStyle(
+            Text(
+              "Financial Analysis (${currentMonthItem.monthName})",
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF475569),
@@ -868,8 +793,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             TextButton(
               onPressed: () {
-                final first = monthlyAnalytics.first;
-                context.push('/financial-analysis?year=${first.year}&month=${first.month}');
+                context.push('/financial-analysis?year=${currentMonthItem.year}&month=${currentMonthItem.month}');
               },
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
@@ -881,35 +805,98 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
         ),
         const SizedBox(height: 10),
-        isDesktop
-            ? Row(
-                children: cards
-                    .take(4)
-                    .map((c) => Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 12),
-                            child: c,
-                          ),
-                        ))
-                    .toList(),
-              )
-            : SizedBox(
-                height: 116,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  children: cards
-                      .map((c) => SizedBox(
-                            width: 175,
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 12),
-                              child: c,
-                            ),
-                          ))
-                      .toList(),
-                ),
-              ),
+        _buildSingleMonthCard(currentMonthItem, isDesktop),
       ],
+    );
+  }
+
+  Widget _buildSingleMonthCard(MonthlyAnalyticItem item, bool isDesktop) {
+    return InkWell(
+      onTap: () {
+        context.push('/financial-analysis?year=${item.year}&month=${item.month}');
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x06000000),
+              blurRadius: 6,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_month_outlined, size: 18, color: Color(0xFF2563EB)),
+                    const SizedBox(width: 8),
+                    Text(
+                      item.monthName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '${item.totalTransactions} Docs',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Revenue', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    const SizedBox(height: 2),
+                    Text('₹${_formatCurrency(item.revenue)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Net Profit', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    const SizedBox(height: 2),
+                    Text('₹${_formatCurrency(item.profit)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Invoices', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    const SizedBox(height: 2),
+                    Text('${item.taxInvoicesCount + item.cashInvoicesCount}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                  ],
+                ),
+                const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 

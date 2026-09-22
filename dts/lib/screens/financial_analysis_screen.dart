@@ -26,10 +26,14 @@ class _FinancialAnalysisScreenState extends ConsumerState<FinancialAnalysisScree
   bool _isLoading = true;
   String? _error;
   MonthlyDetailModel? _detail;
+  late int _selectedYear;
+  late int _selectedMonth;
 
   @override
   void initState() {
     super.initState();
+    _selectedYear = widget.year;
+    _selectedMonth = widget.month;
     _fetchDetail();
   }
 
@@ -41,7 +45,7 @@ class _FinancialAnalysisScreenState extends ConsumerState<FinancialAnalysisScree
 
     try {
       final repo = ref.read(analyticsRepositoryProvider);
-      final res = await repo.getMonthlyDetail(widget.year, widget.month);
+      final res = await repo.getMonthlyDetail(_selectedYear, _selectedMonth);
       setState(() {
         _detail = res;
         _isLoading = false;
@@ -56,6 +60,70 @@ class _FinancialAnalysisScreenState extends ConsumerState<FinancialAnalysisScree
 
   String _formatCurrency(double amount) {
     return NumberFormat('#,##,##0.00', 'en_IN').format(amount);
+  }
+
+  Widget _buildMonthSelectorHeader() {
+    final date = DateTime(_selectedYear, _selectedMonth, 1);
+    final monthStr = DateFormat('MMMM yyyy').format(date);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left, color: Color(0xFF0F172A)),
+            onPressed: () {
+              setState(() {
+                if (_selectedMonth == 1) {
+                  _selectedMonth = 12;
+                  _selectedYear--;
+                } else {
+                  _selectedMonth--;
+                }
+              });
+              _fetchDetail();
+            },
+            tooltip: 'Previous Month',
+          ),
+          Row(
+            children: [
+              const Icon(Icons.calendar_month_outlined, size: 20, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(
+                monthStr,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ],
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right, color: Color(0xFF0F172A)),
+            onPressed: () {
+              setState(() {
+                if (_selectedMonth == 12) {
+                  _selectedMonth = 1;
+                  _selectedYear++;
+                } else {
+                  _selectedMonth++;
+                }
+              });
+              _fetchDetail();
+            },
+            tooltip: 'Next Month',
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -104,6 +172,9 @@ class _FinancialAnalysisScreenState extends ConsumerState<FinancialAnalysisScree
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // Month Selector Header
+                              _buildMonthSelectorHeader(),
+
                               // 1. Month Summary Section Header
                               Text(
                                 '${_detail!.monthName} Overview',
@@ -130,14 +201,22 @@ class _FinancialAnalysisScreenState extends ConsumerState<FinancialAnalysisScree
                               ),
                               const SizedBox(height: 12),
 
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(child: _buildRevenueBreakdownCard()),
-                                  const SizedBox(width: 16),
-                                  Expanded(child: _buildCostBreakdownCard()),
-                                ],
-                              ),
+                              isDesktop
+                                  ? Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(child: _buildRevenueBreakdownCard()),
+                                        const SizedBox(width: 16),
+                                        Expanded(child: _buildCostBreakdownCard()),
+                                      ],
+                                    )
+                                  : Column(
+                                      children: [
+                                        _buildRevenueBreakdownCard(),
+                                        const SizedBox(height: 16),
+                                        _buildCostBreakdownCard(),
+                                      ],
+                                    ),
                               const SizedBox(height: 24),
 
                               // 3. Document Analysis Section
@@ -358,13 +437,23 @@ class _FinancialAnalysisScreenState extends ConsumerState<FinancialAnalysisScree
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-            Text('$count item(s)', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                '$count item(s)',
+                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 8),
         Text('₹${_formatCurrency(amount)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
       ],
     );

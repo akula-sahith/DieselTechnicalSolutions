@@ -34,6 +34,8 @@ import '../screens/delivery_challans_screen.dart';
 import '../screens/create_delivery_challan_screen.dart';
 import '../screens/delivery_challan_details_screen.dart';
 import '../screens/unpaid_bills_screen.dart';
+import '../screens/financial_analysis_screen.dart';
+import '../screens/week_documents_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -218,6 +220,25 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return SuccessScreen(reportId: id, isAgreement: true);
+        },
+      ),
+      GoRoute(
+        path: '/financial-analysis',
+        builder: (context, state) {
+          final yearStr = state.uri.queryParameters['year'];
+          final monthStr = state.uri.queryParameters['month'];
+          final year = int.tryParse(yearStr ?? '') ?? DateTime.now().year;
+          final month = int.tryParse(monthStr ?? '') ?? DateTime.now().month;
+          return FinancialAnalysisScreen(year: year, month: month);
+        },
+      ),
+      GoRoute(
+        path: '/week-documents',
+        builder: (context, state) {
+          final startDate = state.uri.queryParameters['startDate'] ?? '';
+          final endDate = state.uri.queryParameters['endDate'] ?? '';
+          final label = state.uri.queryParameters['label'] ?? '';
+          return WeekDocumentsScreen(startDate: startDate, endDate: endDate, label: label);
         },
       ),
     ],

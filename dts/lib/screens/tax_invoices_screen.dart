@@ -424,7 +424,7 @@ class _TaxInvoicesScreenState extends ConsumerState<TaxInvoicesScreen> {
           documentNumber: invoice.invoiceNumber ?? 'Pending',
           customerName: invoice.billTo.customerName,
           formattedDate: formattedDate,
-          documentType: DocumentType.agreement,
+          documentType: DocumentType.taxInvoice,
           statusText: paymentStatus,
           isPending: paymentStatus == 'Unpaid',
           profitText: invoice.profitDetails != null

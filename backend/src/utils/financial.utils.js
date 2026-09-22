@@ -192,20 +192,39 @@ export const generateNextSequence = async (Model, fieldName = 'estimateNumber') 
     return 1;
   }
 
-  let maxSequence = 0;
+  const existingSeqs = new Set();
+  const currentYear = new Date().getFullYear();
+
   for (const doc of docs) {
     const val = doc[fieldName];
     if (val) {
-      const parts = String(val).split(/[-/]/);
-      const lastPart = parts[parts.length - 1];
-      const seq = Number(lastPart);
-      if (!Number.isNaN(seq) && seq > maxSequence) {
-        maxSequence = seq;
+      const strVal = String(val).trim();
+      const parts = strVal.split(/[-/]/);
+
+      if (parts.length === 3 && parts[0].toUpperCase() === 'EST') {
+        const docYear = Number(parts[1]);
+        if (docYear === currentYear) {
+          const seq = Number(parts[2]);
+          if (!Number.isNaN(seq) && seq > 0) {
+            existingSeqs.add(seq);
+          }
+        }
+      } else {
+        const lastPart = parts[parts.length - 1];
+        const seq = Number(lastPart);
+        if (!Number.isNaN(seq) && seq > 0) {
+          existingSeqs.add(seq);
+        }
       }
     }
   }
 
-  return maxSequence + 1;
+  let nextSeq = 1;
+  while (existingSeqs.has(nextSeq)) {
+    nextSeq++;
+  }
+
+  return nextSeq;
 };
 
 export const calculatePaymentDetails = (totalAmount, amountReceived = 0) => {

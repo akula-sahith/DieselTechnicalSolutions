@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 
 /// The type of document for visual distinction
-enum DocumentType { report, agreement, quotation }
+enum DocumentType { report, agreement, quotation, taxInvoice, cashInvoice, deliveryChallan, purchaseBill }
 
 class DocumentCard extends StatelessWidget {
   final String documentNumber;
@@ -38,6 +38,14 @@ class DocumentCard extends StatelessWidget {
         return AppColors.agreementGreen;
       case DocumentType.quotation:
         return AppColors.quotationBlue;
+      case DocumentType.taxInvoice:
+        return AppColors.primary;
+      case DocumentType.cashInvoice:
+        return AppColors.accent;
+      case DocumentType.deliveryChallan:
+        return const Color(0xFF059669);
+      case DocumentType.purchaseBill:
+        return const Color(0xFF7C3AED);
     }
   }
 
@@ -49,6 +57,14 @@ class DocumentCard extends StatelessWidget {
         return Icons.handshake_outlined;
       case DocumentType.quotation:
         return Icons.request_quote_outlined;
+      case DocumentType.taxInvoice:
+        return Icons.receipt_long_outlined;
+      case DocumentType.cashInvoice:
+        return Icons.subtitles_outlined;
+      case DocumentType.deliveryChallan:
+        return Icons.local_shipping_outlined;
+      case DocumentType.purchaseBill:
+        return Icons.shopping_bag_outlined;
     }
   }
 
@@ -60,6 +76,14 @@ class DocumentCard extends StatelessWidget {
         return 'Agreement';
       case DocumentType.quotation:
         return 'Quotation';
+      case DocumentType.taxInvoice:
+        return 'Tax Invoice';
+      case DocumentType.cashInvoice:
+        return 'Cash Invoice';
+      case DocumentType.deliveryChallan:
+        return 'Delivery Challan';
+      case DocumentType.purchaseBill:
+        return 'Purchase Bill';
     }
   }
 

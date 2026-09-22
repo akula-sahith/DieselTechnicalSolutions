@@ -382,7 +382,7 @@ class _BillingInvoicesScreenState extends ConsumerState<BillingInvoicesScreen> {
                                           documentNumber: invoice.invoiceNumber ?? 'BILL-XXXX',
                                           customerName: invoice.billTo.customerName,
                                           formattedDate: DateFormat('dd MMM yyyy').format(invoice.invoiceDate),
-                                          documentType: DocumentType.agreement,
+                                          documentType: DocumentType.cashInvoice,
                                           statusText: statusText,
                                           isPending: statusText == 'Unpaid',
                                           profitText: invoice.profitDetails != null

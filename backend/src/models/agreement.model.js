@@ -138,6 +138,11 @@ const agreementSchema = new mongoose.Schema(
       default: 'submitted',
       index: true,
     },
+    emailRemindersSent: {
+      thirtyDay: { type: Boolean, default: false },
+      twentyDay: { type: Boolean, default: false },
+      tenDay: { type: Boolean, default: false },
+    },
   },
   {
     timestamps: true,

@@ -2,6 +2,7 @@ import Agreement from '../models/agreement.model.js';
 import uploadToCloudinary from '../services/upload.service.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 import { calculateAgreementTotals, formatOfferNumber, numberToWords } from '../utils/agreement.utils.js';
+import { generateNextSequence } from '../utils/financial.utils.js';
 
 const getAgreementPayload = (req) => {
   const rawPayload = req.body?.agreement ?? req.body;
@@ -26,25 +27,8 @@ const buildDescriptionItems = (items = []) => {
 };
 
 const generateOfferNumber = async () => {
-  const docs = await Agreement.find({}).select('offerNumber').lean();
-
-  if (!docs || docs.length === 0) {
-    return formatOfferNumber(1);
-  }
-
-  let maxSequence = 0;
-  for (const doc of docs) {
-    if (doc.offerNumber) {
-      const parts = String(doc.offerNumber).split('/');
-      const lastPart = parts[parts.length - 1];
-      const seq = Number(lastPart);
-      if (!Number.isNaN(seq) && seq > maxSequence) {
-        maxSequence = seq;
-      }
-    }
-  }
-
-  return formatOfferNumber(maxSequence + 1);
+  const sequence = await generateNextSequence(Agreement, 'offerNumber');
+  return formatOfferNumber(sequence);
 };
 
 export const createAgreement = async (req, res) => {

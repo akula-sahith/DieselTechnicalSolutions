@@ -11,13 +11,13 @@ test('generateUpiPaymentUri creates valid UPI payment URI', () => {
   assert.match(uri, /am=5000/);
   assert.match(uri, /cu=INR/);
   assert.match(uri, /tn=EST-2026-0001/);
-  assert.match(uri, /pn=Diesel\+Technical\+Solutions/);
+  assert.match(uri, new RegExp(`pn=${encodeURIComponent(companyPaymentDetails.companyName)}`));
 });
 
 test('generateUpiPaymentUri includes company name', () => {
   const uri = generateUpiPaymentUri(1000);
 
-  assert.ok(uri.includes(companyPaymentDetails.companyName.replace(/ /g, '+')));
+  assert.ok(uri.includes(encodeURIComponent(companyPaymentDetails.companyName)));
 });
 
 test('generateClickToPayLink returns valid URI', () => {

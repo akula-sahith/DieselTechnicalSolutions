@@ -63,45 +63,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final statsAsync = ref.watch(dashboardStatsProvider);
 
     final todayStr = DateFormat('EEEE, dd MMM yyyy').format(DateTime.now());
-    final now = DateTime.now();
-
-    // Today's Metrics Calculation
-    final todayReports = reportsState.reports.where((r) {
-      final date = r.createdAt ?? r.serviceAndCustomer.dateTime;
-      return date.year == now.year && date.month == now.month && date.day == now.day;
-    }).length + reportsState.drafts.where((d) {
-      final date = d.createdAt ?? d.serviceAndCustomer.dateTime;
-      return date.year == now.year && date.month == now.month && date.day == now.day;
-    }).length;
-
-    final todayAgreements = agreementsState.agreements.where((a) {
-      final date = a.createdAt ?? a.date;
-      return date.year == now.year && date.month == now.month && date.day == now.day;
-    }).length + agreementsState.drafts.where((d) {
-      final date = d.createdAt ?? d.date;
-      return date.year == now.year && date.month == now.month && date.day == now.day;
-    }).length;
-
-    final todayEstimates = estimatesState.estimates.where((e) {
-      final date = e.createdAt ?? e.estimateDate;
-      return date.year == now.year && date.month == now.month && date.day == now.day;
-    }).length;
-
-    final todayInvoices = invoicesState.taxInvoices.where((i) {
-      final date = i.createdAt ?? i.invoiceDate;
-      return date.year == now.year && date.month == now.month && date.day == now.day;
-    }).length;
-
-    final todayCustomers = customersState.customers.where((c) {
-      return false; // Safely default or 0 if not tracked
-    }).length;
-
-    // Total Metrics Calculation
-    final totalReports = reportsNotifier.totalReportsCount;
-    final totalAgreements = agreementsState.totalCount + agreementsState.drafts.length;
-    final totalEstimates = estimatesState.estimates.length;
-    final totalInvoices = invoicesState.taxInvoices.length;
-    final totalCustomers = customersState.customers.length;
 
     // Unified recent activity feed
     final recentActivity = _buildRecentActivity(
@@ -197,170 +158,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ),
 
-              // ──── 2. TODAY'S BUSINESS SUMMARY ────
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Today's Overview",
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF475569),
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildSummaryMiniCard(
-                              label: "Reports",
-                              value: todayReports.toString(),
-                              icon: Icons.assignment_outlined,
-                              color: const Color(0xFF2563EB),
-                            ),
-                          ),
-                          if (!authState.isReporter) ...[
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildSummaryMiniCard(
-                                label: "Agreements",
-                                value: todayAgreements.toString(),
-                                icon: Icons.handshake_outlined,
-                                color: const Color(0xFF059669),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildSummaryMiniCard(
-                                label: "Estimates",
-                                value: todayEstimates.toString(),
-                                icon: Icons.request_quote_outlined,
-                                color: const Color(0xFFD97706),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildSummaryMiniCard(
-                                label: "Invoices",
-                                value: todayInvoices.toString(),
-                                icon: Icons.receipt_long_outlined,
-                                color: const Color(0xFF7C3AED),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildSummaryMiniCard(
-                                label: "Customers",
-                                value: todayCustomers.toString(),
-                                icon: Icons.people_outline_rounded,
-                                color: const Color(0xFF0891B2),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // ──── 3. TOTAL BUSINESS OVERVIEW ────
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Total Overview",
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF475569),
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildSummaryMiniCard(
-                              label: "Total Reports",
-                              value: totalReports.toString(),
-                              icon: Icons.assignment_outlined,
-                              color: const Color(0xFF2563EB),
-                            ),
-                          ),
-                          if (authState.isReporter) ...[
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildSummaryMiniCard(
-                                label: "Completed",
-                                value: reportsNotifier.completedReportsCount.toString(),
-                                icon: Icons.check_circle_outline,
-                                color: const Color(0xFF059669),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildSummaryMiniCard(
-                                label: "Pending Drafts",
-                                value: reportsNotifier.pendingReportsCount.toString(),
-                                icon: Icons.pending_actions_outlined,
-                                color: const Color(0xFFD97706),
-                              ),
-                            ),
-                          ] else ...[
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildSummaryMiniCard(
-                                label: "Agreements",
-                                value: totalAgreements.toString(),
-                                icon: Icons.handshake_outlined,
-                                color: const Color(0xFF059669),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildSummaryMiniCard(
-                                label: "Estimates",
-                                value: totalEstimates.toString(),
-                                icon: Icons.request_quote_outlined,
-                                color: const Color(0xFFD97706),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildSummaryMiniCard(
-                                label: "Invoices",
-                                value: totalInvoices.toString(),
-                                icon: Icons.receipt_long_outlined,
-                                color: const Color(0xFF7C3AED),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildSummaryMiniCard(
-                                label: "Customers",
-                                value: totalCustomers.toString(),
-                                icon: Icons.people_outline_rounded,
-                                color: const Color(0xFF0891B2),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // ──── 3. FINANCIAL OVERVIEW (Admin Only) ────
+              // ──── 2. FINANCIAL OVERVIEW (Admin Only) ────
               if (!authState.isReporter)
                 SliverToBoxAdapter(
                   child: Padding(
@@ -461,6 +259,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                             ))
                                         .toList(),
                                   ),
+                                  _buildMonthlyAnalyticsSection(stats.monthlyAnalytics, isDesktop),
                                   _buildWeeklyAnalyticsSection(stats.weeklyAnalytics, isDesktop),
                                 ],
                               );
@@ -485,6 +284,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                         .toList(),
                                   ),
                                 ),
+                                _buildMonthlyAnalyticsSection(stats.monthlyAnalytics, isDesktop),
                                 _buildWeeklyAnalyticsSection(stats.weeklyAnalytics, isDesktop),
                               ],
                             );
@@ -934,7 +734,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             documentNumber: invoice.invoiceNumber ?? 'Invoice # Pending',
             customerName: invoice.billTo.customerName,
             formattedDate: DateFormat('dd MMM yyyy').format(invoice.invoiceDate),
-            documentType: DocumentType.agreement,
+            documentType: DocumentType.taxInvoice,
             amount: '₹${_formatCurrency(invoice.totalAmount ?? 0.0)}',
             statusText: 'Tax Invoice',
             isPending: false,
@@ -954,7 +754,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             documentNumber: invoice.invoiceNumber ?? 'Bill # Pending',
             customerName: invoice.billTo.customerName,
             formattedDate: DateFormat('dd MMM yyyy').format(invoice.invoiceDate),
-            documentType: DocumentType.agreement,
+            documentType: DocumentType.cashInvoice,
             amount: '₹${_formatCurrency(invoice.totalAmount ?? 0.0)}',
             statusText: 'Cash Invoice',
             isPending: false,
@@ -970,73 +770,227 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return items.take(10).map((item) => item.widget).toList();
   }
 
+  Widget _buildMonthlyAnalyticsSection(List<MonthlyAnalyticItem> monthlyAnalytics, bool isDesktop) {
+    if (monthlyAnalytics.isEmpty) return const SizedBox.shrink();
+
+    final cards = monthlyAnalytics.map((item) {
+      return InkWell(
+        onTap: () {
+          context.push('/financial-analysis?year=${item.year}&month=${item.month}');
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x05000000),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      item.monthName,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '${item.totalTransactions} Docs',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Revenue:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                  Text('₹${_formatCurrency(item.revenue)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Net Profit:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                  Text('₹${_formatCurrency(item.profit)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Invoices:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                  Text('${item.taxInvoicesCount + item.cashInvoicesCount}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 14),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Month-Wise Financial Analysis",
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF475569),
+                letterSpacing: 0.2,
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                final first = monthlyAnalytics.first;
+                context.push('/financial-analysis?year=${first.year}&month=${first.month}');
+              },
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text('View All', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        isDesktop
+            ? Row(
+                children: cards
+                    .take(4)
+                    .map((c) => Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: c,
+                          ),
+                        ))
+                    .toList(),
+              )
+            : SizedBox(
+                height: 116,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  children: cards
+                      .map((c) => SizedBox(
+                            width: 175,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: c,
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ),
+      ],
+    );
+  }
+
   Widget _buildWeeklyAnalyticsSection(List<WeeklyAnalyticItem> analytics, bool isDesktop) {
     if (analytics.isEmpty) return const SizedBox.shrink();
 
     final cards = analytics.map((item) {
-      return Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x05000000),
-              blurRadius: 4,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  item.weekLabel,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
-                    borderRadius: BorderRadius.circular(4),
+      return InkWell(
+        onTap: () {
+          if (item.startDate != null && item.endDate != null) {
+            final startIso = item.startDate!.toIso8601String();
+            final endIso = item.endDate!.toIso8601String();
+            final label = item.dateRangeLabel.isNotEmpty ? item.dateRangeLabel : item.weekLabel;
+            context.push('/week-documents?startDate=${Uri.encodeComponent(startIso)}&endDate=${Uri.encodeComponent(endIso)}&label=${Uri.encodeComponent(label)}');
+          }
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x05000000),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    item.weekLabel,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
                   ),
-                  child: Text(
-                    '${item.reportsCount} Reports',
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '${item.reportsCount} Reports',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Revenue:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                Text('₹${_formatCurrency(item.revenue)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Net Profit:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                Text('₹${_formatCurrency(item.profit)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Invoices:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                Text('${item.invoicesCount}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-              ],
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Revenue:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                  Text('₹${_formatCurrency(item.revenue)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Net Profit:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                  Text('₹${_formatCurrency(item.profit)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Invoices:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                  Text('${item.invoicesCount}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                ],
+              ),
+            ],
+          ),
         ),
       );
     }).toList();
